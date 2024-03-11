@@ -1,7 +1,7 @@
 ### Typy danych i operacje
 ```
 int i = 3 + 2 * 4;
-float f = 2 * 2.0;
+float f = 2 * (2.0 / 2);
 bool b = true or 1 == 1 and true != true;
 
 print(i);
@@ -11,7 +11,7 @@ print(b);
 Output:
 ```
 11
-4.0
+2.0
 false
 ```
 
@@ -149,7 +149,4 @@ c = 10;
 
 ## Konwersja typów
 
-## Gramatyka
-PROGRAM =           STMTS;
-STMTS =             STMTS STMT
-                  | ϵ
+## Założenia
