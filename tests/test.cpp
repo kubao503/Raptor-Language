@@ -25,14 +25,54 @@ TEST(lexer, getToken_while) {
 }
 
 TEST(lexer, getToken_id) {
-    std::istringstream stream("identifier");
+    std::istringstream stream("valid_identifier_123");
     auto lexer = Lexer(stream);
 
     auto token = lexer.getToken();
 
     EXPECT_EQ(token.type, Token::Type::ID) << "Invalid token type";
     EXPECT_TRUE(std::holds_alternative<std::string>(token.value)) << "Invalid type of value";
-    EXPECT_EQ(std::get<std::string>(token.value), "identifier") << "Invalid value";
+    EXPECT_EQ(std::get<std::string>(token.value), "valid_identifier_123") << "Invalid value";
+}
+
+TEST(lexer, getToken_int) {
+    std::istringstream stream("1234");
+    auto lexer = Lexer(stream);
+
+    auto token = lexer.getToken();
+
+    EXPECT_EQ(token.type, Token::Type::INT_CONST) << "Invalid token type";
+    EXPECT_TRUE(std::holds_alternative<unsigned int>(token.value)) << "Invalid type of value";
+    EXPECT_EQ(std::get<unsigned int>(token.value), 1234) << "Invalid value";
+}
+
+TEST(lexer, getToken_int_with_leading_zeros) {
+    std::istringstream stream("0001234");
+    auto lexer = Lexer(stream);
+
+    EXPECT_THROW(lexer.getToken(), InvalidToken) << "Leading zeros are forbidden";
+}
+
+TEST(lexer, getToken_float) {
+    std::istringstream stream("12.125");
+    auto lexer = Lexer(stream);
+
+    auto token = lexer.getToken();
+
+    EXPECT_EQ(token.type, Token::Type::FLOAT_CONST) << "Invalid token type";
+    EXPECT_TRUE(std::holds_alternative<float>(token.value)) << "Invalid type of value";
+    EXPECT_EQ(std::get<float>(token.value), 12.125f) << "Invalid value";
+}
+
+TEST(lexer, getToken_invalid_float) {
+    std::string invalidFloats[] = {"1..125", "1.", ".5"};
+
+    for (auto s : invalidFloats) {
+        std::istringstream stream(s);
+        auto lexer = Lexer(stream);
+
+        EXPECT_THROW(lexer.getToken(), InvalidToken);
+    }
 }
 
 TEST(lexer, getToken_invalid) {

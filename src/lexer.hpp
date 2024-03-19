@@ -1,6 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include <cmath>
 #include <istream>
 #include <variant>
 
@@ -12,14 +13,15 @@ struct Position {
 
 struct Token {
     enum class Type {
-        INT_CONST,
-        BOOL_CONST,
         WHILE_KW,
         ID,
+        BOOL_CONST,
+        INT_CONST,
+        FLOAT_CONST,
     };
 
     Type type;
-    std::variant<std::monostate, int, float, bool, std::string> value = {};
+    std::variant<std::monostate, unsigned int, float, bool, std::string> value = {};
     Position position;
 };
 
@@ -37,6 +39,8 @@ class Lexer {
 
     void ignoreWhiteSpace();
     Token handleIdAndKeyword();
+    Token handleFloat(unsigned int integralPart);
+    Token handleNum();
     char nextChar();
 };
 
