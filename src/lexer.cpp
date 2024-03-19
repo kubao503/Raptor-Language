@@ -1,7 +1,10 @@
 #include "lexer.hpp"
 
-char getToken(std::istream& stream) {
+Lexer::Lexer(std::istream& stream)
+    : stream(stream) {}
+
+Token Lexer::getToken() {
     char c;
     stream.get(c);
-    return c;
+    return {Token::Type::BOOL_CONST, true};
 }
