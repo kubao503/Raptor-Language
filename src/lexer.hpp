@@ -15,6 +15,7 @@ struct Token {
         INT_CONST,
         BOOL_CONST,
         WHILE_KW,
+        ID,
     };
 
     Type type;
@@ -29,9 +30,13 @@ class Lexer {
 
    private:
     std::istream& stream;
+
+    Token currentToken;
     char currentChar;
     Position currentPosition;
 
+    void ignoreWhiteSpace();
+    Token handleIdAndKeyword();
     char nextChar();
 };
 

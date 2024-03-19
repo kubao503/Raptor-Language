@@ -6,30 +6,36 @@ Lexer::Lexer(std::istream& stream)
 }
 
 Token Lexer::getToken() {
+    ignoreWhiteSpace();
+
+    if (std::isalpha(currentChar))
+        return handleIdAndKeyword();
+
+    throw InvalidToken(currentChar);
+}
+
+void Lexer::ignoreWhiteSpace() {
     while (std::isspace(currentChar)) {
         if (currentChar == '\n')
             currentPosition.line += 1;
 
         currentChar = nextChar();
     }
+}
 
-    if (std::isalpha(currentChar)) {
-        std::string lexeme;
+Token Lexer::handleIdAndKeyword() {
+    std::string lexeme;
 
+    do {
         lexeme.push_back(currentChar);
         currentChar = nextChar();
+    } while (std::isalnum(currentChar) || currentChar == '_');
 
-        while (std::isalpha(currentChar)) {
-            lexeme.push_back(currentChar);
-            currentChar = nextChar();
-        }
-
-        if (lexeme == "true")
-            return {Token::Type::BOOL_CONST, true, currentPosition};
-        else if (lexeme == "while")
-            return {Token::Type::WHILE_KW, {}, currentPosition};
-    }
-    throw InvalidToken(currentChar);
+    if (lexeme == "true")
+        return {Token::Type::BOOL_CONST, true, currentPosition};
+    else if (lexeme == "while")
+        return {Token::Type::WHILE_KW, {}, currentPosition};
+    return {Token::Type::ID, lexeme, currentPosition};
 }
 
 char Lexer::nextChar() {

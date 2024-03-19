@@ -24,8 +24,19 @@ TEST(lexer, getToken_while) {
     EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value)) << "Keyword token should not include value";
 }
 
+TEST(lexer, getToken_id) {
+    std::istringstream stream("identifier");
+    auto lexer = Lexer(stream);
+
+    auto token = lexer.getToken();
+
+    EXPECT_EQ(token.type, Token::Type::ID) << "Invalid token type";
+    EXPECT_TRUE(std::holds_alternative<std::string>(token.value)) << "Invalid type of value";
+    EXPECT_EQ(std::get<std::string>(token.value), "identifier") << "Invalid value";
+}
+
 TEST(lexer, getToken_invalid) {
-    std::istringstream stream("invalid");
+    std::istringstream stream("&324");
     auto lexer = Lexer(stream);
 
     EXPECT_THROW(lexer.getToken(), InvalidToken);
