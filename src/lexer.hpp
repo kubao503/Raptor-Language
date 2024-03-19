@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <istream>
+#include <unordered_map>
 #include <variant>
 
 #include "errors.hpp"
@@ -13,7 +14,24 @@ struct Position {
 
 struct Token {
     enum class Type {
+        IF_KW,
         WHILE_KW,
+        RETURN_KW,
+        PRINT_KW,
+        CONST_KW,
+        REF_KW,
+        STRUCT_KW,
+        VARIANT_KW,
+        OR_KW,
+        AND_KW,
+        NOT_KW,
+        AS_KW,
+        IS_KW,
+        VOID_KW,
+        INT_KW,
+        FLOAT_KW,
+        BOOL_KW,
+        STR_KW,
         ID,
         BOOL_CONST,
         INT_CONST,
@@ -32,7 +50,6 @@ class Lexer {
 
    private:
     std::istream& stream;
-
     Token currentToken;
     char currentChar;
     Position currentPosition;
@@ -42,6 +59,8 @@ class Lexer {
     Token handleFloat(unsigned int integralPart);
     Token handleNum();
     char nextChar();
+
+    static const std::unordered_map<std::string, Token::Type> keywords;
 };
 
 #endif

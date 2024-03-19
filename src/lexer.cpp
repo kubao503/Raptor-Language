@@ -17,6 +17,27 @@ Token Lexer::getToken() {
     throw InvalidToken(currentChar);
 }
 
+const std::unordered_map<std::string, Token::Type> Lexer::keywords = {
+    {"if", Token::Type::IF_KW},
+    {"while", Token::Type::WHILE_KW},
+    {"return", Token::Type::RETURN_KW},
+    {"print", Token::Type::PRINT_KW},
+    {"const", Token::Type::CONST_KW},
+    {"ref", Token::Type::REF_KW},
+    {"struct", Token::Type::STRUCT_KW},
+    {"variant", Token::Type::VARIANT_KW},
+    {"or", Token::Type::OR_KW},
+    {"and", Token::Type::AND_KW},
+    {"not", Token::Type::NOT_KW},
+    {"as", Token::Type::AS_KW},
+    {"is", Token::Type::IS_KW},
+    {"void", Token::Type::VOID_KW},
+    {"int", Token::Type::INT_KW},
+    {"float", Token::Type::FLOAT_KW},
+    {"bool", Token::Type::BOOL_KW},
+    {"str", Token::Type::STR_KW},
+};
+
 void Lexer::ignoreWhiteSpace() {
     while (std::isspace(currentChar)) {
         if (currentChar == '\n')
@@ -34,10 +55,13 @@ Token Lexer::handleIdAndKeyword() {
         currentChar = nextChar();
     } while (std::isalnum(currentChar) || currentChar == '_');
 
+    auto k = keywords.find(lexeme);
+    if (k != keywords.end())
+        return {k->second, {}, currentPosition};
+
     if (lexeme == "true")
         return {Token::Type::BOOL_CONST, true, currentPosition};
-    else if (lexeme == "while")
-        return {Token::Type::WHILE_KW, {}, currentPosition};
+
     return {Token::Type::ID, lexeme, currentPosition};
 }
 
