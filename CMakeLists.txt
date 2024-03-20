@@ -8,5 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(compiler_flags INTERFACE)
 target_compile_options(compiler_flags INTERFACE -Wall -Wextra -Werror)
 
+enable_testing()
+
 add_subdirectory(src)
 add_subdirectory(tests)
