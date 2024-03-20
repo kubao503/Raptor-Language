@@ -2,15 +2,11 @@
 #define LEXER_H
 
 #include <cmath>
-#include <istream>
 #include <unordered_map>
 #include <variant>
 
 #include "errors.hpp"
-
-struct Position {
-    unsigned int line = 1;
-};
+#include "source.hpp"
 
 struct Token {
     enum class Type {
@@ -45,22 +41,23 @@ struct Token {
 
 class Lexer {
    public:
-    Lexer(std::istream& stream);
+    Lexer(Source& source)
+        : source_(source) {}
+
     Token getToken();
 
    private:
-    std::istream& stream;
-    Token currentToken;
-    char currentChar;
-    Position currentPosition;
+    Source& source_;
+    Position tokenPosition_;
 
     void ignoreWhiteSpace();
     Token handleIdAndKeyword();
     Token handleFloat(unsigned int integralPart);
     Token handleNum();
-    char nextChar();
 
     static const std::unordered_map<std::string, Token::Type> keywords;
+
+    static unsigned int charToDigit(char c) { return c - '0'; }
 };
 
 #endif

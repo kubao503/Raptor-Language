@@ -1,20 +1,17 @@
 #include "lexer.hpp"
 
-Lexer::Lexer(std::istream& stream)
-    : stream(stream) {
-    stream.get(currentChar);
-}
-
 Token Lexer::getToken() {
     ignoreWhiteSpace();
 
-    if (std::isalpha(currentChar))
+    tokenPosition_ = source_.getPosition();
+
+    if (std::isalpha(source_.getChar()))
         return handleIdAndKeyword();
 
-    if (std::isdigit(currentChar))
+    if (std::isdigit(source_.getChar()))
         return handleNum();
 
-    throw InvalidToken(currentChar);
+    throw InvalidToken(source_.getChar());
 }
 
 const std::unordered_map<std::string, Token::Type> Lexer::keywords = {
@@ -39,11 +36,8 @@ const std::unordered_map<std::string, Token::Type> Lexer::keywords = {
 };
 
 void Lexer::ignoreWhiteSpace() {
-    while (std::isspace(currentChar)) {
-        if (currentChar == '\n')
-            currentPosition.line += 1;
-
-        currentChar = nextChar();
+    while (std::isspace(source_.getChar())) {
+        source_.nextChar();
     }
 }
 
@@ -51,64 +45,58 @@ Token Lexer::handleIdAndKeyword() {
     std::string lexeme;
 
     do {
-        lexeme.push_back(currentChar);
-        currentChar = nextChar();
-    } while (std::isalnum(currentChar) || currentChar == '_');
+        lexeme.push_back(source_.getChar());
+        source_.nextChar();
+    } while (std::isalnum(source_.getChar()) || source_.getChar() == '_');
 
     auto k = keywords.find(lexeme);
     if (k != keywords.end())
-        return {k->second, {}, currentPosition};
+        return {k->second, {}, tokenPosition_};
 
     if (lexeme == "true")
-        return {Token::Type::BOOL_CONST, true, currentPosition};
+        return {Token::Type::BOOL_CONST, true, tokenPosition_};
 
-    return {Token::Type::ID, lexeme, currentPosition};
+    return {Token::Type::ID, lexeme, tokenPosition_};
 }
 
 Token Lexer::handleNum() {
     unsigned int num = 0;
 
-    if (std::atoi(&currentChar) == 0) {
-        currentChar = nextChar();
+    if (charToDigit(source_.getChar()) == 0) {
+        source_.nextChar();
 
-        if (currentChar == '.')
+        if (source_.getChar() == '.')
             return handleFloat(num);
-        else if (std::isdigit(currentChar))
-            throw InvalidToken(currentChar);
+        else if (std::isdigit(source_.getChar()))
+            throw InvalidToken(source_.getChar());
 
-        return {Token::Type::INT_CONST, num, currentPosition};
+        return {Token::Type::INT_CONST, num, tokenPosition_};
     }
 
     do {
-        num = 10 * num + std::atoi(&currentChar);
-        currentChar = nextChar();
-    } while (std::isdigit(currentChar));
+        num = 10 * num + charToDigit(source_.getChar());
+        source_.nextChar();
+    } while (std::isdigit(source_.getChar()));
 
-    if (currentChar == '.')
+    if (source_.getChar() == '.')
         return handleFloat(num);
 
-    return {Token::Type::INT_CONST, num, currentPosition};
+    return {Token::Type::INT_CONST, num, tokenPosition_};
 }
 
 Token Lexer::handleFloat(unsigned int integralPart) {
-    currentChar = nextChar();
-    if (!std::isdigit(currentChar))
-        throw InvalidToken(currentChar);
+    source_.nextChar();
+    if (!std::isdigit(source_.getChar()))
+        throw InvalidToken(source_.getChar());
 
     unsigned int fractionalPart = 0;
     int exponent = 0;
     do {
-        fractionalPart = 10 * fractionalPart + std::atoi(&currentChar);
-        currentChar = nextChar();
+        fractionalPart = 10 * fractionalPart + charToDigit(source_.getChar());
+        source_.nextChar();
         --exponent;
-    } while (std::isdigit(currentChar));
+    } while (std::isdigit(source_.getChar()));
 
     float value = integralPart + fractionalPart * std::pow(10, exponent);
-    return {Token::Type::FLOAT_CONST, value, currentPosition};
-}
-
-char Lexer::nextChar() {
-    char c;
-    stream.get(c);
-    return c;
+    return {Token::Type::FLOAT_CONST, value, tokenPosition_};
 }

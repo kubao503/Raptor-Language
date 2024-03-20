@@ -4,7 +4,8 @@
 
 TEST(lexer, getToken_bool) {
     std::istringstream stream("true");
-    auto lexer = Lexer(stream);
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
 
     auto token = lexer.getToken();
 
@@ -16,7 +17,8 @@ TEST(lexer, getToken_bool) {
 
 TEST(lexer, getToken_while) {
     std::istringstream stream("while");
-    auto lexer = Lexer(stream);
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
 
     auto token = lexer.getToken();
 
@@ -26,7 +28,8 @@ TEST(lexer, getToken_while) {
 
 TEST(lexer, getToken_id) {
     std::istringstream stream("valid_identifier_123");
-    auto lexer = Lexer(stream);
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
 
     auto token = lexer.getToken();
 
@@ -37,7 +40,8 @@ TEST(lexer, getToken_id) {
 
 TEST(lexer, getToken_int) {
     std::istringstream stream("1234");
-    auto lexer = Lexer(stream);
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
 
     auto token = lexer.getToken();
 
@@ -48,14 +52,16 @@ TEST(lexer, getToken_int) {
 
 TEST(lexer, getToken_int_with_leading_zeros) {
     std::istringstream stream("0001234");
-    auto lexer = Lexer(stream);
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
 
     EXPECT_THROW(lexer.getToken(), InvalidToken) << "Leading zeros are forbidden";
 }
 
 TEST(lexer, getToken_float) {
     std::istringstream stream("12.125");
-    auto lexer = Lexer(stream);
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
 
     auto token = lexer.getToken();
 
@@ -69,7 +75,8 @@ TEST(lexer, getToken_invalid_float) {
 
     for (auto s : invalidFloats) {
         std::istringstream stream(s);
-        auto lexer = Lexer(stream);
+        auto source = Source(stream);
+        auto lexer = Lexer(source);
 
         EXPECT_THROW(lexer.getToken(), InvalidToken);
     }
@@ -77,21 +84,24 @@ TEST(lexer, getToken_invalid_float) {
 
 TEST(lexer, getToken_invalid) {
     std::istringstream stream("&324");
-    auto lexer = Lexer(stream);
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
 
     EXPECT_THROW(lexer.getToken(), InvalidToken);
 }
 
 TEST(lexer, getToken_empty_stream) {
     std::istringstream stream("");
-    auto lexer = Lexer(stream);
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
 
     EXPECT_THROW(lexer.getToken(), InvalidToken);
 }
 
 TEST(lexer, getToken_leading_white_space) {
     std::istringstream stream("   \t \n \r\n true");
-    auto lexer = Lexer(stream);
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
 
     auto token = lexer.getToken();
 
@@ -99,4 +109,16 @@ TEST(lexer, getToken_leading_white_space) {
     EXPECT_TRUE(std::holds_alternative<bool>(token.value)) << "Invalid type of token value";
     EXPECT_EQ(std::get<bool>(token.value), true) << "Invalid token value";
     EXPECT_EQ(token.position.line, 3) << "Invalid line";
+}
+
+TEST(lexer, getToken_twice) {
+    std::istringstream stream("  while    return ");
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
+
+    auto token = lexer.getToken();
+    EXPECT_EQ(token.type, Token::Type::WHILE_KW) << "Invalid token type";
+
+    token = lexer.getToken();
+    EXPECT_EQ(token.type, Token::Type::RETURN_KW) << "Invalid token type";
 }

@@ -8,6 +8,7 @@ int main(int argc, char *argv[]) {
         return -1;
 
     std::ifstream ifs(argv[1]);
-    auto lexer = Lexer(ifs);
+    auto source = Source(ifs);
+    auto lexer = Lexer(source);
     std::cout << static_cast<int>(lexer.getToken().type) << '\n';
 }
