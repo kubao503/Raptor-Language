@@ -8,3 +8,9 @@ class InvalidToken : public std::exception {
    private:
     char invalidChar;
 };
+
+class IntOverflow : public std::exception {
+};
+
+class FloatOverflow : public std::exception {
+};

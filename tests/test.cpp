@@ -58,6 +58,15 @@ TEST(lexer, getToken_int_with_leading_zeros) {
     EXPECT_THROW(lexer.getToken(), InvalidToken) << "Leading zeros are forbidden";
 }
 
+TEST(lexer, getToken_int_overflow) {
+    std::istringstream stream("4294967295 4294967296");
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
+
+    EXPECT_NO_THROW(lexer.getToken()) << "Just at the max";
+    EXPECT_THROW(lexer.getToken(), IntOverflow) << "Max exceeded";
+}
+
 TEST(lexer, getToken_float) {
     std::istringstream stream("12.125");
     auto source = Source(stream);
@@ -80,6 +89,15 @@ TEST(lexer, getToken_invalid_float) {
 
         EXPECT_THROW(lexer.getToken(), InvalidToken);
     }
+}
+
+TEST(lexer, getToken_float_overflow) {
+    std::istringstream stream("0.4294967295  0.4294967296");
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
+
+    EXPECT_NO_THROW(lexer.getToken()) << "Just at the max";
+    EXPECT_THROW(lexer.getToken(), FloatOverflow) << "Max exceeded";
 }
 
 TEST(lexer, getToken_invalid) {

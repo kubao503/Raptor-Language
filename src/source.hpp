@@ -16,7 +16,7 @@ class Source {
     }
 
     char getChar() const { return currentChar_; }
-    const Position& getPosition() { return currentPosition_; }
+    const Position& getPosition() const { return currentPosition_; }
     void nextChar() {
         currentChar_ = stream_.get();
         currentPosition_.column += 1;
