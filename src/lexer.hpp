@@ -32,6 +32,7 @@ struct Token {
         BOOL_CONST,
         INT_CONST,
         FLOAT_CONST,
+        ETX,
     };
 
     Type type;

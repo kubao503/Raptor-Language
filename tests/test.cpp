@@ -90,12 +90,17 @@ TEST(lexer, getToken_invalid) {
     EXPECT_THROW(lexer.getToken(), InvalidToken);
 }
 
-TEST(lexer, getToken_empty_stream) {
+TEST(lexer, getToken_empty_source) {
     std::istringstream stream("");
     auto source = Source(stream);
     auto lexer = Lexer(source);
 
-    EXPECT_THROW(lexer.getToken(), InvalidToken);
+    for (int i = 0; i < 3; ++i) {
+        auto token = lexer.getToken();
+
+        EXPECT_EQ(token.type, Token::Type::ETX) << "Invalid token type";
+        EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value)) << "Invalid type of token value";
+    }
 }
 
 TEST(lexer, getToken_leading_white_space) {

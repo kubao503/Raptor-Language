@@ -5,6 +5,9 @@ Token Lexer::getToken() {
 
     tokenPosition_ = source_.getPosition();
 
+    if (source_.getChar() == EOF)
+        return {Token::Type::ETX, {}, tokenPosition_};
+
     if (std::isalpha(source_.getChar()))
         return handleIdAndKeyword();
 
