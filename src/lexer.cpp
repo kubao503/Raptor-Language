@@ -9,10 +9,10 @@ Token Lexer::getToken() {
         return {Token::Type::ETX, {}, tokenPosition_};
 
     if (std::isalpha(source_.getChar()))
-        return handleIdAndKeyword();
+        return buildIdOrKeyword();
 
     if (std::isdigit(source_.getChar()))
-        return handleNum();
+        return buildNumber();
 
     throw InvalidToken(source_.getChar());
 }
@@ -44,7 +44,7 @@ void Lexer::ignoreWhiteSpace() {
     }
 }
 
-Token Lexer::handleIdAndKeyword() {
+Token Lexer::buildIdOrKeyword() {
     std::string lexeme;
 
     do {
@@ -62,14 +62,14 @@ Token Lexer::handleIdAndKeyword() {
     return {Token::Type::ID, lexeme, tokenPosition_};
 }
 
-Token Lexer::handleNum() {
+Token Lexer::buildNumber() {
     unsigned int num = 0;
 
     if (charToDigit(source_.getChar()) == 0) {
         source_.nextChar();
 
         if (source_.getChar() == '.')
-            return handleFloat(num);
+            return buildFloat(num);
         else if (std::isdigit(source_.getChar()))
             throw InvalidToken(source_.getChar());
 
@@ -82,12 +82,12 @@ Token Lexer::handleNum() {
     } while (std::isdigit(source_.getChar()));
 
     if (source_.getChar() == '.')
-        return handleFloat(num);
+        return buildFloat(num);
 
     return {Token::Type::INT_CONST, num, tokenPosition_};
 }
 
-Token Lexer::handleFloat(unsigned int integralPart) {
+Token Lexer::buildFloat(unsigned int integralPart) {
     source_.nextChar();
     if (!std::isdigit(source_.getChar()))
         throw InvalidToken(source_.getChar());

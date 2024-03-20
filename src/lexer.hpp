@@ -52,9 +52,9 @@ class Lexer {
     Position tokenPosition_;
 
     void ignoreWhiteSpace();
-    Token handleIdAndKeyword();
-    Token handleFloat(unsigned int integralPart);
-    Token handleNum();
+    Token buildIdOrKeyword();
+    Token buildFloat(unsigned int integralPart);
+    Token buildNumber();
 
     static const std::unordered_map<std::string, Token::Type> keywords;
 
