@@ -80,7 +80,7 @@ TEST(lexer, getToken_float) {
 }
 
 TEST(lexer, getToken_invalid_float) {
-    std::string invalidFloats[] = {"1..125", "1.", ".5"};
+    std::string invalidFloats[] = {"1..125", "1."};
 
     for (auto s : invalidFloats) {
         std::istringstream stream(s);
@@ -144,4 +144,34 @@ TEST(lexer, getToken_twice) {
 
     token = lexer.getToken();
     EXPECT_EQ(token.type, Token::Type::RETURN_KW) << "Invalid token type";
+}
+
+TEST(lexer, getToken_operators) {
+    std::istringstream stream("< <= > >= = == != ; , . + - * / ( ) { } !");
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
+
+    EXPECT_EQ(lexer.getToken().type, Token::Type::LT_OP) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::LTE_OP) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::GT_OP) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::GTE_OP) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::ASGN_OP) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::EQ_OP) << "Invalid token type";
+
+    EXPECT_EQ(lexer.getToken().type, Token::Type::NEQ_OP) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::SEMI) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::COM) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::DOT) << "Invalid token type";
+
+    EXPECT_EQ(lexer.getToken().type, Token::Type::ADD_OP) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::MIN_OP) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::MULT_OP) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::DIV_OP) << "Invalid token type";
+
+    EXPECT_EQ(lexer.getToken().type, Token::Type::L_PAR) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::R_PAR) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::L_C_BR) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::R_C_BR) << "Invalid token type";
+
+    EXPECT_THROW(lexer.getToken(), InvalidToken) << "Single ! is invalid";
 }

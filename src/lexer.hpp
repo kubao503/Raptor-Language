@@ -38,6 +38,24 @@ struct Token {
         INT_CONST,
         FLOAT_CONST,
         ETX,
+        LT_OP,
+        LTE_OP,
+        GT_OP,
+        GTE_OP,
+        ASGN_OP,
+        EQ_OP,
+        NEQ_OP,
+        ADD_OP,
+        MIN_OP,
+        MULT_OP,
+        DIV_OP,
+        SEMI,
+        COM,
+        DOT,
+        L_PAR,
+        R_PAR,
+        L_C_BR,
+        R_C_BR,
     };
 
     Type type;
@@ -64,6 +82,9 @@ class Lexer {
     builders_map_t initBuilders();
     void ignoreWhiteSpace();
     std::optional<Token> buildIdOrKeyword();
+    Token buildTwoLetterOp(char second, Token::Type single, Token::Type dual);
+    Token buildOneLetterOp(Token::Type type);
+    Token buildNotEqualOperator();
     Token buildFloat(integral_t integralPart);
     Token buildNumber();
 

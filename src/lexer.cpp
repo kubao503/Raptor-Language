@@ -2,6 +2,24 @@
 
 Lexer::builders_map_t Lexer::initBuilders() {
     return {
+        {'<', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::LT_OP, Token::Type::LTE_OP)},
+        {'>', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::GT_OP, Token::Type::GTE_OP)},
+        {'=', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::ASGN_OP, Token::Type::EQ_OP)},
+        {'!', std::bind(&Lexer::buildNotEqualOperator, this)},
+
+        {';', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::SEMI)},
+        {',', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::COM)},
+        {'.', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::DOT)},
+        {'+', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::ADD_OP)},
+        {'-', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::MIN_OP)},
+        {'*', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::MULT_OP)},
+        {'/', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::DIV_OP)},
+
+        {'(', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::L_PAR)},
+        {')', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::R_PAR)},
+        {'{', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::L_C_BR)},
+        {'}', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::R_C_BR)},
+
         {'0', std::bind(&Lexer::buildNumber, this)},
         {'1', std::bind(&Lexer::buildNumber, this)},
         {'2', std::bind(&Lexer::buildNumber, this)},
@@ -12,6 +30,7 @@ Lexer::builders_map_t Lexer::initBuilders() {
         {'7', std::bind(&Lexer::buildNumber, this)},
         {'8', std::bind(&Lexer::buildNumber, this)},
         {'9', std::bind(&Lexer::buildNumber, this)},
+
         {EOF, [this]() -> Token { return {Token::Type::ETX, {}, tokenPosition_}; }},
     };
 }
@@ -86,6 +105,33 @@ Token Lexer::buildNumber() {
         return buildFloat(value);
 
     return {Token::Type::INT_CONST, value, tokenPosition_};
+}
+
+Token Lexer::buildTwoLetterOp(char second, Token::Type single, Token::Type dual) {
+    source_.nextChar();
+
+    if (source_.getChar() == second) {
+        source_.nextChar();
+        return {dual, {}, tokenPosition_};
+    }
+
+    return {single, {}, tokenPosition_};
+}
+
+Token Lexer::buildOneLetterOp(Token::Type type) {
+    source_.nextChar();
+    return {type, {}, tokenPosition_};
+}
+
+Token Lexer::buildNotEqualOperator() {
+    source_.nextChar();
+
+    if (source_.getChar() == '=') {
+        source_.nextChar();
+        return {Token::Type::NEQ_OP, {}, tokenPosition_};
+    }
+
+    throw InvalidToken(source_.getChar());
 }
 
 Token Lexer::buildFloat(integral_t integralPart) {
