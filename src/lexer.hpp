@@ -2,6 +2,7 @@
 #define LEXER_H
 
 #include <cmath>
+#include <functional>
 #include <limits>
 #include <unordered_map>
 #include <variant>
@@ -55,12 +56,27 @@ class Lexer {
     Source& source_;
     Position tokenPosition_;
 
-    void ignoreWhiteSpace();
+    const std::unordered_map<char, std::function<Token()>> builders_ = {
+        {'0', std::bind(&Lexer::buildNumber, this)},
+        {'1', std::bind(&Lexer::buildNumber, this)},
+        {'2', std::bind(&Lexer::buildNumber, this)},
+        {'3', std::bind(&Lexer::buildNumber, this)},
+        {'4', std::bind(&Lexer::buildNumber, this)},
+        {'5', std::bind(&Lexer::buildNumber, this)},
+        {'6', std::bind(&Lexer::buildNumber, this)},
+        {'7', std::bind(&Lexer::buildNumber, this)},
+        {'8', std::bind(&Lexer::buildNumber, this)},
+        {'9', std::bind(&Lexer::buildNumber, this)},
+        {EOF, [this]() -> Token { return {Token::Type::ETX, {}, tokenPosition_}; }},
+    };
+
+    void
+    ignoreWhiteSpace();
     Token buildIdOrKeyword();
     Token buildFloat(integral_t integralPart);
     Token buildNumber();
 
-    static const std::unordered_map<std::string, Token::Type> keywords;
+    static const std::unordered_map<std::string, Token::Type> keywords_;
 
     static integral_t charToDigit(char c) { return c - '0'; }
     static bool willOverflow(integral_t value, integral_t digit);

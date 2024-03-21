@@ -5,14 +5,14 @@ Token Lexer::getToken() {
 
     tokenPosition_ = source_.getPosition();
 
-    if (source_.getChar() == EOF)
-        return {Token::Type::ETX, {}, tokenPosition_};
-
     if (std::isalpha(source_.getChar()))
         return buildIdOrKeyword();
 
-    if (std::isdigit(source_.getChar()))
-        return buildNumber();
+    auto res = builders_.find(source_.getChar());
+    if (res != builders_.end()) {
+        auto builder = res->second;
+        return builder();
+    }
 
     throw InvalidToken(source_.getChar());
 }
@@ -31,8 +31,8 @@ Token Lexer::buildIdOrKeyword() {
         source_.nextChar();
     } while (std::isalnum(source_.getChar()) || source_.getChar() == '_');
 
-    auto k = keywords.find(lexeme);
-    if (k != keywords.end())
+    auto k = keywords_.find(lexeme);
+    if (k != keywords_.end())
         return {k->second, {}, tokenPosition_};
 
     if (lexeme == "true")
@@ -89,7 +89,7 @@ Token Lexer::buildFloat(integral_t integralPart) {
     return {Token::Type::FLOAT_CONST, value, tokenPosition_};
 }
 
-const std::unordered_map<std::string, Token::Type> Lexer::keywords = {
+const std::unordered_map<std::string, Token::Type> Lexer::keywords_{
     {"if", Token::Type::IF_KW},
     {"while", Token::Type::WHILE_KW},
     {"return", Token::Type::RETURN_KW},
