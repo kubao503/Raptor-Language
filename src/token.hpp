@@ -2,6 +2,7 @@
 #define TOKEN_H
 
 #include <ostream>
+#include <unordered_map>
 #include <variant>
 
 #include "source.hpp"
@@ -58,6 +59,8 @@ struct Token {
     Type type;
     std::variant<std::monostate, integral_t, floating_t, bool, std::string> value = {};
     Position position;
+
+    static const std::unordered_map<Type, std::string> typeNames;
 };
 
 std::ostream& operator<<(std::ostream& stream, const Token& token);
