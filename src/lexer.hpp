@@ -80,16 +80,16 @@ class Lexer {
     Position tokenPosition_;
     const builders_map_t builders_;
 
-    builders_map_t initBuilders();
-    void ignoreWhiteSpace();
-    std::optional<Token> buildIdOrKeyword();
-    std::optional<Token> buildKeyword(std::string_view lexeme);
-    std::optional<Token> buildBoolConst(std::string_view lexeme);
-    Token buildTwoLetterOp(char second, Token::Type single, Token::Type dual);
-    Token buildOneLetterOp(Token::Type type);
-    Token buildNotEqualOperator();
-    Token buildFloat(integral_t integralPart);
-    Token buildNumber();
+    builders_map_t initBuilders() const;
+    void ignoreWhiteSpace() const;
+    std::optional<Token> buildIdOrKeyword() const;
+    std::optional<Token> buildKeyword(std::string_view lexeme) const;
+    std::optional<Token> buildBoolConst(std::string_view lexeme) const;
+    Token buildTwoLetterOp(char second, Token::Type single, Token::Type dual) const;
+    Token buildOneLetterOp(Token::Type type) const;
+    Token buildNotEqualOperator() const;
+    Token buildFloat(integral_t integralPart) const;
+    Token buildNumber() const;
 
     static const std::unordered_map<std::string_view, Token::Type> keywords_;
 

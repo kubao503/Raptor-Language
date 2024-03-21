@@ -1,6 +1,6 @@
 #include "lexer.hpp"
 
-Lexer::builders_map_t Lexer::initBuilders() {
+Lexer::builders_map_t Lexer::initBuilders() const {
     return {
         {'<', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::LT_OP, Token::Type::LTE_OP)},
         {'>', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::GT_OP, Token::Type::GTE_OP)},
@@ -52,13 +52,13 @@ Token Lexer::getToken() {
     throw InvalidToken(source_.getChar());
 }
 
-void Lexer::ignoreWhiteSpace() {
+void Lexer::ignoreWhiteSpace() const {
     while (std::isspace(source_.getChar())) {
         source_.nextChar();
     }
 }
 
-std::optional<Token> Lexer::buildIdOrKeyword() {
+std::optional<Token> Lexer::buildIdOrKeyword() const {
     if (!std::isalpha(source_.getChar()))
         return std::nullopt;
 
@@ -75,25 +75,25 @@ std::optional<Token> Lexer::buildIdOrKeyword() {
     if (auto token = buildBoolConst(lexeme))
         return token;
 
-    return Token{Token::Type::ID, lexeme, tokenPosition_};
+    return {{Token::Type::ID, lexeme, tokenPosition_}};
 }
 
-std::optional<Token> Lexer::buildKeyword(std::string_view lexeme) {
+std::optional<Token> Lexer::buildKeyword(std::string_view lexeme) const {
     auto res = keywords_.find(lexeme);
     if (res != keywords_.end())
-        return Token{res->second, {}, tokenPosition_};
+        return {{res->second, {}, tokenPosition_}};
     return std::nullopt;
 }
 
-std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) {
+std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) const {
     if (lexeme == "true")
-        return Token{Token::Type::BOOL_CONST, true, tokenPosition_};
+        return {{Token::Type::BOOL_CONST, true, tokenPosition_}};
     else if (lexeme == "false")
-        return Token{Token::Type::BOOL_CONST, false, tokenPosition_};
+        return {{Token::Type::BOOL_CONST, false, tokenPosition_}};
     return std::nullopt;
 }
 
-Token Lexer::buildNumber() {
+Token Lexer::buildNumber() const {
     integral_t value = 0;
 
     if (charToDigit(source_.getChar()) == 0) {
@@ -121,7 +121,7 @@ Token Lexer::buildNumber() {
     return {Token::Type::INT_CONST, value, tokenPosition_};
 }
 
-Token Lexer::buildTwoLetterOp(char second, Token::Type single, Token::Type dual) {
+Token Lexer::buildTwoLetterOp(char second, Token::Type single, Token::Type dual) const {
     source_.nextChar();
 
     if (source_.getChar() == second) {
@@ -132,12 +132,12 @@ Token Lexer::buildTwoLetterOp(char second, Token::Type single, Token::Type dual)
     return {single, {}, tokenPosition_};
 }
 
-Token Lexer::buildOneLetterOp(Token::Type type) {
+Token Lexer::buildOneLetterOp(Token::Type type) const {
     source_.nextChar();
     return {type, {}, tokenPosition_};
 }
 
-Token Lexer::buildNotEqualOperator() {
+Token Lexer::buildNotEqualOperator() const {
     source_.nextChar();
 
     if (source_.getChar() == '=') {
@@ -148,7 +148,7 @@ Token Lexer::buildNotEqualOperator() {
     throw InvalidToken(source_.getChar());
 }
 
-Token Lexer::buildFloat(integral_t integralPart) {
+Token Lexer::buildFloat(integral_t integralPart) const {
     source_.nextChar();
     if (!std::isdigit(source_.getChar()))
         throw InvalidToken(source_.getChar());
