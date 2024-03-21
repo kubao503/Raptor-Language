@@ -83,6 +83,7 @@ class Lexer {
     builders_map_t initBuilders();
     void ignoreWhiteSpace();
     std::optional<Token> buildIdOrKeyword();
+    std::optional<Token> buildKeyword(std::string_view lexeme);
     std::optional<Token> buildBoolConst(std::string_view lexeme);
     Token buildTwoLetterOp(char second, Token::Type single, Token::Type dual);
     Token buildOneLetterOp(Token::Type type);
@@ -90,7 +91,7 @@ class Lexer {
     Token buildFloat(integral_t integralPart);
     Token buildNumber();
 
-    static const std::unordered_map<std::string, Token::Type> keywords_;
+    static const std::unordered_map<std::string_view, Token::Type> keywords_;
 
     static integral_t charToDigit(char c) { return c - '0'; }
     static bool willOverflow(integral_t value, integral_t digit);

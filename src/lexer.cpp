@@ -69,14 +69,20 @@ std::optional<Token> Lexer::buildIdOrKeyword() {
         source_.nextChar();
     } while (std::isalnum(source_.getChar()) || source_.getChar() == '_');
 
-    auto k = keywords_.find(lexeme);
-    if (k != keywords_.end())
-        return Token{k->second, {}, tokenPosition_};
+    if (auto token = buildKeyword(lexeme))
+        return token;
 
     if (auto token = buildBoolConst(lexeme))
         return token;
 
     return Token{Token::Type::ID, lexeme, tokenPosition_};
+}
+
+std::optional<Token> Lexer::buildKeyword(std::string_view lexeme) {
+    auto res = keywords_.find(lexeme);
+    if (res != keywords_.end())
+        return Token{res->second, {}, tokenPosition_};
+    return std::nullopt;
 }
 
 std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) {
@@ -162,7 +168,7 @@ Token Lexer::buildFloat(integral_t integralPart) {
     return {Token::Type::FLOAT_CONST, value, tokenPosition_};
 }
 
-const std::unordered_map<std::string, Token::Type> Lexer::keywords_{
+const std::unordered_map<std::string_view, Token::Type> Lexer::keywords_{
     {"if", Token::Type::IF_KW},
     {"while", Token::Type::WHILE_KW},
     {"return", Token::Type::RETURN_KW},
