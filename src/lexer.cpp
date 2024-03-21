@@ -21,8 +21,8 @@ Token Lexer::getToken() {
 
     tokenPosition_ = source_.getPosition();
 
-    if (std::isalpha(source_.getChar()))
-        return buildIdOrKeyword();
+    if (auto token = buildIdOrKeyword())
+        return token.value();
 
     auto res = builders_.find(source_.getChar());
     if (res != builders_.end()) {
@@ -39,7 +39,10 @@ void Lexer::ignoreWhiteSpace() {
     }
 }
 
-Token Lexer::buildIdOrKeyword() {
+std::optional<Token> Lexer::buildIdOrKeyword() {
+    if (!std::isalpha(source_.getChar()))
+        return std::nullopt;
+
     std::string lexeme;
 
     do {
@@ -49,12 +52,12 @@ Token Lexer::buildIdOrKeyword() {
 
     auto k = keywords_.find(lexeme);
     if (k != keywords_.end())
-        return {k->second, {}, tokenPosition_};
+        return Token{k->second, {}, tokenPosition_};
 
     if (lexeme == "true")
-        return {Token::Type::BOOL_CONST, true, tokenPosition_};
+        return Token{Token::Type::BOOL_CONST, true, tokenPosition_};
 
-    return {Token::Type::ID, lexeme, tokenPosition_};
+    return Token{Token::Type::ID, lexeme, tokenPosition_};
 }
 
 Token Lexer::buildNumber() {

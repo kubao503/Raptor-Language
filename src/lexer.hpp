@@ -43,6 +43,8 @@ struct Token {
     Type type;
     std::variant<std::monostate, integral_t, floating_t, bool, std::string> value = {};
     Position position;
+
+    operator bool() { return !std::holds_alternative<std::monostate>(value); }
 };
 
 class Lexer {
@@ -61,7 +63,7 @@ class Lexer {
 
     builders_map_t initBuilders();
     void ignoreWhiteSpace();
-    Token buildIdOrKeyword();
+    std::optional<Token> buildIdOrKeyword();
     Token buildFloat(integral_t integralPart);
     Token buildNumber();
 
