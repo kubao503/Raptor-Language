@@ -73,10 +73,18 @@ std::optional<Token> Lexer::buildIdOrKeyword() {
     if (k != keywords_.end())
         return Token{k->second, {}, tokenPosition_};
 
-    if (lexeme == "true")
-        return Token{Token::Type::BOOL_CONST, true, tokenPosition_};
+    if (auto token = buildBoolConst(lexeme))
+        return token;
 
     return Token{Token::Type::ID, lexeme, tokenPosition_};
+}
+
+std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) {
+    if (lexeme == "true")
+        return Token{Token::Type::BOOL_CONST, true, tokenPosition_};
+    else if (lexeme == "false")
+        return Token{Token::Type::BOOL_CONST, false, tokenPosition_};
+    return std::nullopt;
 }
 
 Token Lexer::buildNumber() {

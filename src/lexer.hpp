@@ -4,6 +4,7 @@
 #include <cmath>
 #include <functional>
 #include <limits>
+#include <string_view>
 #include <unordered_map>
 #include <variant>
 
@@ -82,6 +83,7 @@ class Lexer {
     builders_map_t initBuilders();
     void ignoreWhiteSpace();
     std::optional<Token> buildIdOrKeyword();
+    std::optional<Token> buildBoolConst(std::string_view lexeme);
     Token buildTwoLetterOp(char second, Token::Type single, Token::Type dual);
     Token buildOneLetterOp(Token::Type type);
     Token buildNotEqualOperator();

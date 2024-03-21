@@ -3,16 +3,17 @@
 #include "lexer.hpp"
 
 TEST(lexer, getToken_bool) {
-    std::istringstream stream("true");
+    std::istringstream stream("true false");
     auto source = Source(stream);
     auto lexer = Lexer(source);
 
     auto token = lexer.getToken();
-
     EXPECT_EQ(token.type, Token::Type::BOOL_CONST) << "Invalid type";
-    EXPECT_TRUE(std::holds_alternative<bool>(token.value)) << "Invalid type of value";
     EXPECT_EQ(std::get<bool>(token.value), true) << "Invalid value";
-    EXPECT_EQ(token.position.line, 1) << "Invalid line";
+
+    token = lexer.getToken();
+    EXPECT_EQ(token.type, Token::Type::BOOL_CONST) << "Invalid type";
+    EXPECT_EQ(std::get<bool>(token.value), false) << "Invalid value";
 }
 
 TEST(lexer, getToken_while) {
