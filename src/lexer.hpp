@@ -38,6 +38,7 @@ struct Token {
         BOOL_CONST,
         INT_CONST,
         FLOAT_CONST,
+        STR_CONST,
         ETX,
         LT_OP,
         LTE_OP,
@@ -90,6 +91,7 @@ class Lexer {
     Token buildNotEqualOperator() const;
     Token buildFloat(integral_t integralPart) const;
     Token buildNumber() const;
+    Token buildStrConst() const;
 
     static const std::unordered_map<std::string_view, Token::Type> keywords_;
 

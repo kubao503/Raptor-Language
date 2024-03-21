@@ -5,7 +5,10 @@ Lexer::builders_map_t Lexer::initBuilders() const {
         {'<', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::LT_OP, Token::Type::LTE_OP)},
         {'>', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::GT_OP, Token::Type::GTE_OP)},
         {'=', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::ASGN_OP, Token::Type::EQ_OP)},
+
         {'!', std::bind(&Lexer::buildNotEqualOperator, this)},
+
+        {'"', std::bind(&Lexer::buildStrConst, this)},
 
         {';', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::SEMI)},
         {',', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::COM)},
@@ -119,6 +122,32 @@ Token Lexer::buildNumber() const {
         return buildFloat(value);
 
     return {Token::Type::INT_CONST, value, tokenPosition_};
+}
+
+Token Lexer::buildStrConst() const {
+    std::string value;
+    bool escape = false;
+
+    while (true) {
+        source_.nextChar();
+        if (source_.getChar() == EOF)
+            throw InvalidToken(source_.getChar());
+        else if (!escape && source_.getChar() == '"')
+            break;
+        else if (source_.getChar() == '\\')
+            escape = true;
+        else if (escape && source_.getChar() == 'n') {
+            value.push_back('\n');
+            escape = false;
+        } else if (escape && source_.getChar() == '"') {
+            value.push_back('"');
+            escape = false;
+        } else
+            value.push_back(source_.getChar());
+    }
+
+    source_.nextChar();
+    return {Token::Type::STR_CONST, value, tokenPosition_};
 }
 
 Token Lexer::buildTwoLetterOp(char second, Token::Type single, Token::Type dual) const {
