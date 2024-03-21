@@ -46,32 +46,21 @@ struct Token {
 };
 
 class Lexer {
+    using builders_map_t = std::unordered_map<char, std::function<Token()>>;
+
    public:
     Lexer(Source& source)
-        : source_(source) {}
+        : source_(source), builders_(initBuilders()) {}
 
     Token getToken();
 
    private:
     Source& source_;
     Position tokenPosition_;
+    const builders_map_t builders_;
 
-    const std::unordered_map<char, std::function<Token()>> builders_ = {
-        {'0', std::bind(&Lexer::buildNumber, this)},
-        {'1', std::bind(&Lexer::buildNumber, this)},
-        {'2', std::bind(&Lexer::buildNumber, this)},
-        {'3', std::bind(&Lexer::buildNumber, this)},
-        {'4', std::bind(&Lexer::buildNumber, this)},
-        {'5', std::bind(&Lexer::buildNumber, this)},
-        {'6', std::bind(&Lexer::buildNumber, this)},
-        {'7', std::bind(&Lexer::buildNumber, this)},
-        {'8', std::bind(&Lexer::buildNumber, this)},
-        {'9', std::bind(&Lexer::buildNumber, this)},
-        {EOF, [this]() -> Token { return {Token::Type::ETX, {}, tokenPosition_}; }},
-    };
-
-    void
-    ignoreWhiteSpace();
+    builders_map_t initBuilders();
+    void ignoreWhiteSpace();
     Token buildIdOrKeyword();
     Token buildFloat(integral_t integralPart);
     Token buildNumber();

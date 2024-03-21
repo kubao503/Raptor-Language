@@ -1,5 +1,21 @@
 #include "lexer.hpp"
 
+Lexer::builders_map_t Lexer::initBuilders() {
+    return {
+        {'0', std::bind(&Lexer::buildNumber, this)},
+        {'1', std::bind(&Lexer::buildNumber, this)},
+        {'2', std::bind(&Lexer::buildNumber, this)},
+        {'3', std::bind(&Lexer::buildNumber, this)},
+        {'4', std::bind(&Lexer::buildNumber, this)},
+        {'5', std::bind(&Lexer::buildNumber, this)},
+        {'6', std::bind(&Lexer::buildNumber, this)},
+        {'7', std::bind(&Lexer::buildNumber, this)},
+        {'8', std::bind(&Lexer::buildNumber, this)},
+        {'9', std::bind(&Lexer::buildNumber, this)},
+        {EOF, [this]() -> Token { return {Token::Type::ETX, {}, tokenPosition_}; }},
+    };
+}
+
 Token Lexer::getToken() {
     ignoreWhiteSpace();
 
