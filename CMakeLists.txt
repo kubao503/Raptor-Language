@@ -8,6 +8,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(compiler_flags INTERFACE)
 target_compile_options(compiler_flags INTERFACE -Wall -Wextra -Werror)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(compiler_flags INTERFACE -g)
+endif()
+
+
 enable_testing()
 
 add_subdirectory(src)
