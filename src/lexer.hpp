@@ -63,9 +63,9 @@ struct Token {
     Type type;
     std::variant<std::monostate, integral_t, floating_t, bool, std::string> value = {};
     Position position;
-
-    operator bool() { return !std::holds_alternative<std::monostate>(value); }
 };
+
+std::ostream& operator<<(std::ostream& stream, const Token& token);
 
 class Lexer {
     using builders_map_t = std::unordered_map<char, std::function<Token()>>;

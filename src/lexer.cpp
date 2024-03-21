@@ -222,3 +222,8 @@ bool Lexer::willOverflow(integral_t value, integral_t digit) {
     auto maxSafe = (std::numeric_limits<integral_t>::max() - digit) / 10;
     return value > maxSafe;
 }
+
+std::ostream& operator<<(std::ostream& stream, const Token& token) {
+    stream << '<' << static_cast<int>(token.type) << "> ";
+    return stream;
+}

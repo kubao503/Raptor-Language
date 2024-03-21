@@ -1,3 +1,6 @@
+#ifndef ERRORS_H
+#define ERRORS_H
+
 #include <exception>
 #include <string>
 
@@ -14,3 +17,5 @@ class IntOverflow : public std::exception {
 
 class FloatOverflow : public std::exception {
 };
+
+#endif

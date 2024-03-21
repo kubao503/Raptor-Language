@@ -10,5 +10,11 @@ int main(int argc, char *argv[]) {
     std::ifstream ifs(argv[1]);
     auto source = Source(ifs);
     auto lexer = Lexer(source);
-    std::cout << static_cast<int>(lexer.getToken().type) << '\n';
+
+    auto token = lexer.getToken();
+    while (token.type != Token::Type::ETX) {
+        std::cout << token;
+        token = lexer.getToken();
+    }
+    std::cout << '\n';
 }
