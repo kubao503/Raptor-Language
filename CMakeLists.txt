@@ -4,6 +4,9 @@ project(interpreter)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(magic_enum REQUIRED)
+
+
 add_library(compiler_flags INTERFACE)
 target_compile_options(compiler_flags INTERFACE -Wall -Wextra -Werror -pedantic)
 
