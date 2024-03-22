@@ -24,7 +24,8 @@ TEST(lexer, getToken_while) {
     auto token = lexer.getToken();
 
     EXPECT_EQ(token.type, Token::Type::WHILE_KW) << "Invalid token type";
-    EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value)) << "Keyword token should not include value";
+    EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value))
+        << "Keyword token should not include value";
 }
 
 TEST(lexer, getToken_id) {
@@ -118,7 +119,8 @@ TEST(lexer, getToken_empty_source) {
         auto token = lexer.getToken();
 
         EXPECT_EQ(token.type, Token::Type::ETX) << "Invalid token type";
-        EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value)) << "Invalid type of token value";
+        EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value))
+            << "Invalid type of token value";
     }
 }
 
@@ -194,5 +196,6 @@ TEST(lexer, getToken_invalid_str) {
     auto source = Source(stream);
     auto lexer = Lexer(source);
 
-    EXPECT_THROW(std::get<std::string>(lexer.getToken().value), InvalidToken) << "Str const without ending quotation mark";
+    EXPECT_THROW(std::get<std::string>(lexer.getToken().value), InvalidToken)
+        << "Str const without ending quotation mark";
 }

@@ -6,16 +6,15 @@
 
 class InvalidToken : public std::exception {
    public:
-    InvalidToken(char c) : invalidChar(c) {}
+    InvalidToken(char c)
+        : invalidChar(c) {}
 
    private:
     char invalidChar;
 };
 
-class IntOverflow : public std::exception {
-};
+class IntOverflow : public std::exception {};
 
-class FloatOverflow : public std::exception {
-};
+class FloatOverflow : public std::exception {};
 
 #endif

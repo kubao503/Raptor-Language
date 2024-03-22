@@ -2,9 +2,12 @@
 
 Lexer::builders_map_t Lexer::initBuilders() const {
     return {
-        {'<', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::LT_OP, Token::Type::LTE_OP)},
-        {'>', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::GT_OP, Token::Type::GTE_OP)},
-        {'=', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::ASGN_OP, Token::Type::EQ_OP)},
+        {'<',
+         std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::LT_OP, Token::Type::LTE_OP)},
+        {'>',
+         std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::GT_OP, Token::Type::GTE_OP)},
+        {'=',
+         std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::ASGN_OP, Token::Type::EQ_OP)},
 
         {'!', std::bind(&Lexer::buildNotEqualOperator, this)},
 
@@ -34,7 +37,10 @@ Lexer::builders_map_t Lexer::initBuilders() const {
         {'8', std::bind(&Lexer::buildNumber, this)},
         {'9', std::bind(&Lexer::buildNumber, this)},
 
-        {EOF, [this]() -> Token { return {Token::Type::ETX, {}, tokenPosition_}; }},
+        {EOF,
+         [this]() -> Token {
+             return {Token::Type::ETX, {}, tokenPosition_};
+         }},
     };
 }
 
@@ -198,24 +204,15 @@ Token Lexer::buildFloat(integral_t integralPart) const {
 }
 
 const std::unordered_map<std::string_view, Token::Type> Lexer::keywords_{
-    {"if", Token::Type::IF_KW},
-    {"while", Token::Type::WHILE_KW},
-    {"return", Token::Type::RETURN_KW},
-    {"print", Token::Type::PRINT_KW},
-    {"const", Token::Type::CONST_KW},
-    {"ref", Token::Type::REF_KW},
-    {"struct", Token::Type::STRUCT_KW},
-    {"variant", Token::Type::VARIANT_KW},
-    {"or", Token::Type::OR_KW},
-    {"and", Token::Type::AND_KW},
-    {"not", Token::Type::NOT_KW},
-    {"as", Token::Type::AS_KW},
-    {"is", Token::Type::IS_KW},
-    {"void", Token::Type::VOID_KW},
-    {"int", Token::Type::INT_KW},
-    {"float", Token::Type::FLOAT_KW},
-    {"bool", Token::Type::BOOL_KW},
-    {"str", Token::Type::STR_KW},
+    {"if", Token::Type::IF_KW},         {"while", Token::Type::WHILE_KW},
+    {"return", Token::Type::RETURN_KW}, {"print", Token::Type::PRINT_KW},
+    {"const", Token::Type::CONST_KW},   {"ref", Token::Type::REF_KW},
+    {"struct", Token::Type::STRUCT_KW}, {"variant", Token::Type::VARIANT_KW},
+    {"or", Token::Type::OR_KW},         {"and", Token::Type::AND_KW},
+    {"not", Token::Type::NOT_KW},       {"as", Token::Type::AS_KW},
+    {"is", Token::Type::IS_KW},         {"void", Token::Type::VOID_KW},
+    {"int", Token::Type::INT_KW},       {"float", Token::Type::FLOAT_KW},
+    {"bool", Token::Type::BOOL_KW},     {"str", Token::Type::STR_KW},
 };
 
 bool Lexer::willOverflow(integral_t value, integral_t digit) {
