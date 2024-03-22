@@ -36,6 +36,7 @@ class Lexer {
     Token buildFloat(integral_t integralPart) const;
     Token buildNumber() const;
     Token buildStrConst() const;
+    Token buildComment() const;
 
     static const std::unordered_map<std::string_view, Token::Type> keywords_;
 

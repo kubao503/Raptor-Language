@@ -37,12 +37,13 @@ const std::unordered_map<Token::Type, std::string> Token::typeNames = {
     {Type::MULT_OP, "MULT_OP"},
     {Type::DIV_OP, "DIV_OP"},
     {Type::SEMI, "SEMI"},
-    {Type::COM, "COM"},
+    {Type::CMA, "CMA"},
     {Type::DOT, "DOT"},
     {Type::L_PAR, "L_PAR"},
     {Type::R_PAR, "R_PAR"},
     {Type::L_C_BR, "L_C_BR"},
     {Type::R_C_BR, "R_C_BR"},
+    {Type::CMT, "CMT"},
 };
 
 struct ToStringFunctor {

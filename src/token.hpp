@@ -48,12 +48,13 @@ struct Token {
         MULT_OP,
         DIV_OP,
         SEMI,
-        COM,
+        CMA,
         DOT,
         L_PAR,
         R_PAR,
         L_C_BR,
         R_C_BR,
+        CMT,
     };
 
     Type type;

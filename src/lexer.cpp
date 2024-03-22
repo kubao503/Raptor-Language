@@ -13,8 +13,10 @@ Lexer::builders_map_t Lexer::initBuilders() const {
 
         {'"', std::bind(&Lexer::buildStrConst, this)},
 
+        {'#', std::bind(&Lexer::buildComment, this)},
+
         {';', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::SEMI)},
-        {',', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::COM)},
+        {',', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::CMA)},
         {'.', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::DOT)},
         {'+', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::ADD_OP)},
         {'-', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::MIN_OP)},
@@ -154,6 +156,17 @@ Token Lexer::buildStrConst() const {
 
     source_.nextChar();
     return {Token::Type::STR_CONST, value, tokenPosition_};
+}
+
+Token Lexer::buildComment() const {
+    std::string value;
+
+    while (true) {
+        source_.nextChar();
+        if (source_.getChar() == '\n' || source_.getChar() == EOF)
+            return {Token::Type::CMT, value, tokenPosition_};
+        value.push_back(source_.getChar());
+    }
 }
 
 Token Lexer::buildTwoLetterOp(char second, Token::Type single, Token::Type dual) const {

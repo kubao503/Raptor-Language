@@ -163,7 +163,7 @@ TEST(lexer, getToken_operators) {
 
     EXPECT_EQ(lexer.getToken().type, Token::Type::NEQ_OP) << "Invalid token type";
     EXPECT_EQ(lexer.getToken().type, Token::Type::SEMI) << "Invalid token type";
-    EXPECT_EQ(lexer.getToken().type, Token::Type::COM) << "Invalid token type";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::CMA) << "Invalid token type";
     EXPECT_EQ(lexer.getToken().type, Token::Type::DOT) << "Invalid token type";
 
     EXPECT_EQ(lexer.getToken().type, Token::Type::ADD_OP) << "Invalid token type";
@@ -198,4 +198,14 @@ TEST(lexer, getToken_invalid_str) {
 
     EXPECT_THROW(std::get<std::string>(lexer.getToken().value), InvalidToken)
         << "Str const without ending quotation mark";
+}
+
+TEST(lexer, getToken_comment) {
+    std::istringstream stream("   # int # \" 12 \" \n new line");
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
+
+    auto token = lexer.getToken();
+    EXPECT_EQ(token.type, Token::Type::CMT) << "Invalid token type";
+    EXPECT_EQ(std::get<std::string>(token.value), " int # \" 12 \" ");
 }

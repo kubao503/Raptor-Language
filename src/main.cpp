@@ -11,10 +11,10 @@ int main(int argc, char *argv[]) {
     auto source = Source(ifs);
     auto lexer = Lexer(source);
 
-    auto token = lexer.getToken();
-    while (token.type != Token::Type::ETX) {
-        std::cout << token;
+    Token token;
+    do {
         token = lexer.getToken();
-    }
+        std::cout << token;
+    } while (token.type != Token::Type::ETX);
     std::cout << '\n';
 }
