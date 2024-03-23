@@ -114,9 +114,6 @@ Token Lexer::buildNumber() const {
 
         if (source_.getChar() == '.')
             return buildFloat(value);
-        else if (std::isdigit(source_.getChar()))
-            throw InvalidToken(source_.getChar());
-
         return {Token::Type::INT_CONST, value, tokenPosition_};
     }
 

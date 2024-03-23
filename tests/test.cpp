@@ -52,12 +52,14 @@ TEST(lexer, getToken_int) {
     EXPECT_EQ(std::get<unsigned int>(token.value), 1234) << "Invalid value";
 }
 
-TEST(lexer, getToken_int_with_leading_zeros) {
-    std::istringstream stream("0001234");
+TEST(lexer, getToken_int_with_leading_zero) {
+    std::istringstream stream("01234");
     auto source = Source(stream);
     auto lexer = Lexer(source);
 
-    EXPECT_THROW(lexer.getToken(), InvalidToken) << "Leading zeros are forbidden";
+    EXPECT_EQ(std::get<integral_t>(lexer.getToken().value), 0) << "First part of int";
+
+    EXPECT_EQ(std::get<integral_t>(lexer.getToken().value), 1234) << "Second part of int";
 }
 
 TEST(lexer, getToken_int_overflow) {
