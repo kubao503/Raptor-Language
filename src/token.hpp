@@ -7,9 +7,7 @@
 
 #include "magic_enum/magic_enum.hpp"
 #include "source.hpp"
-
-using integral_t = unsigned int;
-using floating_t = float;
+#include "types.hpp"
 
 struct Token {
     enum class Type {
