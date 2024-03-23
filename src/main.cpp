@@ -12,8 +12,12 @@ int main(int argc, char *argv[]) {
     auto lexer = Lexer(source);
 
     Token token;
-    do {
-        token = lexer.getToken();
-        std::cout << token << '\n';
-    } while (token.type != Token::Type::ETX);
+    try {
+        do {
+            token = lexer.getToken();
+            std::cout << token << '\n';
+        } while (token.type != Token::Type::ETX);
+    } catch (const std::exception &e) {
+        std::cerr << "err: " << e.what() << '\n';
+    }
 }

@@ -57,7 +57,7 @@ Token Lexer::getToken() {
         return builder();
     }
 
-    throw InvalidToken(source_.getChar());
+    throw InvalidToken(tokenPosition_);
 }
 
 void Lexer::ignoreWhiteSpace() const {
@@ -143,7 +143,7 @@ Token Lexer::buildStrConst() const {
         source_.nextChar();
 
         if (source_.getChar() == EOF)
-            throw InvalidToken(source_.getChar());
+            throw NotTerminatedStrConst(tokenPosition_, value);
         else if (!escape && source_.getChar() == '"')
             break;
         else if (!escape && source_.getChar() == '\\')
@@ -151,7 +151,7 @@ Token Lexer::buildStrConst() const {
         else if (escape) {
             auto result = escapedChars_.find(source_.getChar());
             if (result == escapedChars_.end())
-                throw InvalidToken(source_.getChar());
+                throw NonEscapableChar(tokenPosition_, source_.getChar());
 
             auto escapedChar = result->second;
             value.push_back(escapedChar);
@@ -199,13 +199,13 @@ Token Lexer::buildNotEqualOperator() const {
         return {Token::Type::NEQ_OP, {}, tokenPosition_};
     }
 
-    throw InvalidToken(source_.getChar());
+    throw InvalidToken(tokenPosition_);
 }
 
 Token Lexer::buildFloat(integral_t integralPart) const {
     source_.nextChar();
     if (!std::isdigit(source_.getChar()))
-        throw InvalidToken(source_.getChar());
+        throw InvalidToken(tokenPosition_);
 
     integral_t fractionalPart = 0;
     int exponent = 0;
