@@ -5,7 +5,7 @@
 
 struct Position {
     unsigned int line = 1;
-    unsigned int column = 1;
+    unsigned int column = 0;
 };
 
 class Source {
@@ -23,7 +23,7 @@ class Source {
 
         if (currentChar_ == '\n') {
             currentPosition_.line += 1;
-            currentPosition_.column = 1;
+            currentPosition_.column = 0;
         }
     }
 

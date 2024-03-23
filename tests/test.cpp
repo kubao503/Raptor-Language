@@ -138,7 +138,6 @@ TEST(lexer, getToken_leading_white_space) {
     EXPECT_EQ(token.type, Token::Type::BOOL_CONST) << "Invalid token type";
     EXPECT_TRUE(std::holds_alternative<bool>(token.value)) << "Invalid type of token value";
     EXPECT_EQ(std::get<bool>(token.value), true) << "Invalid token value";
-    EXPECT_EQ(token.position.line, 3) << "Invalid line";
 }
 
 TEST(lexer, getToken_twice) {
@@ -220,4 +219,22 @@ TEST(lexer, getToken_comment) {
     auto token = lexer.getToken();
     EXPECT_EQ(token.type, Token::Type::CMT) << "Invalid token type";
     EXPECT_EQ(std::get<std::string>(token.value), " int # \" 12 \" ");
+}
+
+TEST(lexer, getToken_token_position) {
+    std::istringstream stream("int void \nwhile");
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
+
+    auto token = lexer.getToken();
+    EXPECT_EQ(token.position.line, 1);
+    EXPECT_EQ(token.position.column, 1);
+
+    token = lexer.getToken();
+    EXPECT_EQ(token.position.line, 1);
+    EXPECT_EQ(token.position.column, 5);
+
+    token = lexer.getToken();
+    EXPECT_EQ(token.position.line, 2);
+    EXPECT_EQ(token.position.column, 1);
 }
