@@ -141,17 +141,20 @@ Token Lexer::buildStrConst() const {
 
     while (true) {
         source_.nextChar();
+
         if (source_.getChar() == EOF)
             throw InvalidToken(source_.getChar());
         else if (!escape && source_.getChar() == '"')
             break;
-        else if (source_.getChar() == '\\')
+        else if (!escape && source_.getChar() == '\\')
             escape = true;
-        else if (escape && source_.getChar() == 'n') {
-            value.push_back('\n');
-            escape = false;
-        } else if (escape && source_.getChar() == '"') {
-            value.push_back('"');
+        else if (escape) {
+            auto result = escapedChars_.find(source_.getChar());
+            if (result == escapedChars_.end())
+                throw InvalidToken(source_.getChar());
+
+            auto escapedChar = result->second;
+            value.push_back(escapedChar);
             escape = false;
         } else
             value.push_back(source_.getChar());
@@ -223,3 +226,6 @@ bool Lexer::willOverflow(integral_t value, integral_t digit) {
     auto maxSafe = (std::numeric_limits<integral_t>::max() - digit) / 10;
     return value > maxSafe;
 }
+
+const std::unordered_map<char, char> Lexer::escapedChars_{
+    {'n', '\n'}, {'t', '\t'}, {'"', '"'}, {'\\', '\\'}};

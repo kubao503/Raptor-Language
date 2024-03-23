@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <cctype>
 #include <functional>
 #include <limits>
 #include <string_view>
@@ -43,6 +42,8 @@ class Lexer {
 
     static integral_t charToDigit(char c) { return c - '0'; }
     static bool willOverflow(integral_t value, integral_t digit);
+
+    static const std::unordered_map<char, char> escapedChars_;
 };
 
 #endif

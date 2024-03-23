@@ -184,24 +184,32 @@ TEST(lexer, getToken_operators) {
 }
 
 TEST(lexer, getToken_str_const) {
-    std::istringstream stream("  \"\\\"lama \\nma delfina\\\"\" ");
+    std::istringstream stream(" \"\\\"lama \\nma \\\\ delfina\\\"\" ");
     auto source = Source(stream);
     auto lexer = Lexer(source);
 
     auto token = lexer.getToken();
     EXPECT_EQ(token.type, Token::Type::STR_CONST) << "Invalid token type";
-    EXPECT_EQ(std::get<std::string>(token.value), "\"lama \nma delfina\"") << "Invalid token value";
+    EXPECT_EQ(std::get<std::string>(token.value), "\"lama \nma \\ delfina\"")
+        << "Invalid token value";
 
     EXPECT_EQ(lexer.getToken().type, Token::Type::ETX) << "Invalid token type";
 }
 
-TEST(lexer, getToken_invalid_str) {
+TEST(lexer, getToken_not_terminated_str_const) {
     std::istringstream stream("  \"no ending quotation mark");
     auto source = Source(stream);
     auto lexer = Lexer(source);
 
-    EXPECT_THROW(std::get<std::string>(lexer.getToken().value), InvalidToken)
-        << "Str const without ending quotation mark";
+    EXPECT_THROW(lexer.getToken(), InvalidToken) << "Str const without ending quotation mark";
+}
+
+TEST(lexer, getToken_escaping_wrong_char) {
+    std::istringstream stream(" \"\\a\" ");
+    auto source = Source(stream);
+    auto lexer = Lexer(source);
+
+    EXPECT_THROW(lexer.getToken(), InvalidToken) << "cannot escape char 'a'";
 }
 
 TEST(lexer, getToken_comment) {
