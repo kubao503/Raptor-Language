@@ -2,7 +2,7 @@
 
 #include "lexer.hpp"
 
-TEST(lexer, getToken_bool) {
+TEST(lexer, getToken_bool_const) {
     std::istringstream stream("true false");
     auto source = Source(stream);
     auto lexer = Lexer(source);
@@ -17,7 +17,7 @@ TEST(lexer, getToken_bool) {
 }
 
 TEST(lexer, getToken_while) {
-    std::istringstream stream("while");
+    std::istringstream stream("while While");
     auto source = Source(stream);
     auto lexer = Lexer(source);
 
@@ -26,6 +26,8 @@ TEST(lexer, getToken_while) {
     EXPECT_EQ(token.type, Token::Type::WHILE_KW) << "Invalid token type";
     EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value))
         << "Keyword token should not include value";
+
+    EXPECT_EQ(lexer.getToken().type, Token::Type::ID) << "\"While\" is not a valid keyword";
 }
 
 TEST(lexer, getToken_id) {

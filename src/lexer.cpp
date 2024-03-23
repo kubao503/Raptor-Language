@@ -87,6 +87,10 @@ std::optional<Token> Lexer::buildIdOrKeyword() const {
 }
 
 std::optional<Token> Lexer::buildKeyword(std::string_view lexeme) const {
+    // Keyword must be lowercase
+    if (std::any_of(lexeme.begin(), lexeme.end(), [](char c) { return std::isupper(c); }))
+        return std::nullopt;
+
     auto suffix = "_KW";
     std::string keyword(lexeme.size(), ' ');
     std::transform(lexeme.begin(), lexeme.end(), keyword.begin(), ::toupper);
