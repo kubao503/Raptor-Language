@@ -124,7 +124,7 @@ Token Lexer::buildNumber() const {
     do {
         auto digit = charToDigit(source_.getChar());
         if (willOverflow(value, digit))
-            throw IntOverflow();
+            throw IntOverflow(tokenPosition_, value, digit);
         value = 10 * value + digit;
         source_.nextChar();
     } while (std::isdigit(source_.getChar()));
