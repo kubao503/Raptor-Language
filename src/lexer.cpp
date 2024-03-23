@@ -28,6 +28,8 @@ Lexer::builders_map_t Lexer::initBuilders() const {
         {'{', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::L_C_BR)},
         {'}', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::R_C_BR)},
 
+        {EOF, std::bind(&Lexer::buildOneLetterOp, this, Token::Type::ETX)},
+
         {'0', std::bind(&Lexer::buildNumber, this)},
         {'1', std::bind(&Lexer::buildNumber, this)},
         {'2', std::bind(&Lexer::buildNumber, this)},
@@ -38,11 +40,6 @@ Lexer::builders_map_t Lexer::initBuilders() const {
         {'7', std::bind(&Lexer::buildNumber, this)},
         {'8', std::bind(&Lexer::buildNumber, this)},
         {'9', std::bind(&Lexer::buildNumber, this)},
-
-        {EOF,
-         [this]() -> Token {
-             return {Token::Type::ETX, {}, tokenPosition_};
-         }},
     };
 }
 
@@ -90,9 +87,14 @@ std::optional<Token> Lexer::buildIdOrKeyword() const {
 }
 
 std::optional<Token> Lexer::buildKeyword(std::string_view lexeme) const {
-    auto res = keywords_.find(lexeme);
-    if (res != keywords_.end())
-        return {{res->second, {}, tokenPosition_}};
+    auto suffix = "_KW";
+    std::string keyword(lexeme.size(), ' ');
+    std::transform(lexeme.begin(), lexeme.end(), keyword.begin(), ::toupper);
+    keyword += suffix;
+
+    auto res = magic_enum::enum_cast<Token::Type>(keyword);
+    if (res.has_value())
+        return {{res.value(), {}, tokenPosition_}};
     return std::nullopt;
 }
 
@@ -215,18 +217,6 @@ Token Lexer::buildFloat(integral_t integralPart) const {
     floating_t value = integralPart + fractionalPart * std::pow(10, exponent);
     return {Token::Type::FLOAT_CONST, value, tokenPosition_};
 }
-
-const std::unordered_map<std::string_view, Token::Type> Lexer::keywords_{
-    {"if", Token::Type::IF_KW},         {"while", Token::Type::WHILE_KW},
-    {"return", Token::Type::RETURN_KW}, {"print", Token::Type::PRINT_KW},
-    {"const", Token::Type::CONST_KW},   {"ref", Token::Type::REF_KW},
-    {"struct", Token::Type::STRUCT_KW}, {"variant", Token::Type::VARIANT_KW},
-    {"or", Token::Type::OR_KW},         {"and", Token::Type::AND_KW},
-    {"not", Token::Type::NOT_KW},       {"as", Token::Type::AS_KW},
-    {"is", Token::Type::IS_KW},         {"void", Token::Type::VOID_KW},
-    {"int", Token::Type::INT_KW},       {"float", Token::Type::FLOAT_KW},
-    {"bool", Token::Type::BOOL_KW},     {"str", Token::Type::STR_KW},
-};
 
 bool Lexer::willOverflow(integral_t value, integral_t digit) {
     auto maxSafe = (std::numeric_limits<integral_t>::max() - digit) / 10;

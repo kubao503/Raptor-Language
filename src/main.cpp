@@ -14,7 +14,6 @@ int main(int argc, char *argv[]) {
     Token token;
     do {
         token = lexer.getToken();
-        std::cout << token;
+        std::cout << token << '\n';
     } while (token.type != Token::Type::ETX);
-    std::cout << '\n';
 }

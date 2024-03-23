@@ -1,7 +1,9 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <functional>
 #include <limits>
 #include <string_view>
@@ -37,8 +39,6 @@ class Lexer {
     Token buildNumber() const;
     Token buildStrConst() const;
     Token buildComment() const;
-
-    static const std::unordered_map<std::string_view, Token::Type> keywords_;
 
     static integral_t charToDigit(char c) { return c - '0'; }
     static bool willOverflow(integral_t value, integral_t digit);
