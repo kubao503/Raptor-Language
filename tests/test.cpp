@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "errors.hpp"
 #include "lexer.hpp"
 
 TEST(lexer, getToken_bool_const) {

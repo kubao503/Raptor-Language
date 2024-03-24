@@ -1,5 +1,7 @@
 #include "token.hpp"
 
+#include "magic_enum/magic_enum.hpp"
+
 struct ToStringFunctor {
     std::string operator()(std::monostate) const { return ""; }
     std::string operator()(integral_t i) const { return std::to_string(i); }

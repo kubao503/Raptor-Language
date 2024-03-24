@@ -1,15 +1,10 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include <algorithm>
-#include <cmath>
-#include <cstring>
 #include <functional>
-#include <limits>
-#include <string_view>
+#include <optional>
 #include <unordered_map>
 
-#include "errors.hpp"
 #include "source.hpp"
 #include "token.hpp"
 

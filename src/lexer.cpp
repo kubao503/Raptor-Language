@@ -1,5 +1,12 @@
 #include "lexer.hpp"
 
+#include <cmath>
+#include <limits>
+#include <string_view>
+
+#include "errors.hpp"
+#include "magic_enum/magic_enum.hpp"
+
 Lexer::builders_map_t Lexer::initBuilders() const {
     return {
         {'<',

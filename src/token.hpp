@@ -2,12 +2,12 @@
 #define TOKEN_H
 
 #include <ostream>
-#include <unordered_map>
 #include <variant>
 
-#include "magic_enum/magic_enum.hpp"
-#include "source.hpp"
+#include "position.hpp"
 #include "types.hpp"
+
+struct Position;
 
 struct Token {
     enum class Type {

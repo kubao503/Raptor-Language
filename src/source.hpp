@@ -3,10 +3,7 @@
 
 #include <istream>
 
-struct Position {
-    unsigned int line = 1;
-    unsigned int column = 0;
-};
+#include "position.hpp"
 
 class Source {
    public:

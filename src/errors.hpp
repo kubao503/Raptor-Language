@@ -5,7 +5,7 @@
 #include <limits>
 #include <string>
 
-#include "source.hpp"
+#include "position.hpp"
 #include "types.hpp"
 
 class InvalidToken : public std::exception {
