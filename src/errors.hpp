@@ -21,12 +21,7 @@ class InvalidToken : public std::exception {
     const Position position_;
     mutable std::string message_;
 
-    const char* what() const noexcept override {
-        message_ = getName() + " at " + std::to_string(position_.line) + ':' +
-                   std::to_string(position_.column) + '\n' + additionalInfo();
-
-        return message_.c_str();
-    };
+    const char* what() const noexcept override;
 };
 
 class NotTerminatedStrConst : public InvalidToken {
@@ -36,7 +31,7 @@ class NotTerminatedStrConst : public InvalidToken {
 
    private:
     std::string getName() const override { return "NotTerminatedStrConst"; }
-    std::string additionalInfo() const override { return "str: " + strConst_; }
+    std::string additionalInfo() const override;
 
     const std::string strConst_;
 };
@@ -50,7 +45,7 @@ class NonEscapableChar : public InvalidToken {
     const char c_;
 
     std::string getName() const override { return "NonEscapableChar"; }
-    std::string additionalInfo() const override { return "char: '" + std::string(1, c_) + '\''; }
+    std::string additionalInfo() const override;
 };
 
 class IntOverflow : public InvalidToken {
@@ -63,11 +58,7 @@ class IntOverflow : public InvalidToken {
     const integral_t digit_;
 
     std::string getName() const override { return "IntOverflow "; }
-    std::string additionalInfo() const override {
-        auto max = std::numeric_limits<integral_t>::max();
-        return std::to_string(value_) + " * 10 + " + std::to_string(digit_) + " > " +
-               std::to_string(max);
-    }
+    std::string additionalInfo() const override;
 };
 
 class FloatOverflow : public std::exception {};
