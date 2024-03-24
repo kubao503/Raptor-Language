@@ -1,7 +1,8 @@
 ---
 BasedOnStyle: Google
 AllowShortIfStatementsOnASingleLine: Never
-ColumnLimit: '100'
+ColumnLimit: '90'
 IndentWidth: '4'
 PackConstructorInitializers: NextLineOnly
+BreakBeforeBinaryOperators: NonAssignment
 ...

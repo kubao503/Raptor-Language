@@ -28,7 +28,8 @@ TEST(lexer, getToken_while) {
     EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value))
         << "Keyword token should not include value";
 
-    EXPECT_EQ(lexer.getToken().type, Token::Type::ID) << "\"While\" is not a valid keyword";
+    EXPECT_EQ(lexer.getToken().type, Token::Type::ID)
+        << "\"While\" is not a valid keyword";
 }
 
 TEST(lexer, getToken_id) {
@@ -39,8 +40,10 @@ TEST(lexer, getToken_id) {
     auto token = lexer.getToken();
 
     EXPECT_EQ(token.type, Token::Type::ID) << "Invalid token type";
-    EXPECT_TRUE(std::holds_alternative<std::string>(token.value)) << "Invalid type of value";
-    EXPECT_EQ(std::get<std::string>(token.value), "valid_identifier_123") << "Invalid value";
+    EXPECT_TRUE(std::holds_alternative<std::string>(token.value))
+        << "Invalid type of value";
+    EXPECT_EQ(std::get<std::string>(token.value), "valid_identifier_123")
+        << "Invalid value";
 }
 
 TEST(lexer, getToken_int) {
@@ -51,7 +54,8 @@ TEST(lexer, getToken_int) {
     auto token = lexer.getToken();
 
     EXPECT_EQ(token.type, Token::Type::INT_CONST) << "Invalid token type";
-    EXPECT_TRUE(std::holds_alternative<unsigned int>(token.value)) << "Invalid type of value";
+    EXPECT_TRUE(std::holds_alternative<unsigned int>(token.value))
+        << "Invalid type of value";
     EXPECT_EQ(std::get<unsigned int>(token.value), 1234) << "Invalid value";
 }
 
@@ -71,7 +75,7 @@ TEST(lexer, getToken_int_overflow) {
     auto lexer = Lexer(source);
 
     EXPECT_NO_THROW(lexer.getToken()) << "Just at the max";
-    EXPECT_THROW(lexer.getToken(), IntOverflow) << "Max exceeded";
+    EXPECT_THROW(lexer.getToken(), NumericOverflow) << "Max exceeded";
 }
 
 TEST(lexer, getToken_float) {
@@ -94,7 +98,7 @@ TEST(lexer, getToken_invalid_float) {
         auto source = Source(stream);
         auto lexer = Lexer(source);
 
-        EXPECT_THROW(lexer.getToken(), InvalidToken);
+        EXPECT_THROW(lexer.getToken(), InvalidFloat);
     }
 }
 
@@ -104,7 +108,7 @@ TEST(lexer, getToken_float_overflow) {
     auto lexer = Lexer(source);
 
     EXPECT_NO_THROW(lexer.getToken()) << "Just at the max";
-    EXPECT_THROW(lexer.getToken(), FloatOverflow) << "Max exceeded";
+    EXPECT_THROW(lexer.getToken(), NumericOverflow) << "Max exceeded";
 }
 
 TEST(lexer, getToken_invalid) {
@@ -137,7 +141,8 @@ TEST(lexer, getToken_leading_white_space) {
     auto token = lexer.getToken();
 
     EXPECT_EQ(token.type, Token::Type::BOOL_CONST) << "Invalid token type";
-    EXPECT_TRUE(std::holds_alternative<bool>(token.value)) << "Invalid type of token value";
+    EXPECT_TRUE(std::holds_alternative<bool>(token.value))
+        << "Invalid type of token value";
     EXPECT_EQ(std::get<bool>(token.value), true) << "Invalid token value";
 }
 
@@ -180,7 +185,7 @@ TEST(lexer, getToken_operators) {
     EXPECT_EQ(lexer.getToken().type, Token::Type::L_C_BR) << "Invalid token type";
     EXPECT_EQ(lexer.getToken().type, Token::Type::R_C_BR) << "Invalid token type";
 
-    EXPECT_THROW(lexer.getToken(), InvalidToken) << "Single ! is invalid";
+    EXPECT_THROW(lexer.getToken(), InvalidNotEqualOp) << "Single ! is invalid";
 }
 
 TEST(lexer, getToken_str_const) {
@@ -201,7 +206,8 @@ TEST(lexer, getToken_not_terminated_str_const) {
     auto source = Source(stream);
     auto lexer = Lexer(source);
 
-    EXPECT_THROW(lexer.getToken(), InvalidToken) << "Str const without ending quotation mark";
+    EXPECT_THROW(lexer.getToken(), NotTerminatedStrConst)
+        << "Str const without ending quotation mark";
 }
 
 TEST(lexer, getToken_escaping_wrong_char) {
@@ -209,7 +215,7 @@ TEST(lexer, getToken_escaping_wrong_char) {
     auto source = Source(stream);
     auto lexer = Lexer(source);
 
-    EXPECT_THROW(lexer.getToken(), InvalidToken) << "cannot escape char 'a'";
+    EXPECT_THROW(lexer.getToken(), NonEscapableChar) << "cannot escape char 'a'";
 }
 
 TEST(lexer, getToken_comment) {

@@ -18,6 +18,6 @@ int main(int argc, char *argv[]) {
             std::cout << token << '\n';
         } while (token.type != Token::Type::ETX);
     } catch (const std::exception &e) {
-        std::cerr << "err: " << e.what() << '\n';
+        std::cerr << "\nerr: " << e.what() << '\n';
     }
 }

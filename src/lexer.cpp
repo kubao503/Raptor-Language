@@ -9,12 +9,12 @@
 
 Lexer::builders_map_t Lexer::initBuilders() const {
     return {
-        {'<',
-         std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::LT_OP, Token::Type::LTE_OP)},
-        {'>',
-         std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::GT_OP, Token::Type::GTE_OP)},
-        {'=',
-         std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::ASGN_OP, Token::Type::EQ_OP)},
+        {'<', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::LT_OP,
+                        Token::Type::LTE_OP)},
+        {'>', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::GT_OP,
+                        Token::Type::GTE_OP)},
+        {'=', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::ASGN_OP,
+                        Token::Type::EQ_OP)},
 
         {'!', std::bind(&Lexer::buildNotEqualOperator, this)},
 
@@ -64,7 +64,7 @@ Token Lexer::getToken() {
         return builder();
     }
 
-    throw InvalidToken(tokenPosition_);
+    throw InvalidToken(tokenPosition_, source_.getChar());
 }
 
 void Lexer::ignoreWhiteSpace() const {
@@ -131,7 +131,7 @@ Token Lexer::buildNumber() const {
     do {
         auto digit = charToDigit(source_.getChar());
         if (willOverflow(value, digit))
-            throw IntOverflow(tokenPosition_, value, digit);
+            throw NumericOverflow(tokenPosition_, value, digit);
         value = 10 * value + digit;
         source_.nextChar();
     } while (std::isdigit(source_.getChar()));
@@ -150,7 +150,7 @@ Token Lexer::buildStrConst() const {
         source_.nextChar();
 
         if (source_.getChar() == EOF)
-            throw NotTerminatedStrConst(tokenPosition_, value);
+            throw NotTerminatedStrConst(tokenPosition_);
         else if (!escape && source_.getChar() == '"')
             break;
         else if (!escape && source_.getChar() == '\\')
@@ -206,20 +206,20 @@ Token Lexer::buildNotEqualOperator() const {
         return {Token::Type::NEQ_OP, {}, tokenPosition_};
     }
 
-    throw InvalidToken(tokenPosition_);
+    throw InvalidNotEqualOp(tokenPosition_);
 }
 
 Token Lexer::buildFloat(integral_t integralPart) const {
     source_.nextChar();
     if (!std::isdigit(source_.getChar()))
-        throw InvalidToken(tokenPosition_);
+        throw InvalidFloat(tokenPosition_);
 
     integral_t fractionalPart = 0;
     int exponent = 0;
     do {
         auto digit = charToDigit(source_.getChar());
         if (willOverflow(fractionalPart, digit))
-            throw FloatOverflow();
+            throw NumericOverflow(tokenPosition_, fractionalPart, digit);
         fractionalPart = 10 * fractionalPart + digit;
         source_.nextChar();
         --exponent;
