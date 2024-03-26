@@ -14,13 +14,13 @@ class LexerException : public std::exception {
         : position_(position) {}
 
    protected:
-    virtual std::string getName() const = 0;
     virtual std::string additionalInfo() const { return ""; }
 
    private:
     const Position position_;
     mutable std::string message_;
 
+    std::string getName() const;
     const char* what() const noexcept override;
 };
 
@@ -32,7 +32,6 @@ class InvalidToken : public LexerException {
    private:
     const char c_;
 
-    std::string getName() const override { return "InvalidToken"; }
     std::string additionalInfo() const override;
 };
 
@@ -41,7 +40,6 @@ class InvalidNotEqualOp : public LexerException {
     using LexerException::LexerException;
 
    private:
-    std::string getName() const override { return "InvalidNotEqualOp"; }
     std::string additionalInfo() const override;
 };
 
@@ -50,7 +48,6 @@ class NotTerminatedStrConst : public LexerException {
     using LexerException::LexerException;
 
    private:
-    std::string getName() const override { return "NotTerminatedStrConst"; }
     std::string additionalInfo() const override;
 };
 
@@ -62,7 +59,6 @@ class NonEscapableChar : public LexerException {
    private:
     const char c_;
 
-    std::string getName() const override { return "NonEscapableChar"; }
     std::string additionalInfo() const override;
 };
 
@@ -75,7 +71,6 @@ class NumericOverflow : public LexerException {
     const integral_t value_;
     const integral_t digit_;
 
-    std::string getName() const override { return "NumericOverflow"; }
     std::string additionalInfo() const override;
 };
 
@@ -84,7 +79,6 @@ class InvalidFloat : public LexerException {
     using LexerException::LexerException;
 
    private:
-    std::string getName() const override { return "InvalidFloat"; }
     std::string additionalInfo() const override;
 };
 

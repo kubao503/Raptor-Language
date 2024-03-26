@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(magic_enum REQUIRED)
 find_package(GTest REQUIRED)
+find_package(Boost REQUIRED)
 
 add_library(compiler_flags INTERFACE)
 target_compile_options(compiler_flags INTERFACE -Wall -Wextra -Werror -pedantic)

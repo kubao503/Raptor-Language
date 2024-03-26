@@ -1,5 +1,12 @@
 #include "errors.hpp"
 
+#include <boost/core/demangle.hpp>
+
+std::string LexerException::getName() const {
+    auto name = typeid(*this).name();
+    return boost::core::demangle(name);
+}
+
 const char* LexerException::what() const noexcept {
     message_ = getName() + " at " + std::to_string(position_.line) + ':'
                + std::to_string(position_.column) + '\n' + additionalInfo();
@@ -11,7 +18,9 @@ std::string InvalidToken::additionalInfo() const {
     return "Unknown token starting with '" + std::string(1, c_) + '\'';
 }
 
-std::string InvalidNotEqualOp::additionalInfo() const { return "Invalid != operator"; }
+std::string InvalidNotEqualOp::additionalInfo() const {
+    return "Invalid != operator";
+}
 
 std::string NotTerminatedStrConst::additionalInfo() const {
     return "Encountered end of file while processing str literal";

@@ -13,6 +13,7 @@ target_link_libraries(
     lexer
     PUBLIC compiler_flags
     PUBLIC magic_enum::magic_enum
+    PUBLIC boost::boost
 )
 
 add_executable(
