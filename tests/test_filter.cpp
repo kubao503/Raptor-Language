@@ -34,3 +34,8 @@ TEST(FilterTest, basic_filtering) {
     EXPECT_EQ(filter.getToken().type, Token::Type::DOT);
     EXPECT_EQ(filter.getToken().type, Token::Type::ETX);
 }
+
+TEST(FilterTest, forbid_etx_filtering) {
+    auto lexer = FakeLexer({});
+    EXPECT_THROW(Filter(lexer, Token::Type::ETX), InvalidFilterType);
+}

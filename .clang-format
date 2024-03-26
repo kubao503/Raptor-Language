@@ -6,4 +6,5 @@ IndentWidth: '4'
 PackConstructorInitializers: NextLineOnly
 BreakBeforeBinaryOperators: NonAssignment
 DerivePointerAlignment: false
+AllowShortFunctionsOnASingleLine: Inline
 ...
