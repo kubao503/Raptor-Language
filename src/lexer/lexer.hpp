@@ -5,17 +5,18 @@
 #include <optional>
 #include <unordered_map>
 
+#include "ILexer.hpp"
 #include "source.hpp"
 #include "token.hpp"
 
-class Lexer {
+class Lexer : public ILexer {
     using builders_map_t = std::unordered_map<char, std::function<Token()>>;
 
    public:
     Lexer(Source& source)
         : source_(source), builders_(initBuilders()) {}
 
-    Token getToken();
+    Token getToken() override;
 
    private:
     Source& source_;
@@ -24,6 +25,7 @@ class Lexer {
 
     builders_map_t initBuilders() const;
     void ignoreWhiteSpace() const;
+
     std::optional<Token> buildIdOrKeyword() const;
     std::optional<Token> buildKeyword(std::string_view lexeme) const;
     std::optional<Token> buildBoolConst(std::string_view lexeme) const;

@@ -5,4 +5,5 @@ ColumnLimit: '90'
 IndentWidth: '4'
 PackConstructorInitializers: NextLineOnly
 BreakBeforeBinaryOperators: NonAssignment
+DerivePointerAlignment: false
 ...
