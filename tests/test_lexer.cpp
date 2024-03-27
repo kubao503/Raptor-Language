@@ -5,7 +5,7 @@
 
 class LexerTest : public testing::Test {
    protected:
-    void SetUp(const std::string &input) {
+    void SetUp(const std::string& input) {
         stream_ = std::istringstream(input);
         source_ = std::make_unique<Source>(stream_);
         lexer_ = std::make_unique<Lexer>(*source_);
@@ -172,7 +172,7 @@ TEST_F(LexerTest, getToken_operators) {
     EXPECT_EQ(lexer_->getToken().type, Token::Type::L_C_BR) << "Invalid token type";
     EXPECT_EQ(lexer_->getToken().type, Token::Type::R_C_BR) << "Invalid token type";
 
-    EXPECT_THROW(lexer_->getToken(), InvalidNotEqualOp) << "Single ! is invalid";
+    EXPECT_THROW(lexer_->getToken(), InvalidToken) << "Single ! is invalid";
 }
 
 TEST_F(LexerTest, getToken_str_const) {

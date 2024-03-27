@@ -18,10 +18,6 @@ std::string InvalidToken::additionalInfo() const {
     return "Unknown token starting with '" + std::string(1, c_) + '\'';
 }
 
-std::string InvalidNotEqualOp::additionalInfo() const {
-    return "Invalid != operator";
-}
-
 std::string NotTerminatedStrConst::additionalInfo() const {
     return "Encountered end of file while processing str literal";
 }

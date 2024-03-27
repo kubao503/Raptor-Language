@@ -209,7 +209,7 @@ Token Lexer::buildNotEqualOperator() const {
         return {Token::Type::NEQ_OP, {}, tokenPosition_};
     }
 
-    throw InvalidNotEqualOp(tokenPosition_);
+    throw InvalidToken(tokenPosition_, '!');
 }
 
 Token Lexer::buildFloat(integral_t integralPart) const {

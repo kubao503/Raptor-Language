@@ -35,14 +35,6 @@ class InvalidToken : public LexerException {
     std::string additionalInfo() const override;
 };
 
-class InvalidNotEqualOp : public LexerException {
-   public:
-    using LexerException::LexerException;
-
-   private:
-    std::string additionalInfo() const override;
-};
-
 class NotTerminatedStrConst : public LexerException {
    public:
     using LexerException::LexerException;
