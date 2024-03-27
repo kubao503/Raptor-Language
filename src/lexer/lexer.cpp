@@ -8,45 +8,48 @@
 #include "magic_enum/magic_enum.hpp"
 
 Lexer::builders_map_t Lexer::initBuilders() const {
+    using namespace std::placeholders;
+    using std::bind;
+
+    auto buildTwoLetterOp = bind(&Lexer::buildTwoLetterOp, this, _1, _2, _3);
+    auto buildOneLetterOp = bind(&Lexer::buildOneLetterOp, this, std::placeholders::_1);
+    auto buildNumber = bind(&Lexer::buildNumber, this);
+    auto buildNotEqualOperator = bind(&Lexer::buildNotEqualOperator, this);
+    auto buildStrConst = bind(&Lexer::buildStrConst, this);
+    auto buildComment = bind(&Lexer::buildComment, this);
+
     return {
-        {'<', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::LT_OP,
-                        Token::Type::LTE_OP)},
-        {'>', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::GT_OP,
-                        Token::Type::GTE_OP)},
-        {'=', std::bind(&Lexer::buildTwoLetterOp, this, '=', Token::Type::ASGN_OP,
-                        Token::Type::EQ_OP)},
+        {'<', bind(buildTwoLetterOp, '=', Token::Type::LT_OP, Token::Type::LTE_OP)},
+        {'>', bind(buildTwoLetterOp, '=', Token::Type::GT_OP, Token::Type::GTE_OP)},
+        {'=', bind(buildTwoLetterOp, '=', Token::Type::ASGN_OP, Token::Type::EQ_OP)},
 
-        {'!', std::bind(&Lexer::buildNotEqualOperator, this)},
+        {';', bind(buildOneLetterOp, Token::Type::SEMI)},
+        {',', bind(buildOneLetterOp, Token::Type::CMA)},
+        {'.', bind(buildOneLetterOp, Token::Type::DOT)},
+        {'+', bind(buildOneLetterOp, Token::Type::ADD_OP)},
+        {'-', bind(buildOneLetterOp, Token::Type::MIN_OP)},
+        {'*', bind(buildOneLetterOp, Token::Type::MULT_OP)},
+        {'/', bind(buildOneLetterOp, Token::Type::DIV_OP)},
+        {'(', bind(buildOneLetterOp, Token::Type::L_PAR)},
+        {')', bind(buildOneLetterOp, Token::Type::R_PAR)},
+        {'{', bind(buildOneLetterOp, Token::Type::L_C_BR)},
+        {'}', bind(buildOneLetterOp, Token::Type::R_C_BR)},
+        {EOF, bind(buildOneLetterOp, Token::Type::ETX)},
 
-        {'"', std::bind(&Lexer::buildStrConst, this)},
+        {'0', buildNumber},
+        {'1', buildNumber},
+        {'2', buildNumber},
+        {'3', buildNumber},
+        {'4', buildNumber},
+        {'5', buildNumber},
+        {'6', buildNumber},
+        {'7', buildNumber},
+        {'8', buildNumber},
+        {'9', buildNumber},
 
-        {'#', std::bind(&Lexer::buildComment, this)},
-
-        {';', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::SEMI)},
-        {',', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::CMA)},
-        {'.', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::DOT)},
-        {'+', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::ADD_OP)},
-        {'-', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::MIN_OP)},
-        {'*', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::MULT_OP)},
-        {'/', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::DIV_OP)},
-
-        {'(', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::L_PAR)},
-        {')', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::R_PAR)},
-        {'{', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::L_C_BR)},
-        {'}', std::bind(&Lexer::buildOneLetterOp, this, Token::Type::R_C_BR)},
-
-        {EOF, std::bind(&Lexer::buildOneLetterOp, this, Token::Type::ETX)},
-
-        {'0', std::bind(&Lexer::buildNumber, this)},
-        {'1', std::bind(&Lexer::buildNumber, this)},
-        {'2', std::bind(&Lexer::buildNumber, this)},
-        {'3', std::bind(&Lexer::buildNumber, this)},
-        {'4', std::bind(&Lexer::buildNumber, this)},
-        {'5', std::bind(&Lexer::buildNumber, this)},
-        {'6', std::bind(&Lexer::buildNumber, this)},
-        {'7', std::bind(&Lexer::buildNumber, this)},
-        {'8', std::bind(&Lexer::buildNumber, this)},
-        {'9', std::bind(&Lexer::buildNumber, this)},
+        {'!', buildNotEqualOperator},
+        {'"', buildStrConst},
+        {'#', buildComment},
     };
 }
 
