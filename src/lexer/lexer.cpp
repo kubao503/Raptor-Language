@@ -76,6 +76,10 @@ void Lexer::ignoreWhiteSpace() const {
     }
 }
 
+bool isAlnumOrUnderscore(char c) {
+    return std::isalnum(c) || c == '_';
+}
+
 std::optional<Token> Lexer::buildIdOrKeyword() const {
     if (!std::isalpha(source_.getChar()))
         return std::nullopt;
@@ -85,7 +89,7 @@ std::optional<Token> Lexer::buildIdOrKeyword() const {
     do {
         lexeme.push_back(source_.getChar());
         source_.nextChar();
-    } while (std::isalnum(source_.getChar()) || source_.getChar() == '_');
+    } while (isAlnumOrUnderscore(source_.getChar()));
 
     if (auto token = buildKeyword(lexeme))
         return token;
@@ -96,20 +100,28 @@ std::optional<Token> Lexer::buildIdOrKeyword() const {
     return {{Token::Type::ID, lexeme, tokenPosition_}};
 }
 
+bool isAnyUpperCase(std::string_view s) {
+    return std::any_of(s.begin(), s.end(), [](char c) { return std::isupper(c); });
+}
+
 std::optional<Token> Lexer::buildKeyword(std::string_view lexeme) const {
-    // Keyword must be lowercase
-    if (std::any_of(lexeme.begin(), lexeme.end(), [](char c) { return std::isupper(c); }))
+    if (isAnyUpperCase(lexeme))
         return std::nullopt;
 
-    auto suffix = "_KW";
+    auto keyword = lexemeToKeyword(lexeme);
+
+    if (auto tokenType = magic_enum::enum_cast<Token::Type>(keyword))
+        return {{tokenType.value(), {}, tokenPosition_}};
+    return std::nullopt;
+}
+
+std::string Lexer::lexemeToKeyword(std::string_view lexeme) {
+    std::string suffix = "_KW";
     std::string keyword(lexeme.size(), ' ');
     std::transform(lexeme.begin(), lexeme.end(), keyword.begin(), ::toupper);
     keyword += suffix;
 
-    auto res = magic_enum::enum_cast<Token::Type>(keyword);
-    if (res.has_value())
-        return {{res.value(), {}, tokenPosition_}};
-    return std::nullopt;
+    return keyword;
 }
 
 std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) const {

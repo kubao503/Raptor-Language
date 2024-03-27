@@ -39,6 +39,7 @@ class Lexer : public ILexer {
 
     static integral_t charToDigit(char c) { return c - '0'; }
     static bool willOverflow(integral_t value, integral_t digit);
+    static std::string lexemeToKeyword(std::string_view lexeme);
 
     static const std::unordered_map<char, char> escapedChars_;
 };
