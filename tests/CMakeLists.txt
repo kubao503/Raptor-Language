@@ -11,7 +11,6 @@ target_link_libraries(
     tests
     PRIVATE gtest::gtest
     PRIVATE lexer
-    PUBLIC compiler_flags
 )
 
 include(GoogleTest)
