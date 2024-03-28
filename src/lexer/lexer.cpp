@@ -126,9 +126,9 @@ std::string Lexer::lexemeToKeyword(std::string_view lexeme) {
 
 std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) const {
     if (lexeme == "true")
-        return {{Token::Type::BOOL_CONST, true, tokenPosition_}};
+        return {{Token::Type::TRUE_CONST, {}, tokenPosition_}};
     else if (lexeme == "false")
-        return {{Token::Type::BOOL_CONST, false, tokenPosition_}};
+        return {{Token::Type::FALSE_CONST, {}, tokenPosition_}};
     return std::nullopt;
 }
 
