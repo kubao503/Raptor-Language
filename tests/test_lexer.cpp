@@ -193,6 +193,13 @@ TEST_F(LexerTest, getToken_not_terminated_str_const) {
         << "Str const without ending quotation mark";
 }
 
+TEST_F(LexerTest, getToken_backslash_at_the_end_of_file) {
+    SetUp(R"("abc\)");
+
+    EXPECT_THROW(lexer_->getToken(), NotTerminatedStrConst)
+        << "Non-terminated string is more important than backslash";
+}
+
 TEST_F(LexerTest, getToken_escaping_wrong_char) {
     SetUp(" \"\\a\" ");
 
