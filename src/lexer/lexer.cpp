@@ -56,23 +56,23 @@ Lexer::builders_map_t Lexer::initBuilders() const {
 Token Lexer::getToken() {
     ignoreWhiteSpace();
 
-    tokenPosition_ = source_.getPosition();
+    tokenPosition_ = source_->getPosition();
 
     if (auto token = buildIdOrKeyword())
         return token.value();
 
-    auto res = builders_.find(source_.getChar());
+    auto res = builders_.find(source_->getChar());
     if (res != builders_.end()) {
         auto builder = res->second;
         return builder();
     }
 
-    throw InvalidToken(tokenPosition_, source_.getChar());
+    throw InvalidToken(tokenPosition_, source_->getChar());
 }
 
 void Lexer::ignoreWhiteSpace() const {
-    while (std::isspace(source_.getChar())) {
-        source_.nextChar();
+    while (std::isspace(source_->getChar())) {
+        source_->nextChar();
     }
 }
 
@@ -81,15 +81,15 @@ bool isAlnumOrUnderscore(char c) {
 }
 
 std::optional<Token> Lexer::buildIdOrKeyword() const {
-    if (!std::isalpha(source_.getChar()))
+    if (!std::isalpha(source_->getChar()))
         return std::nullopt;
 
     std::string lexeme;
 
     do {
-        lexeme.push_back(source_.getChar());
-        source_.nextChar();
-    } while (isAlnumOrUnderscore(source_.getChar()));
+        lexeme.push_back(source_->getChar());
+        source_->nextChar();
+    } while (isAlnumOrUnderscore(source_->getChar()));
 
     if (auto token = buildKeyword(lexeme))
         return token;
@@ -135,23 +135,23 @@ std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) const {
 Token Lexer::buildNumber() const {
     integral_t value = 0;
 
-    if (charToDigit(source_.getChar()) == 0) {
-        source_.nextChar();
+    if (charToDigit(source_->getChar()) == 0) {
+        source_->nextChar();
 
-        if (source_.getChar() == '.')
+        if (source_->getChar() == '.')
             return buildFloat(value);
         return {Token::Type::INT_CONST, value, tokenPosition_};
     }
 
     do {
-        auto digit = charToDigit(source_.getChar());
+        auto digit = charToDigit(source_->getChar());
         if (willOverflow(value, digit))
             throw NumericOverflow(tokenPosition_, value, digit);
         value = 10 * value + digit;
-        source_.nextChar();
-    } while (std::isdigit(source_.getChar()));
+        source_->nextChar();
+    } while (std::isdigit(source_->getChar()));
 
-    if (source_.getChar() == '.')
+    if (source_->getChar() == '.')
         return buildFloat(value);
 
     return {Token::Type::INT_CONST, value, tokenPosition_};
@@ -162,27 +162,27 @@ Token Lexer::buildStrConst() const {
     bool escape = false;
 
     while (true) {
-        source_.nextChar();
+        source_->nextChar();
 
-        if (source_.getChar() == EOF)
+        if (source_->getChar() == EOF)
             throw NotTerminatedStrConst(tokenPosition_);
-        else if (!escape && source_.getChar() == '"')
+        else if (!escape && source_->getChar() == '"')
             break;
-        else if (!escape && source_.getChar() == '\\')
+        else if (!escape && source_->getChar() == '\\')
             escape = true;
         else if (escape) {
-            auto result = escapedChars_.find(source_.getChar());
+            auto result = escapedChars_.find(source_->getChar());
             if (result == escapedChars_.end())
-                throw NonEscapableChar(tokenPosition_, source_.getChar());
+                throw NonEscapableChar(tokenPosition_, source_->getChar());
 
             auto escapedChar = result->second;
             value.push_back(escapedChar);
             escape = false;
         } else
-            value.push_back(source_.getChar());
+            value.push_back(source_->getChar());
     }
 
-    source_.nextChar();
+    source_->nextChar();
     return {Token::Type::STR_CONST, value, tokenPosition_};
 }
 
@@ -190,18 +190,18 @@ Token Lexer::buildComment() const {
     std::string value;
 
     while (true) {
-        source_.nextChar();
-        if (source_.getChar() == '\n' || source_.getChar() == EOF)
+        source_->nextChar();
+        if (source_->getChar() == '\n' || source_->getChar() == EOF)
             return {Token::Type::CMT, value, tokenPosition_};
-        value.push_back(source_.getChar());
+        value.push_back(source_->getChar());
     }
 }
 
 Token Lexer::buildTwoLetterOp(char second, Token::Type single, Token::Type dual) const {
-    source_.nextChar();
+    source_->nextChar();
 
-    if (source_.getChar() == second) {
-        source_.nextChar();
+    if (source_->getChar() == second) {
+        source_->nextChar();
         return {dual, {}, tokenPosition_};
     }
 
@@ -209,15 +209,15 @@ Token Lexer::buildTwoLetterOp(char second, Token::Type single, Token::Type dual)
 }
 
 Token Lexer::buildOneLetterOp(Token::Type type) const {
-    source_.nextChar();
+    source_->nextChar();
     return {type, {}, tokenPosition_};
 }
 
 Token Lexer::buildNotEqualOperator() const {
-    source_.nextChar();
+    source_->nextChar();
 
-    if (source_.getChar() == '=') {
-        source_.nextChar();
+    if (source_->getChar() == '=') {
+        source_->nextChar();
         return {Token::Type::NEQ_OP, {}, tokenPosition_};
     }
 
@@ -225,20 +225,20 @@ Token Lexer::buildNotEqualOperator() const {
 }
 
 Token Lexer::buildFloat(integral_t integralPart) const {
-    source_.nextChar();
-    if (!std::isdigit(source_.getChar()))
+    source_->nextChar();
+    if (!std::isdigit(source_->getChar()))
         throw InvalidFloat(tokenPosition_);
 
     integral_t fractionalPart = 0;
     int exponent = 0;
     do {
-        auto digit = charToDigit(source_.getChar());
+        auto digit = charToDigit(source_->getChar());
         if (willOverflow(fractionalPart, digit))
             throw NumericOverflow(tokenPosition_, fractionalPart, digit);
         fractionalPart = 10 * fractionalPart + digit;
-        source_.nextChar();
+        source_->nextChar();
         --exponent;
-    } while (std::isdigit(source_.getChar()));
+    } while (std::isdigit(source_->getChar()));
 
     floating_t value = integralPart + fractionalPart * std::pow(10, exponent);
     return {Token::Type::FLOAT_CONST, value, tokenPosition_};

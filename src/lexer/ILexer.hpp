@@ -6,7 +6,7 @@
 class ILexer {
    public:
     virtual Token getToken() = 0;
-    virtual ~ILexer() {}
+    virtual ~ILexer() = default;
 };
 
 #endif

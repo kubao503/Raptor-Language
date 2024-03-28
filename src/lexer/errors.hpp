@@ -17,7 +17,7 @@ class LexerException : public std::exception {
     virtual std::string additionalInfo() const { return ""; }
 
    private:
-    const Position position_;
+    Position position_;
     mutable std::string message_;
 
     std::string getName() const;
@@ -30,7 +30,7 @@ class InvalidToken : public LexerException {
         : LexerException(position), c_(c) {}
 
    private:
-    const char c_;
+    char c_;
 
     std::string additionalInfo() const override;
 };
@@ -49,7 +49,7 @@ class NonEscapableChar : public LexerException {
         : LexerException(position), c_(c) {}
 
    private:
-    const char c_;
+    char c_;
 
     std::string additionalInfo() const override;
 };
@@ -60,8 +60,8 @@ class NumericOverflow : public LexerException {
         : LexerException(position), value_(value), digit_(digit) {}
 
    private:
-    const integral_t value_;
-    const integral_t digit_;
+    integral_t value_;
+    integral_t digit_;
 
     std::string additionalInfo() const override;
 };

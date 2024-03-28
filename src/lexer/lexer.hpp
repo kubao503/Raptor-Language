@@ -13,15 +13,15 @@ class Lexer : public ILexer {
     using builders_map_t = std::unordered_map<char, std::function<Token()>>;
 
    public:
-    Lexer(Source& source)
+    Lexer(Source* source)
         : source_(source), builders_(initBuilders()) {}
 
     Token getToken() override;
 
    private:
-    Source& source_;
+    Source* source_;
     Position tokenPosition_;
-    const builders_map_t builders_;
+    builders_map_t builders_;
 
     builders_map_t initBuilders() const;
     void ignoreWhiteSpace() const;

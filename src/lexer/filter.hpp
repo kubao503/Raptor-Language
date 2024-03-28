@@ -12,7 +12,7 @@ class InvalidFilterType : public std::exception {
 
 class Filter : public ILexer {
    public:
-    Filter(ILexer& lexer, Token::Type ignore)
+    Filter(ILexer* lexer, Token::Type ignore)
         : lexer_(lexer), ignore_(ignore) {
         if (ignore == Token::Type::ETX)
             throw InvalidFilterType();
@@ -22,14 +22,14 @@ class Filter : public ILexer {
         Token token;
 
         do {
-            token = lexer_.getToken();
+            token = lexer_->getToken();
         } while (token.type == ignore_);
 
         return token;
     }
 
    private:
-    ILexer& lexer_;
+    ILexer* lexer_;
     Token::Type ignore_;
 };
 

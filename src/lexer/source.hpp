@@ -7,7 +7,7 @@
 
 class Source {
    public:
-    Source(std::istream& stream)
+    Source(std::istream* stream)
         : stream_(stream) {
         nextChar();
     }
@@ -15,7 +15,7 @@ class Source {
     char getChar() const { return currentChar_; }
     const Position& getPosition() const { return currentPosition_; }
     void nextChar() {
-        currentChar_ = stream_.get();
+        currentChar_ = stream_->get();
         currentPosition_.column += 1;
 
         if (currentChar_ == '\n') {
@@ -25,7 +25,7 @@ class Source {
     }
 
    private:
-    std::istream& stream_;
+    std::istream* stream_;
     char currentChar_;
     Position currentPosition_;
 };

@@ -7,8 +7,8 @@ class LexerTest : public testing::Test {
    protected:
     void SetUp(const std::string& input) {
         stream_ = std::istringstream(input);
-        source_ = std::make_unique<Source>(stream_);
-        lexer_ = std::make_unique<Lexer>(*source_);
+        source_ = std::make_unique<Source>(&stream_);
+        lexer_ = std::make_unique<Lexer>(source_.get());
     }
 
     std::istringstream stream_;

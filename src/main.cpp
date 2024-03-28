@@ -9,9 +9,9 @@ int main(int argc, char* argv[]) {
         return -1;
 
     std::ifstream ifs(argv[1]);
-    auto source = Source(ifs);
-    auto lexer = Lexer(source);
-    auto filter = Filter(lexer, Token::Type::CMT);
+    auto source = Source(&ifs);
+    auto lexer = Lexer(&source);
+    auto filter = Filter(&lexer, Token::Type::CMT);
 
     Token token;
     try {
