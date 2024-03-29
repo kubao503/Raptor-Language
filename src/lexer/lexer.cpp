@@ -202,19 +202,17 @@ std::optional<Token> Lexer::buildOneLetterOp(char c, Token::Type type) const {
     return {{type, {}, tokenPosition_}};
 }
 
-std::optional<Token> Lexer::buildTwoLetterOp(char first, char second, Token::Type single,
-                                             Token::Type dual) const {
-    if (source_->getChar() != first)
+std::optional<Token> Lexer::buildTwoLetterOp(chars_t chars, token_types_t types) const {
+    if (source_->getChar() != chars.first)
         return std::nullopt;
 
     source_->nextChar();
 
-    if (source_->getChar() == second) {
-        source_->nextChar();
-        return {{dual, {}, tokenPosition_}};
-    }
+    if (source_->getChar() != chars.second)
+        return {{types.first, {}, tokenPosition_}};
 
-    return {{single, {}, tokenPosition_}};
+    source_->nextChar();
+    return {{types.second, {}, tokenPosition_}};
 }
 
 bool Lexer::willOverflow(integral_t value, integral_t digit) {
@@ -244,13 +242,16 @@ const Lexer::builders_t Lexer::builders_{
     [](Lexer& lexer) { return lexer.buildOneLetterOp(EOF, Token::Type::ETX); },
 
     [](Lexer& lexer) {
-        return lexer.buildTwoLetterOp('<', '=', Token::Type::LT_OP, Token::Type::LTE_OP);
+        return lexer.buildTwoLetterOp({'<', '='},
+                                      {Token::Type::LT_OP, Token::Type::LTE_OP});
     },
     [](Lexer& lexer) {
-        return lexer.buildTwoLetterOp('>', '=', Token::Type::GT_OP, Token::Type::GTE_OP);
+        return lexer.buildTwoLetterOp({'>', '='},
+                                      {Token::Type::GT_OP, Token::Type::GTE_OP});
     },
     [](Lexer& lexer) {
-        return lexer.buildTwoLetterOp('=', '=', Token::Type::ASGN_OP, Token::Type::EQ_OP);
+        return lexer.buildTwoLetterOp({'=', '='},
+                                      {Token::Type::ASGN_OP, Token::Type::EQ_OP});
     },
 };
 
