@@ -10,37 +10,37 @@
 #include "token.hpp"
 
 class Lexer : public ILexer {
-    using builders_map_t = std::unordered_map<char, std::function<Token()>>;
+    using builders_t = std::initializer_list<std::function<std::optional<Token>(Lexer&)>>;
 
    public:
     Lexer(Source* source)
-        : source_(source), builders_(initBuilders()) {}
+        : source_(source) {}
 
     Token getToken() override;
 
    private:
     Source* source_;
     Position tokenPosition_;
-    builders_map_t builders_;
 
-    builders_map_t initBuilders() const;
     void ignoreWhiteSpace() const;
 
     std::optional<Token> buildIdOrKeyword() const;
     std::optional<Token> buildKeyword(std::string_view lexeme) const;
     std::optional<Token> buildBoolConst(std::string_view lexeme) const;
-    Token buildTwoLetterOp(char second, Token::Type single, Token::Type dual) const;
-    Token buildOneLetterOp(Token::Type type) const;
-    Token buildNotEqualOperator() const;
-    Token buildFloat(integral_t integralPart) const;
-    Token buildNumber() const;
-    Token buildStrConst() const;
-    Token buildComment() const;
+    std::optional<Token> buildNumber() const;
+    std::optional<Token> buildFloat(integral_t integralPart) const;
+    std::optional<Token> buildStrConst() const;
+    std::optional<Token> buildComment() const;
+    std::optional<Token> buildNotEqualOp() const;
+    std::optional<Token> buildOneLetterOp(char c, Token::Type type) const;
+    std::optional<Token> buildTwoLetterOp(char first, char second, Token::Type single,
+                                          Token::Type dual) const;
 
     static integral_t charToDigit(char c) { return c - '0'; }
     static bool willOverflow(integral_t value, integral_t digit);
     static std::string lexemeToKeyword(std::string_view lexeme);
 
+    static const builders_t builders_;
     static const std::unordered_map<char, char> escapedChars_;
 };
 

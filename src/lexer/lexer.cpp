@@ -7,64 +7,14 @@
 #include "errors.hpp"
 #include "magic_enum/magic_enum.hpp"
 
-Lexer::builders_map_t Lexer::initBuilders() const {
-    using namespace std::placeholders;
-    using std::bind;
-
-    auto buildTwoLetterOp = bind(&Lexer::buildTwoLetterOp, this, _1, _2, _3);
-    auto buildOneLetterOp = bind(&Lexer::buildOneLetterOp, this, std::placeholders::_1);
-    auto buildNumber = bind(&Lexer::buildNumber, this);
-    auto buildNotEqualOperator = bind(&Lexer::buildNotEqualOperator, this);
-    auto buildStrConst = bind(&Lexer::buildStrConst, this);
-    auto buildComment = bind(&Lexer::buildComment, this);
-
-    return {
-        {'<', bind(buildTwoLetterOp, '=', Token::Type::LT_OP, Token::Type::LTE_OP)},
-        {'>', bind(buildTwoLetterOp, '=', Token::Type::GT_OP, Token::Type::GTE_OP)},
-        {'=', bind(buildTwoLetterOp, '=', Token::Type::ASGN_OP, Token::Type::EQ_OP)},
-
-        {';', bind(buildOneLetterOp, Token::Type::SEMI)},
-        {',', bind(buildOneLetterOp, Token::Type::CMA)},
-        {'.', bind(buildOneLetterOp, Token::Type::DOT)},
-        {'+', bind(buildOneLetterOp, Token::Type::ADD_OP)},
-        {'-', bind(buildOneLetterOp, Token::Type::MIN_OP)},
-        {'*', bind(buildOneLetterOp, Token::Type::MULT_OP)},
-        {'/', bind(buildOneLetterOp, Token::Type::DIV_OP)},
-        {'(', bind(buildOneLetterOp, Token::Type::L_PAR)},
-        {')', bind(buildOneLetterOp, Token::Type::R_PAR)},
-        {'{', bind(buildOneLetterOp, Token::Type::L_C_BR)},
-        {'}', bind(buildOneLetterOp, Token::Type::R_C_BR)},
-        {EOF, bind(buildOneLetterOp, Token::Type::ETX)},
-
-        {'0', buildNumber},
-        {'1', buildNumber},
-        {'2', buildNumber},
-        {'3', buildNumber},
-        {'4', buildNumber},
-        {'5', buildNumber},
-        {'6', buildNumber},
-        {'7', buildNumber},
-        {'8', buildNumber},
-        {'9', buildNumber},
-
-        {'!', buildNotEqualOperator},
-        {'"', buildStrConst},
-        {'#', buildComment},
-    };
-}
-
 Token Lexer::getToken() {
     ignoreWhiteSpace();
 
     tokenPosition_ = source_->getPosition();
 
-    if (auto token = buildIdOrKeyword())
-        return token.value();
-
-    auto res = builders_.find(source_->getChar());
-    if (res != builders_.end()) {
-        auto builder = res->second;
-        return builder();
+    for (const auto& builder : builders_) {
+        if (auto token = builder(*this))
+            return token.value();
     }
 
     throw InvalidToken(tokenPosition_, source_->getChar());
@@ -132,15 +82,19 @@ std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) const {
     return std::nullopt;
 }
 
-Token Lexer::buildNumber() const {
+std::optional<Token> Lexer::buildNumber() const {
+    if (!std::isdigit(source_->getChar()))
+        return std::nullopt;
+
     integral_t value = 0;
 
     if (charToDigit(source_->getChar()) == 0) {
         source_->nextChar();
 
-        if (source_->getChar() == '.')
-            return buildFloat(value);
-        return {Token::Type::INT_CONST, value, tokenPosition_};
+        if (auto token = buildFloat(value))
+            return token;
+
+        return {{Token::Type::INT_CONST, value, tokenPosition_}};
     }
 
     do {
@@ -151,13 +105,39 @@ Token Lexer::buildNumber() const {
         source_->nextChar();
     } while (std::isdigit(source_->getChar()));
 
-    if (source_->getChar() == '.')
-        return buildFloat(value);
+    if (auto token = buildFloat(value))
+        return token;
 
-    return {Token::Type::INT_CONST, value, tokenPosition_};
+    return {{Token::Type::INT_CONST, value, tokenPosition_}};
 }
 
-Token Lexer::buildStrConst() const {
+std::optional<Token> Lexer::buildFloat(integral_t integralPart) const {
+    if (source_->getChar() != '.')
+        return std::nullopt;
+
+    source_->nextChar();
+    if (!std::isdigit(source_->getChar()))
+        throw InvalidFloat(tokenPosition_);
+
+    integral_t fractionalPart = 0;
+    int exponent = 0;
+    do {
+        auto digit = charToDigit(source_->getChar());
+        if (willOverflow(fractionalPart, digit))
+            throw NumericOverflow(tokenPosition_, fractionalPart, digit);
+        fractionalPart = 10 * fractionalPart + digit;
+        source_->nextChar();
+        --exponent;
+    } while (std::isdigit(source_->getChar()));
+
+    floating_t value = integralPart + fractionalPart * std::pow(10, exponent);
+    return {{Token::Type::FLOAT_CONST, value, tokenPosition_}};
+}
+
+std::optional<Token> Lexer::buildStrConst() const {
+    if (source_->getChar() != '"')
+        return std::nullopt;
+
     std::string value;
     bool escape = false;
 
@@ -183,71 +163,96 @@ Token Lexer::buildStrConst() const {
     }
 
     source_->nextChar();
-    return {Token::Type::STR_CONST, value, tokenPosition_};
+    return {{Token::Type::STR_CONST, value, tokenPosition_}};
 }
 
-Token Lexer::buildComment() const {
+std::optional<Token> Lexer::buildComment() const {
+    if (source_->getChar() != '#')
+        return std::nullopt;
+
     std::string value;
 
     while (true) {
         source_->nextChar();
         if (source_->getChar() == '\n' || source_->getChar() == EOF)
-            return {Token::Type::CMT, value, tokenPosition_};
+            return {{Token::Type::CMT, value, tokenPosition_}};
         value.push_back(source_->getChar());
     }
 }
 
-Token Lexer::buildTwoLetterOp(char second, Token::Type single, Token::Type dual) const {
-    source_->nextChar();
+std::optional<Token> Lexer::buildNotEqualOp() const {
+    if (source_->getChar() != '!')
+        return std::nullopt;
 
-    if (source_->getChar() == second) {
-        source_->nextChar();
-        return {dual, {}, tokenPosition_};
-    }
-
-    return {single, {}, tokenPosition_};
-}
-
-Token Lexer::buildOneLetterOp(Token::Type type) const {
-    source_->nextChar();
-    return {type, {}, tokenPosition_};
-}
-
-Token Lexer::buildNotEqualOperator() const {
     source_->nextChar();
 
     if (source_->getChar() == '=') {
         source_->nextChar();
-        return {Token::Type::NEQ_OP, {}, tokenPosition_};
+        return {{Token::Type::NEQ_OP, {}, tokenPosition_}};
     }
 
     throw InvalidToken(tokenPosition_, '!');
 }
 
-Token Lexer::buildFloat(integral_t integralPart) const {
+std::optional<Token> Lexer::buildOneLetterOp(char c, Token::Type type) const {
+    if (source_->getChar() != c)
+        return std::nullopt;
+
     source_->nextChar();
-    if (!std::isdigit(source_->getChar()))
-        throw InvalidFloat(tokenPosition_);
+    return {{type, {}, tokenPosition_}};
+}
 
-    integral_t fractionalPart = 0;
-    int exponent = 0;
-    do {
-        auto digit = charToDigit(source_->getChar());
-        if (willOverflow(fractionalPart, digit))
-            throw NumericOverflow(tokenPosition_, fractionalPart, digit);
-        fractionalPart = 10 * fractionalPart + digit;
+std::optional<Token> Lexer::buildTwoLetterOp(char first, char second, Token::Type single,
+                                             Token::Type dual) const {
+    if (source_->getChar() != first)
+        return std::nullopt;
+
+    source_->nextChar();
+
+    if (source_->getChar() == second) {
         source_->nextChar();
-        --exponent;
-    } while (std::isdigit(source_->getChar()));
+        return {{dual, {}, tokenPosition_}};
+    }
 
-    floating_t value = integralPart + fractionalPart * std::pow(10, exponent);
-    return {Token::Type::FLOAT_CONST, value, tokenPosition_};
+    return {{single, {}, tokenPosition_}};
 }
 
 bool Lexer::willOverflow(integral_t value, integral_t digit) {
+    // 10 * maxSafe + digit <= max
     auto maxSafe = (std::numeric_limits<integral_t>::max() - digit) / 10;
     return value > maxSafe;
 }
+
+const Lexer::builders_t Lexer::builders_{
+    [](Lexer& lexer) { return lexer.buildIdOrKeyword(); },
+    [](Lexer& lexer) { return lexer.buildNumber(); },
+    [](Lexer& lexer) { return lexer.buildStrConst(); },
+    [](Lexer& lexer) { return lexer.buildComment(); },
+    [](Lexer& lexer) { return lexer.buildNotEqualOp(); },
+
+    [](Lexer& lexer) { return lexer.buildOneLetterOp(';', Token::Type::SEMI); },
+    [](Lexer& lexer) { return lexer.buildOneLetterOp(',', Token::Type::CMA); },
+    [](Lexer& lexer) { return lexer.buildOneLetterOp('.', Token::Type::DOT); },
+    [](Lexer& lexer) { return lexer.buildOneLetterOp('+', Token::Type::ADD_OP); },
+    [](Lexer& lexer) { return lexer.buildOneLetterOp('-', Token::Type::MIN_OP); },
+    [](Lexer& lexer) { return lexer.buildOneLetterOp('*', Token::Type::MULT_OP); },
+    [](Lexer& lexer) { return lexer.buildOneLetterOp('/', Token::Type::DIV_OP); },
+    [](Lexer& lexer) { return lexer.buildOneLetterOp('(', Token::Type::L_PAR); },
+    [](Lexer& lexer) { return lexer.buildOneLetterOp(')', Token::Type::R_PAR); },
+    [](Lexer& lexer) { return lexer.buildOneLetterOp('{', Token::Type::L_C_BR); },
+    [](Lexer& lexer) { return lexer.buildOneLetterOp('}', Token::Type::R_C_BR); },
+    [](Lexer& lexer) { return lexer.buildOneLetterOp(EOF, Token::Type::ETX); },
+
+    [](Lexer& lexer) {
+        return lexer.buildTwoLetterOp('<', '=', Token::Type::LT_OP, Token::Type::LTE_OP);
+    },
+    [](Lexer& lexer) {
+        return lexer.buildTwoLetterOp('>', '=', Token::Type::GT_OP, Token::Type::GTE_OP);
+    },
+    [](Lexer& lexer) {
+        return lexer.buildTwoLetterOp('=', '=', Token::Type::ASGN_OP, Token::Type::EQ_OP);
+    },
+};
 
 const std::unordered_map<char, char> Lexer::escapedChars_{
     {'n', '\n'}, {'t', '\t'}, {'"', '"'}, {'\\', '\\'}};
