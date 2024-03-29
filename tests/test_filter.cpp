@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "filter.hpp"
+#include "types.hpp"
 
 using TypeSequence = std::vector<Token::Type>;
 

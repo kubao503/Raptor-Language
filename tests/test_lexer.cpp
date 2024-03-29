@@ -2,6 +2,9 @@
 
 #include "errors.hpp"
 #include "lexer.hpp"
+#include "types.hpp"
+
+using TypeSequence = std::vector<Token::Type>;
 
 class LexerTest : public testing::Test {
    protected:
@@ -16,29 +19,35 @@ class LexerTest : public testing::Test {
     std::unique_ptr<Lexer> lexer_;
 };
 
-TEST_F(LexerTest, getToken_bool_const) {
-    SetUp("true false");
+TEST_F(LexerTest, getToken_true) {
+    SetUp("true");
 
     auto token = lexer_->getToken();
     EXPECT_EQ(token.type, Token::Type::TRUE_CONST) << "Invalid type";
     EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value)) << "Invalid value";
 
-    token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::FALSE_CONST) << "Invalid type";
-    EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value)) << "Invalid value";
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
 }
 
-TEST_F(LexerTest, getToken_while) {
-    SetUp("while While");
+TEST_F(LexerTest, getToken_false) {
+    SetUp("false");
+
+    auto token = lexer_->getToken();
+    EXPECT_EQ(token.type, Token::Type::FALSE_CONST) << "Invalid type";
+    EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value)) << "Invalid value";
+
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
+}
+
+TEST_F(LexerTest, getToken_while_keyword) {
+    SetUp("while");
 
     auto token = lexer_->getToken();
 
-    EXPECT_EQ(token.type, Token::Type::WHILE_KW) << "Invalid token type";
-    EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value))
-        << "Keyword token should not include value";
+    EXPECT_EQ(token.type, Token::Type::WHILE_KW) << "Invalid type";
+    EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value)) << "Invalid value";
 
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::ID)
-        << "\"While\" is not a valid keyword";
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
 }
 
 TEST_F(LexerTest, getToken_id) {
@@ -46,11 +55,11 @@ TEST_F(LexerTest, getToken_id) {
 
     auto token = lexer_->getToken();
 
-    EXPECT_EQ(token.type, Token::Type::ID) << "Invalid token type";
-    EXPECT_TRUE(std::holds_alternative<std::string>(token.value))
-        << "Invalid type of value";
+    EXPECT_EQ(token.type, Token::Type::ID) << "Invalid type";
     EXPECT_EQ(std::get<std::string>(token.value), "valid_identifier_123")
         << "Invalid value";
+
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
 }
 
 TEST_F(LexerTest, getToken_int) {
@@ -58,10 +67,10 @@ TEST_F(LexerTest, getToken_int) {
 
     auto token = lexer_->getToken();
 
-    EXPECT_EQ(token.type, Token::Type::INT_CONST) << "Invalid token type";
-    EXPECT_TRUE(std::holds_alternative<unsigned int>(token.value))
-        << "Invalid type of value";
-    EXPECT_EQ(std::get<unsigned int>(token.value), 1234) << "Invalid value";
+    EXPECT_EQ(token.type, Token::Type::INT_CONST) << "Invalid type";
+    EXPECT_EQ(std::get<integral_t>(token.value), 1234) << "Invalid value";
+
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
 }
 
 TEST_F(LexerTest, getToken_int_with_leading_zero) {
@@ -71,12 +80,19 @@ TEST_F(LexerTest, getToken_int_with_leading_zero) {
 
     EXPECT_EQ(std::get<integral_t>(lexer_->getToken().value), 1234)
         << "Second part of int";
+
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
+}
+
+TEST_F(LexerTest, getToken_int_max) {
+    SetUp("4294967295");
+
+    EXPECT_NO_THROW(lexer_->getToken()) << "Just at the max";
 }
 
 TEST_F(LexerTest, getToken_int_overflow) {
-    SetUp("4294967295 4294967296");
+    SetUp("4294967296");
 
-    EXPECT_NO_THROW(lexer_->getToken()) << "Just at the max";
     EXPECT_THROW(lexer_->getToken(), NumericOverflow) << "Max exceeded";
 }
 
@@ -85,26 +101,32 @@ TEST_F(LexerTest, getToken_float) {
 
     auto token = lexer_->getToken();
 
-    EXPECT_EQ(token.type, Token::Type::FLOAT_CONST) << "Invalid token type";
-    EXPECT_TRUE(std::holds_alternative<float>(token.value)) << "Invalid type of value";
+    EXPECT_EQ(token.type, Token::Type::FLOAT_CONST) << "Invalid type";
     EXPECT_EQ(std::get<float>(token.value), 12.125f) << "Invalid value";
+
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
 }
 
-class LexerTestParam : public LexerTest,
+class LexerFloatTest : public LexerTest,
                        public testing::WithParamInterface<std::string> {};
 
-TEST_P(LexerTestParam, getToken_invalid_float) {
+TEST_P(LexerFloatTest, getToken_invalid_float) {
     SetUp(GetParam());
 
     EXPECT_THROW(lexer_->getToken(), InvalidFloat);
 }
 
-INSTANTIATE_TEST_SUITE_P(InvalidFloat, LexerTestParam, testing::Values("1..125", "1."));
+INSTANTIATE_TEST_SUITE_P(InvalidFloat, LexerFloatTest, testing::Values("1..125", "1."));
 
-TEST_F(LexerTest, getToken_float_overflow) {
-    SetUp("0.4294967295  0.4294967296");
+TEST_F(LexerTest, getToken_float_max) {
+    SetUp("0.4294967295");
 
     EXPECT_NO_THROW(lexer_->getToken()) << "Just at the max";
+}
+
+TEST_F(LexerTest, getToken_float_overflow) {
+    SetUp("0.4294967296");
+
     EXPECT_THROW(lexer_->getToken(), NumericOverflow) << "Max exceeded";
 }
 
@@ -117,12 +139,11 @@ TEST_F(LexerTest, getToken_invalid) {
 TEST_F(LexerTest, getToken_empty_source) {
     SetUp("");
 
-    for (int i = 0; i < 3; ++i) {
+    for (int i{0}; i < 5; ++i) {
         auto token = lexer_->getToken();
-
-        EXPECT_EQ(token.type, Token::Type::ETX) << "Invalid token type";
+        EXPECT_EQ(token.type, Token::Type::ETX) << "Invalid type";
         EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value))
-            << "Invalid type of token value";
+            << "Invalid value";
     }
 }
 
@@ -131,60 +152,56 @@ TEST_F(LexerTest, getToken_leading_white_space) {
 
     auto token = lexer_->getToken();
 
-    EXPECT_EQ(token.type, Token::Type::TRUE_CONST) << "Invalid token type";
+    EXPECT_EQ(token.type, Token::Type::TRUE_CONST) << "Invalid type";
 }
 
-TEST_F(LexerTest, getToken_twice) {
-    SetUp("  while    return ");
+class LexerOperatorTest
+    : public LexerTest,
+      public testing::WithParamInterface<std::pair<std::string, Token::Type>> {};
+
+TEST_P(LexerOperatorTest, getToken_operators) {
+    SetUp(GetParam().first);
 
     auto token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::WHILE_KW) << "Invalid token type";
+    EXPECT_EQ(token.type, GetParam().second) << "Invalid type";
+    EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value)) << "Invalid value";
 
-    token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::RETURN_KW) << "Invalid token type";
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
 }
 
-TEST_F(LexerTest, getToken_operators) {
-    SetUp("< <= > >= = == != ; , . + - * / ( ) { } !");
-
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::LT_OP) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::LTE_OP) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::GT_OP) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::GTE_OP) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::ASGN_OP) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::EQ_OP) << "Invalid token type";
-
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::NEQ_OP) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::SEMI) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::CMA) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::DOT) << "Invalid token type";
-
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::ADD_OP) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::MIN_OP) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::MULT_OP) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::DIV_OP) << "Invalid token type";
-
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::L_PAR) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::R_PAR) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::L_C_BR) << "Invalid token type";
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::R_C_BR) << "Invalid token type";
-
-    EXPECT_THROW(lexer_->getToken(), InvalidToken) << "Single ! is invalid";
-}
+INSTANTIATE_TEST_SUITE_P(Operators, LexerOperatorTest,
+                         testing::Values(std::make_pair("<", Token::Type::LT_OP),
+                                         std::make_pair("<=", Token::Type::LTE_OP),
+                                         std::make_pair(">", Token::Type::GT_OP),
+                                         std::make_pair(">=", Token::Type::GTE_OP),
+                                         std::make_pair("=", Token::Type::ASGN_OP),
+                                         std::make_pair("==", Token::Type::EQ_OP),
+                                         std::make_pair("!=", Token::Type::NEQ_OP),
+                                         std::make_pair(";", Token::Type::SEMI),
+                                         std::make_pair(",", Token::Type::CMA),
+                                         std::make_pair(".", Token::Type::DOT),
+                                         std::make_pair("+", Token::Type::ADD_OP),
+                                         std::make_pair("-", Token::Type::MIN_OP),
+                                         std::make_pair("*", Token::Type::MULT_OP),
+                                         std::make_pair("/", Token::Type::DIV_OP),
+                                         std::make_pair("(", Token::Type::L_PAR),
+                                         std::make_pair(")", Token::Type::R_PAR),
+                                         std::make_pair("{", Token::Type::L_C_BR),
+                                         std::make_pair("}", Token::Type::R_C_BR)));
 
 TEST_F(LexerTest, getToken_str_const) {
-    SetUp(" \"\\\"lama \\nma \\\\ delfina\\\"\" ");
+    SetUp(R"("\"lama \nma \\ delfina\"")");
 
     auto token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::STR_CONST) << "Invalid token type";
+    EXPECT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
     EXPECT_EQ(std::get<std::string>(token.value), "\"lama \nma \\ delfina\"")
         << "Invalid token value";
 
-    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid token type";
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
 }
 
 TEST_F(LexerTest, getToken_not_terminated_str_const) {
-    SetUp("  \"no ending quotation mark");
+    SetUp(R"("no ending quotation mark)");
 
     EXPECT_THROW(lexer_->getToken(), NotTerminatedStrConst)
         << "Str const without ending quotation mark";
@@ -198,21 +215,31 @@ TEST_F(LexerTest, getToken_backslash_at_the_end_of_file) {
 }
 
 TEST_F(LexerTest, getToken_escaping_wrong_char) {
-    SetUp(" \"\\a\" ");
+    SetUp(R"("\a")");
 
     EXPECT_THROW(lexer_->getToken(), NonEscapableChar) << "cannot escape char 'a'";
 }
 
 TEST_F(LexerTest, getToken_comment) {
-    SetUp("   # int # \" 12 \" \n new line");
+    SetUp(R"(# int 12 # "abc")");
 
     auto token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::CMT) << "Invalid token type";
-    EXPECT_EQ(std::get<std::string>(token.value), " int # \" 12 \" ");
+    EXPECT_EQ(token.type, Token::Type::CMT) << "Invalid type";
+    EXPECT_EQ(std::get<std::string>(token.value), R"( int 12 # "abc")");
+
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
 }
 
-TEST_F(LexerTest, getToken_token_position) {
-    SetUp("int void \nwhile");
+TEST_F(LexerTest, getToken_end_comment_at_new_line) {
+    SetUp("# first line\n second line");
+
+    auto token = lexer_->getToken();
+    EXPECT_EQ(token.type, Token::Type::CMT) << "Invalid type";
+    EXPECT_EQ(std::get<std::string>(token.value), R"( first line)");
+}
+
+TEST_F(LexerTest, getToken_token_position_one_line) {
+    SetUp("int void");
 
     auto token = lexer_->getToken();
     EXPECT_EQ(token.position.line, 1);
@@ -221,8 +248,35 @@ TEST_F(LexerTest, getToken_token_position) {
     token = lexer_->getToken();
     EXPECT_EQ(token.position.line, 1);
     EXPECT_EQ(token.position.column, 5);
+}
+
+TEST_F(LexerTest, getToken_token_position_two_lines) {
+    SetUp("abc\ndef");
+
+    auto token = lexer_->getToken();
+    EXPECT_EQ(token.position.line, 1);
+    EXPECT_EQ(token.position.column, 1);
 
     token = lexer_->getToken();
     EXPECT_EQ(token.position.line, 2);
     EXPECT_EQ(token.position.column, 1);
+}
+
+TEST_F(LexerTest, getToken_multiple_tokens) {
+    std::string input{
+        "void add_one_ref(ref int num) {"
+        "    num = num + 1;"
+        "}"};
+    SetUp(input);
+
+    TypeSequence seq{
+        Token::Type::VOID_KW,   Token::Type::ID,     Token::Type::L_PAR,
+        Token::Type::REF_KW,    Token::Type::INT_KW, Token::Type::ID,
+        Token::Type::R_PAR,     Token::Type::L_C_BR, Token::Type::ID,
+        Token::Type::ASGN_OP,   Token::Type::ID,     Token::Type::ADD_OP,
+        Token::Type::INT_CONST, Token::Type::SEMI,   Token::Type::R_C_BR,
+        Token::Type::ETX,
+    };
+
+    for (auto type : seq) EXPECT_EQ(lexer_->getToken().type, type) << "Invalid type";
 }
