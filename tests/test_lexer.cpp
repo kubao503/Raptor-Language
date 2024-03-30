@@ -189,7 +189,47 @@ INSTANTIATE_TEST_SUITE_P(Operators, LexerOperatorTest,
                                          std::make_pair("{", Token::Type::L_C_BR),
                                          std::make_pair("}", Token::Type::R_C_BR)));
 
-TEST_F(LexerTest, getToken_str_const) {
+TEST_F(LexerTest, getToken_str_const_empty) {
+    SetUp(R"("")");
+
+    auto token = lexer_->getToken();
+    EXPECT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
+    EXPECT_EQ(std::get<std::string>(token.value), "") << "Invalid token value";
+
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
+}
+
+TEST_F(LexerTest, getToken_str_const_new_line) {
+    SetUp(R"("a\nb")");
+
+    auto token = lexer_->getToken();
+    EXPECT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
+    EXPECT_EQ(std::get<std::string>(token.value), "a\nb") << "Invalid token value";
+
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
+}
+
+TEST_F(LexerTest, getToken_str_const_quotation_mark) {
+    SetUp(R"("\"")");
+
+    auto token = lexer_->getToken();
+    EXPECT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
+    EXPECT_EQ(std::get<std::string>(token.value), R"(")") << "Invalid token value";
+
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
+}
+
+TEST_F(LexerTest, getToken_str_const_backslash) {
+    SetUp(R"("\\")");
+
+    auto token = lexer_->getToken();
+    EXPECT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
+    EXPECT_EQ(std::get<std::string>(token.value), R"(\)") << "Invalid token value";
+
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
+}
+
+TEST_F(LexerTest, getToken_str_const_complicated) {
     SetUp(R"("\"lama \nma \\ delfina\"")");
 
     auto token = lexer_->getToken();

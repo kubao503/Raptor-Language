@@ -10,7 +10,7 @@
 
 class Lexer : public ILexer {
     using chars_t = std::pair<char, char>;
-    using token_types_t = std::pair<Token::Type, Token::Type>;
+    using types_t = std::pair<Token::Type, Token::Type>;
 
     using builders_t = std::initializer_list<std::function<std::optional<Token>(Lexer&)>>;
     using escaped_chars_t = std::initializer_list<chars_t>;
@@ -36,7 +36,10 @@ class Lexer : public ILexer {
     std::optional<Token> buildComment() const;
     std::optional<Token> buildNotEqualOp() const;
     std::optional<Token> buildOneLetterOp(char c, Token::Type type) const;
-    std::optional<Token> buildTwoLetterOp(chars_t chars, token_types_t types) const;
+    std::optional<Token> buildTwoLetterOp(chars_t chars, types_t types) const;
+
+    void expectNoEndOfFile() const;
+    char findInEscapedChars(char searched) const;
 
     static integral_t charToDigit(char c) { return c - '0'; }
     static bool willOverflow(integral_t value, integral_t digit);

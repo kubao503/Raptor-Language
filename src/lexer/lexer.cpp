@@ -66,7 +66,8 @@ std::optional<Token> Lexer::buildKeyword(std::string_view lexeme) const {
 }
 
 std::string Lexer::lexemeToKeyword(std::string_view lexeme) {
-    std::string suffix = "_KW";
+    static std::string suffix{"_KW"};
+
     std::string keyword(lexeme.size(), ' ');
     std::transform(lexeme.begin(), lexeme.end(), keyword.begin(), ::toupper);
     keyword += suffix;
@@ -137,49 +138,54 @@ std::optional<Token> Lexer::buildFloat(integral_t integralPart) const {
 std::optional<Token> Lexer::buildStrConst() const {
     if (source_->getChar() != '"')
         return std::nullopt;
+    source_->nextChar();
 
-    std::string value;
-    bool escape = false;
+    std::string strConst;
 
-    while (true) {
+    while (source_->getChar() != '"') {
+        expectNoEndOfFile();
+        auto strConstChar = source_->getChar();
+
+        if (source_->getChar() == '\\') {
+            source_->nextChar();
+            expectNoEndOfFile();
+            strConstChar = findInEscapedChars(source_->getChar());
+        }
+
+        strConst.push_back(strConstChar);
         source_->nextChar();
-
-        if (source_->getChar() == EOF)
-            throw NotTerminatedStrConst(tokenPosition_);
-        else if (!escape && source_->getChar() == '"')
-            break;
-        else if (!escape && source_->getChar() == '\\')
-            escape = true;
-        else if (escape) {
-            auto c = source_->getChar();
-            auto pred = [c](const chars_t& p) { return p.first == c; };
-            auto res = std::find_if(escapedChars_.begin(), escapedChars_.end(), pred);
-            if (res == escapedChars_.end())
-                throw NonEscapableChar(tokenPosition_, source_->getChar());
-
-            auto escapedChar = res->second;
-            value.push_back(escapedChar);
-            escape = false;
-        } else
-            value.push_back(source_->getChar());
     }
 
     source_->nextChar();
-    return {{Token::Type::STR_CONST, value, tokenPosition_}};
+    return {{Token::Type::STR_CONST, strConst, tokenPosition_}};
+}
+
+void Lexer::expectNoEndOfFile() const {
+    if (source_->getChar() == EOF)
+        throw NotTerminatedStrConst(tokenPosition_);
+}
+
+char Lexer::findInEscapedChars(char searched) const {
+    auto pred = [searched](const chars_t& p) { return p.first == searched; };
+    auto res = std::find_if(escapedChars_.begin(), escapedChars_.end(), pred);
+
+    if (res == escapedChars_.end())
+        throw NonEscapableChar(tokenPosition_, source_->getChar());
+    return res->second;
 }
 
 std::optional<Token> Lexer::buildComment() const {
     if (source_->getChar() != '#')
         return std::nullopt;
+    source_->nextChar();
 
     std::string value;
 
-    while (true) {
-        source_->nextChar();
-        if (source_->getChar() == '\n' || source_->getChar() == EOF)
-            return {{Token::Type::CMT, value, tokenPosition_}};
+    while (source_->getChar() != '\n' && source_->getChar() != EOF) {
         value.push_back(source_->getChar());
+        source_->nextChar();
     }
+    return {{Token::Type::CMT, value, tokenPosition_}};
 }
 
 std::optional<Token> Lexer::buildNotEqualOp() const {
@@ -204,7 +210,7 @@ std::optional<Token> Lexer::buildOneLetterOp(char c, Token::Type type) const {
     return {{type, {}, tokenPosition_}};
 }
 
-std::optional<Token> Lexer::buildTwoLetterOp(chars_t chars, token_types_t types) const {
+std::optional<Token> Lexer::buildTwoLetterOp(chars_t chars, types_t types) const {
     if (source_->getChar() != chars.first)
         return std::nullopt;
 
