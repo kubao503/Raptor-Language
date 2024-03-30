@@ -151,11 +151,13 @@ std::optional<Token> Lexer::buildStrConst() const {
         else if (!escape && source_->getChar() == '\\')
             escape = true;
         else if (escape) {
-            auto result = escapedChars_.find(source_->getChar());
-            if (result == escapedChars_.end())
+            auto c = source_->getChar();
+            auto pred = [c](const chars_t& p) { return p.first == c; };
+            auto res = std::find_if(escapedChars_.begin(), escapedChars_.end(), pred);
+            if (res == escapedChars_.end())
                 throw NonEscapableChar(tokenPosition_, source_->getChar());
 
-            auto escapedChar = result->second;
+            auto escapedChar = res->second;
             value.push_back(escapedChar);
             escape = false;
         } else
@@ -221,7 +223,7 @@ bool Lexer::willOverflow(integral_t value, integral_t digit) {
     return value > maxSafe;
 }
 
-const Lexer::builders_t Lexer::builders_{
+Lexer::builders_t Lexer::builders_{
     [](Lexer& lexer) { return lexer.buildIdOrKeyword(); },
     [](Lexer& lexer) { return lexer.buildNumber(); },
     [](Lexer& lexer) { return lexer.buildStrConst(); },
@@ -255,5 +257,5 @@ const Lexer::builders_t Lexer::builders_{
     },
 };
 
-const std::unordered_map<char, char> Lexer::escapedChars_{
+Lexer::escaped_chars_t Lexer::escapedChars_{
     {'n', '\n'}, {'t', '\t'}, {'"', '"'}, {'\\', '\\'}};

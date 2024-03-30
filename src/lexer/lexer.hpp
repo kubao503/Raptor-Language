@@ -3,16 +3,17 @@
 
 #include <functional>
 #include <optional>
-#include <unordered_map>
 
 #include "ILexer.hpp"
 #include "source.hpp"
 #include "token.hpp"
 
 class Lexer : public ILexer {
-    using builders_t = std::initializer_list<std::function<std::optional<Token>(Lexer&)>>;
     using chars_t = std::pair<char, char>;
     using token_types_t = std::pair<Token::Type, Token::Type>;
+
+    using builders_t = std::initializer_list<std::function<std::optional<Token>(Lexer&)>>;
+    using escaped_chars_t = std::initializer_list<chars_t>;
 
    public:
     Lexer(Source* source)
@@ -41,8 +42,8 @@ class Lexer : public ILexer {
     static bool willOverflow(integral_t value, integral_t digit);
     static std::string lexemeToKeyword(std::string_view lexeme);
 
-    static const builders_t builders_;
-    static const std::unordered_map<char, char> escapedChars_;
+    static builders_t builders_;
+    static escaped_chars_t escapedChars_;
 };
 
 #endif
