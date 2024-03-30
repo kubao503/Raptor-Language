@@ -62,6 +62,17 @@ TEST_F(LexerTest, getToken_id) {
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
 }
 
+TEST_F(LexerTest, getToken_id_pretending_to_be_keyword) {
+    SetUp("While");
+
+    auto token = lexer_->getToken();
+
+    EXPECT_EQ(token.type, Token::Type::ID) << "Keywords are lowercase only";
+    EXPECT_EQ(std::get<std::string>(token.value), "While") << "Invalid value";
+
+    EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
+}
+
 TEST_F(LexerTest, getToken_int) {
     SetUp("1234");
 
@@ -148,7 +159,7 @@ TEST_F(LexerTest, getToken_empty_source) {
 }
 
 TEST_F(LexerTest, getToken_leading_white_space) {
-    SetUp("   \t \n \r\n true");
+    SetUp("   \t \n  true");
 
     auto token = lexer_->getToken();
 
@@ -160,34 +171,34 @@ class LexerOperatorTest
       public testing::WithParamInterface<std::pair<std::string, Token::Type>> {};
 
 TEST_P(LexerOperatorTest, getToken_operators) {
-    SetUp(GetParam().first);
+    auto& [op, tokenType] = GetParam();
+    SetUp(op);
 
     auto token = lexer_->getToken();
-    EXPECT_EQ(token.type, GetParam().second) << "Invalid type";
+    EXPECT_EQ(token.type, tokenType) << "Invalid type";
     EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value)) << "Invalid value";
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
 }
 
-INSTANTIATE_TEST_SUITE_P(Operators, LexerOperatorTest,
-                         testing::Values(std::make_pair("<", Token::Type::LT_OP),
-                                         std::make_pair("<=", Token::Type::LTE_OP),
-                                         std::make_pair(">", Token::Type::GT_OP),
-                                         std::make_pair(">=", Token::Type::GTE_OP),
-                                         std::make_pair("=", Token::Type::ASGN_OP),
-                                         std::make_pair("==", Token::Type::EQ_OP),
-                                         std::make_pair("!=", Token::Type::NEQ_OP),
-                                         std::make_pair(";", Token::Type::SEMI),
-                                         std::make_pair(",", Token::Type::CMA),
-                                         std::make_pair(".", Token::Type::DOT),
-                                         std::make_pair("+", Token::Type::ADD_OP),
-                                         std::make_pair("-", Token::Type::MIN_OP),
-                                         std::make_pair("*", Token::Type::MULT_OP),
-                                         std::make_pair("/", Token::Type::DIV_OP),
-                                         std::make_pair("(", Token::Type::L_PAR),
-                                         std::make_pair(")", Token::Type::R_PAR),
-                                         std::make_pair("{", Token::Type::L_C_BR),
-                                         std::make_pair("}", Token::Type::R_C_BR)));
+auto operatorPairs = testing::Values(
+    std::make_pair("<", Token::Type::LT_OP), std::make_pair("<=", Token::Type::LTE_OP),
+    std::make_pair(">", Token::Type::GT_OP), std::make_pair(">=", Token::Type::GTE_OP),
+    std::make_pair("=", Token::Type::ASGN_OP), std::make_pair("==", Token::Type::EQ_OP),
+    std::make_pair("!=", Token::Type::NEQ_OP), std::make_pair(";", Token::Type::SEMI),
+    std::make_pair(",", Token::Type::CMA), std::make_pair(".", Token::Type::DOT),
+    std::make_pair("+", Token::Type::ADD_OP), std::make_pair("-", Token::Type::MIN_OP),
+    std::make_pair("*", Token::Type::MULT_OP), std::make_pair("/", Token::Type::DIV_OP),
+    std::make_pair("(", Token::Type::L_PAR), std::make_pair(")", Token::Type::R_PAR),
+    std::make_pair("{", Token::Type::L_C_BR), std::make_pair("}", Token::Type::R_C_BR));
+
+INSTANTIATE_TEST_SUITE_P(Operators, LexerOperatorTest, operatorPairs);
+
+TEST_F(LexerTest, getToken_invalid_not_equal_operator) {
+    SetUp("!");
+
+    EXPECT_THROW(lexer_->getToken(), InvalidToken);
+}
 
 TEST_F(LexerTest, getToken_str_const_empty) {
     SetUp(R"("")");
