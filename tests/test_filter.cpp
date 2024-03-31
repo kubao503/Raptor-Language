@@ -3,12 +3,12 @@
 #include "filter.hpp"
 #include "types.hpp"
 
-using TypeSequence = std::vector<Token::Type>;
-
 class FakeLexer : public ILexer {
+    using TypeSequence = std::vector<Token::Type>;
+
    public:
-    FakeLexer(TypeSequence typeSequence)
-        : typeSequence_(std::move(typeSequence)), current_(typeSequence_.begin()) {}
+    FakeLexer(std::initializer_list<Token::Type> typeSequence)
+        : typeSequence_(typeSequence), current_(typeSequence_.begin()) {}
 
     Token getToken() {
         if (current_ != typeSequence_.end()) {
@@ -20,14 +20,13 @@ class FakeLexer : public ILexer {
 
    private:
     TypeSequence typeSequence_;
-    TypeSequence::const_iterator current_;
+    TypeSequence::iterator current_;
 
     static constexpr Token::Type default_ = Token::Type::ETX;
 };
 
 TEST(FilterTest, basic_filtering) {
-    TypeSequence seq = {Token::Type::SEMI, Token::Type::CMT, Token::Type::DOT};
-    auto lexer = FakeLexer(std::move(seq));
+    auto lexer = FakeLexer({Token::Type::SEMI, Token::Type::CMT, Token::Type::DOT});
 
     auto filter = Filter(&lexer, Token::Type::CMT);
 
