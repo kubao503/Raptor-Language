@@ -23,7 +23,7 @@ TEST_F(LexerTest, getToken_true) {
     SetUp("true");
 
     auto token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::TRUE_CONST) << "Invalid type";
+    ASSERT_EQ(token.type, Token::Type::TRUE_CONST) << "Invalid type";
     EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value)) << "Invalid value";
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
@@ -33,7 +33,7 @@ TEST_F(LexerTest, getToken_false) {
     SetUp("false");
 
     auto token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::FALSE_CONST) << "Invalid type";
+    ASSERT_EQ(token.type, Token::Type::FALSE_CONST) << "Invalid type";
     EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value)) << "Invalid value";
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
@@ -44,7 +44,7 @@ TEST_F(LexerTest, getToken_while_keyword) {
 
     auto token = lexer_->getToken();
 
-    EXPECT_EQ(token.type, Token::Type::WHILE_KW) << "Invalid type";
+    ASSERT_EQ(token.type, Token::Type::WHILE_KW) << "Invalid type";
     EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value)) << "Invalid value";
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
@@ -55,7 +55,7 @@ TEST_F(LexerTest, getToken_id) {
 
     auto token = lexer_->getToken();
 
-    EXPECT_EQ(token.type, Token::Type::ID) << "Invalid type";
+    ASSERT_EQ(token.type, Token::Type::ID) << "Invalid type";
     EXPECT_EQ(std::get<std::string>(token.value), "valid_identifier_123")
         << "Invalid value";
 
@@ -67,7 +67,7 @@ TEST_F(LexerTest, getToken_id_pretending_to_be_keyword) {
 
     auto token = lexer_->getToken();
 
-    EXPECT_EQ(token.type, Token::Type::ID) << "Keywords are lowercase only";
+    ASSERT_EQ(token.type, Token::Type::ID) << "Keywords are lowercase only";
     EXPECT_EQ(std::get<std::string>(token.value), "While") << "Invalid value";
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
@@ -78,7 +78,7 @@ TEST_F(LexerTest, getToken_int) {
 
     auto token = lexer_->getToken();
 
-    EXPECT_EQ(token.type, Token::Type::INT_CONST) << "Invalid type";
+    ASSERT_EQ(token.type, Token::Type::INT_CONST) << "Invalid type";
     EXPECT_EQ(std::get<integral_t>(token.value), 1234) << "Invalid value";
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
@@ -87,7 +87,7 @@ TEST_F(LexerTest, getToken_int) {
 TEST_F(LexerTest, getToken_int_with_leading_zero) {
     SetUp("01234");
 
-    EXPECT_EQ(std::get<integral_t>(lexer_->getToken().value), 0) << "First part of int";
+    ASSERT_EQ(std::get<integral_t>(lexer_->getToken().value), 0) << "First part of int";
 
     EXPECT_EQ(std::get<integral_t>(lexer_->getToken().value), 1234)
         << "Second part of int";
@@ -112,7 +112,7 @@ TEST_F(LexerTest, getToken_float) {
 
     auto token = lexer_->getToken();
 
-    EXPECT_EQ(token.type, Token::Type::FLOAT_CONST) << "Invalid type";
+    ASSERT_EQ(token.type, Token::Type::FLOAT_CONST) << "Invalid type";
     EXPECT_EQ(std::get<float>(token.value), 12.125f) << "Invalid value";
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
@@ -152,7 +152,7 @@ TEST_F(LexerTest, getToken_empty_source) {
 
     for (int i{0}; i < 5; ++i) {
         auto token = lexer_->getToken();
-        EXPECT_EQ(token.type, Token::Type::ETX) << "Invalid type";
+        ASSERT_EQ(token.type, Token::Type::ETX) << "Invalid type";
         EXPECT_TRUE(std::holds_alternative<std::monostate>(token.value))
             << "Invalid value";
     }
@@ -204,7 +204,7 @@ TEST_F(LexerTest, getToken_str_const_empty) {
     SetUp(R"("")");
 
     auto token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
+    ASSERT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
     EXPECT_EQ(std::get<std::string>(token.value), "") << "Invalid token value";
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
@@ -214,7 +214,7 @@ TEST_F(LexerTest, getToken_str_const_new_line) {
     SetUp(R"("a\nb")");
 
     auto token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
+    ASSERT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
     EXPECT_EQ(std::get<std::string>(token.value), "a\nb") << "Invalid token value";
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
@@ -224,7 +224,7 @@ TEST_F(LexerTest, getToken_str_const_quotation_mark) {
     SetUp(R"("\"")");
 
     auto token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
+    ASSERT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
     EXPECT_EQ(std::get<std::string>(token.value), R"(")") << "Invalid token value";
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
@@ -234,7 +234,7 @@ TEST_F(LexerTest, getToken_str_const_backslash) {
     SetUp(R"("\\")");
 
     auto token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
+    ASSERT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
     EXPECT_EQ(std::get<std::string>(token.value), R"(\)") << "Invalid token value";
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
@@ -244,7 +244,7 @@ TEST_F(LexerTest, getToken_str_const_complicated) {
     SetUp(R"("\"lama \nma \\ delfina\"")");
 
     auto token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
+    ASSERT_EQ(token.type, Token::Type::STR_CONST) << "Invalid type";
     EXPECT_EQ(std::get<std::string>(token.value), "\"lama \nma \\ delfina\"")
         << "Invalid token value";
 
@@ -275,7 +275,7 @@ TEST_F(LexerTest, getToken_comment) {
     SetUp(R"(# int 12 # "abc")");
 
     auto token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::CMT) << "Invalid type";
+    ASSERT_EQ(token.type, Token::Type::CMT) << "Invalid type";
     EXPECT_EQ(std::get<std::string>(token.value), R"( int 12 # "abc")");
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
@@ -285,7 +285,7 @@ TEST_F(LexerTest, getToken_end_comment_at_new_line) {
     SetUp("# first line\n second line");
 
     auto token = lexer_->getToken();
-    EXPECT_EQ(token.type, Token::Type::CMT) << "Invalid type";
+    ASSERT_EQ(token.type, Token::Type::CMT) << "Invalid type";
     EXPECT_EQ(std::get<std::string>(token.value), R"( first line)");
 }
 
