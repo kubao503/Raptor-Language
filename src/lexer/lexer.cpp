@@ -83,20 +83,51 @@ std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) const {
     return std::nullopt;
 }
 
-std::optional<Token> Lexer::buildNumber() const {
+std::optional<Token> Lexer::buildIntConst() const {
+    if (source_->getChar() == '0') {
+        source_->nextChar();
+
+        if (auto token = buildFloatConst(0u))
+            return token;
+
+        return {{Token::Type::INT_CONST, 0u, tokenPosition_}};
+    }
+
+    if (auto res = buildNumber()) {
+        auto [integralPart, _] = res.value();
+
+        if (auto token = buildFloatConst(integralPart))
+            return token;
+
+        return {{Token::Type::INT_CONST, integralPart, tokenPosition_}};
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Token> Lexer::buildFloatConst(integral_t integralPart) const {
+    if (source_->getChar() != '.')
+        return std::nullopt;
+
+    source_->nextChar();
+
+    if (auto res = buildNumber()) {
+        auto [fractionalPart, digitCount] = res.value();
+        int exponent{-static_cast<int>(digitCount)};
+
+        floating_t value = integralPart + fractionalPart * std::pow(10, exponent);
+        return {{Token::Type::FLOAT_CONST, value, tokenPosition_}};
+    }
+
+    throw InvalidFloat(tokenPosition_);
+}
+
+Lexer::number_with_counter_t Lexer::buildNumber() const {
     if (!std::isdigit(source_->getChar()))
         return std::nullopt;
 
-    integral_t value = 0;
-
-    if (charToDigit(source_->getChar()) == 0) {
-        source_->nextChar();
-
-        if (auto token = buildFloat(value))
-            return token;
-
-        return {{Token::Type::INT_CONST, value, tokenPosition_}};
-    }
+    integral_t value{0};
+    unsigned int digitCount{0};
 
     do {
         auto digit = charToDigit(source_->getChar());
@@ -104,35 +135,10 @@ std::optional<Token> Lexer::buildNumber() const {
             throw NumericOverflow(tokenPosition_, value, digit);
         value = 10 * value + digit;
         source_->nextChar();
+        ++digitCount;
     } while (std::isdigit(source_->getChar()));
 
-    if (auto token = buildFloat(value))
-        return token;
-
-    return {{Token::Type::INT_CONST, value, tokenPosition_}};
-}
-
-std::optional<Token> Lexer::buildFloat(integral_t integralPart) const {
-    if (source_->getChar() != '.')
-        return std::nullopt;
-
-    source_->nextChar();
-    if (!std::isdigit(source_->getChar()))
-        throw InvalidFloat(tokenPosition_);
-
-    integral_t fractionalPart = 0;
-    int exponent = 0;
-    do {
-        auto digit = charToDigit(source_->getChar());
-        if (willOverflow(fractionalPart, digit))
-            throw NumericOverflow(tokenPosition_, fractionalPart, digit);
-        fractionalPart = 10 * fractionalPart + digit;
-        source_->nextChar();
-        --exponent;
-    } while (std::isdigit(source_->getChar()));
-
-    floating_t value = integralPart + fractionalPart * std::pow(10, exponent);
-    return {{Token::Type::FLOAT_CONST, value, tokenPosition_}};
+    return {{value, digitCount}};
 }
 
 std::optional<Token> Lexer::buildStrConst() const {
@@ -230,36 +236,33 @@ bool Lexer::willOverflow(integral_t value, integral_t digit) {
 }
 
 Lexer::builders_t Lexer::builders_{
-    [](Lexer& lexer) { return lexer.buildIdOrKeyword(); },
-    [](Lexer& lexer) { return lexer.buildNumber(); },
-    [](Lexer& lexer) { return lexer.buildStrConst(); },
-    [](Lexer& lexer) { return lexer.buildComment(); },
-    [](Lexer& lexer) { return lexer.buildNotEqualOp(); },
+    [](Lexer& l) { return l.buildIdOrKeyword(); },
+    [](Lexer& l) { return l.buildIntConst(); },
+    [](Lexer& l) { return l.buildStrConst(); },
+    [](Lexer& l) { return l.buildComment(); },
+    [](Lexer& l) { return l.buildNotEqualOp(); },
 
-    [](Lexer& lexer) { return lexer.buildOneLetterOp(';', Token::Type::SEMI); },
-    [](Lexer& lexer) { return lexer.buildOneLetterOp(',', Token::Type::CMA); },
-    [](Lexer& lexer) { return lexer.buildOneLetterOp('.', Token::Type::DOT); },
-    [](Lexer& lexer) { return lexer.buildOneLetterOp('+', Token::Type::ADD_OP); },
-    [](Lexer& lexer) { return lexer.buildOneLetterOp('-', Token::Type::MIN_OP); },
-    [](Lexer& lexer) { return lexer.buildOneLetterOp('*', Token::Type::MULT_OP); },
-    [](Lexer& lexer) { return lexer.buildOneLetterOp('/', Token::Type::DIV_OP); },
-    [](Lexer& lexer) { return lexer.buildOneLetterOp('(', Token::Type::L_PAR); },
-    [](Lexer& lexer) { return lexer.buildOneLetterOp(')', Token::Type::R_PAR); },
-    [](Lexer& lexer) { return lexer.buildOneLetterOp('{', Token::Type::L_C_BR); },
-    [](Lexer& lexer) { return lexer.buildOneLetterOp('}', Token::Type::R_C_BR); },
-    [](Lexer& lexer) { return lexer.buildOneLetterOp(EOF, Token::Type::ETX); },
+    [](Lexer& l) { return l.buildOneLetterOp(';', Token::Type::SEMI); },
+    [](Lexer& l) { return l.buildOneLetterOp(',', Token::Type::CMA); },
+    [](Lexer& l) { return l.buildOneLetterOp('.', Token::Type::DOT); },
+    [](Lexer& l) { return l.buildOneLetterOp('+', Token::Type::ADD_OP); },
+    [](Lexer& l) { return l.buildOneLetterOp('-', Token::Type::MIN_OP); },
+    [](Lexer& l) { return l.buildOneLetterOp('*', Token::Type::MULT_OP); },
+    [](Lexer& l) { return l.buildOneLetterOp('/', Token::Type::DIV_OP); },
+    [](Lexer& l) { return l.buildOneLetterOp('(', Token::Type::L_PAR); },
+    [](Lexer& l) { return l.buildOneLetterOp(')', Token::Type::R_PAR); },
+    [](Lexer& l) { return l.buildOneLetterOp('{', Token::Type::L_C_BR); },
+    [](Lexer& l) { return l.buildOneLetterOp('}', Token::Type::R_C_BR); },
+    [](Lexer& l) { return l.buildOneLetterOp(EOF, Token::Type::ETX); },
 
-    [](Lexer& lexer) {
-        return lexer.buildTwoLetterOp({'<', '='},
-                                      {Token::Type::LT_OP, Token::Type::LTE_OP});
+    [](Lexer& l) {
+        return l.buildTwoLetterOp({'<', '='}, {Token::Type::LT_OP, Token::Type::LTE_OP});
     },
-    [](Lexer& lexer) {
-        return lexer.buildTwoLetterOp({'>', '='},
-                                      {Token::Type::GT_OP, Token::Type::GTE_OP});
+    [](Lexer& l) {
+        return l.buildTwoLetterOp({'>', '='}, {Token::Type::GT_OP, Token::Type::GTE_OP});
     },
-    [](Lexer& lexer) {
-        return lexer.buildTwoLetterOp({'=', '='},
-                                      {Token::Type::ASGN_OP, Token::Type::EQ_OP});
+    [](Lexer& l) {
+        return l.buildTwoLetterOp({'=', '='}, {Token::Type::ASGN_OP, Token::Type::EQ_OP});
     },
 };
 

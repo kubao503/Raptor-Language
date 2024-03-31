@@ -15,6 +15,8 @@ class Lexer : public ILexer {
     using builders_t = std::initializer_list<std::function<std::optional<Token>(Lexer&)>>;
     using escaped_chars_t = std::initializer_list<chars_t>;
 
+    using number_with_counter_t = std::optional<std::pair<integral_t, unsigned int>>;
+
    public:
     Lexer(Source* source)
         : source_(source) {}
@@ -30,14 +32,15 @@ class Lexer : public ILexer {
     std::optional<Token> buildIdOrKeyword() const;
     std::optional<Token> buildKeyword(std::string_view lexeme) const;
     std::optional<Token> buildBoolConst(std::string_view lexeme) const;
-    std::optional<Token> buildNumber() const;
-    std::optional<Token> buildFloat(integral_t integralPart) const;
+    std::optional<Token> buildIntConst() const;
+    std::optional<Token> buildFloatConst(integral_t integralPart) const;
     std::optional<Token> buildStrConst() const;
     std::optional<Token> buildComment() const;
     std::optional<Token> buildNotEqualOp() const;
     std::optional<Token> buildOneLetterOp(char c, Token::Type type) const;
     std::optional<Token> buildTwoLetterOp(chars_t chars, types_t types) const;
 
+    number_with_counter_t buildNumber() const;
     void expectNoEndOfFile() const;
     char findInEscapedChars(char searched) const;
 
