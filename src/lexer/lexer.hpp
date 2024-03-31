@@ -9,13 +9,14 @@
 #include "token.hpp"
 
 class Lexer : public ILexer {
-    using chars_t = std::pair<char, char>;
-    using types_t = std::pair<Token::Type, Token::Type>;
+    using CharPair = std::pair<char, char>;
+    using TokenTypes = std::pair<Token::Type, Token::Type>;
 
-    using builders_t = std::initializer_list<std::function<std::optional<Token>(Lexer&)>>;
-    using escaped_chars_t = std::initializer_list<chars_t>;
+    using TokenBuilders =
+        std::initializer_list<std::function<std::optional<Token>(Lexer&)>>;
+    using EscapedChars = std::initializer_list<CharPair>;
 
-    using number_with_counter_t = std::optional<std::pair<integral_t, unsigned int>>;
+    using IntWithDigitCount = std::pair<Integral, unsigned int>;
 
    public:
     Lexer(Source* source)
@@ -33,23 +34,23 @@ class Lexer : public ILexer {
     std::optional<Token> buildKeyword(std::string_view lexeme) const;
     std::optional<Token> buildBoolConst(std::string_view lexeme) const;
     std::optional<Token> buildIntConst() const;
-    std::optional<Token> buildFloatConst(integral_t integralPart) const;
+    std::optional<Token> buildFloatConst(Integral integralPart) const;
     std::optional<Token> buildStrConst() const;
     std::optional<Token> buildComment() const;
     std::optional<Token> buildNotEqualOp() const;
     std::optional<Token> buildOneLetterOp(char c, Token::Type type) const;
-    std::optional<Token> buildTwoLetterOp(chars_t chars, types_t types) const;
+    std::optional<Token> buildTwoLetterOp(CharPair chars, TokenTypes types) const;
 
-    number_with_counter_t buildNumber() const;
+    std::optional<IntWithDigitCount> buildNumber() const;
     void expectNoEndOfFile() const;
     char findInEscapedChars(char searched) const;
 
-    static integral_t charToDigit(char c) { return c - '0'; }
-    static bool willOverflow(integral_t value, integral_t digit);
+    static Integral charToDigit(char c) { return c - '0'; }
+    static bool willOverflow(Integral value, Integral digit);
     static std::string lexemeToKeyword(std::string_view lexeme);
 
-    static builders_t builders_;
-    static escaped_chars_t escapedChars_;
+    static TokenBuilders TokenBuilders_;
+    static EscapedChars escapedChars_;
 };
 
 #endif

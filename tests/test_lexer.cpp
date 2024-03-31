@@ -79,7 +79,7 @@ TEST_F(LexerTest, getToken_int) {
     auto token = lexer_->getToken();
 
     ASSERT_EQ(token.type, Token::Type::INT_CONST) << "Invalid type";
-    EXPECT_EQ(std::get<integral_t>(token.value), 1234) << "Invalid value";
+    EXPECT_EQ(std::get<Integral>(token.value), 1234) << "Invalid value";
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
 }
@@ -87,10 +87,9 @@ TEST_F(LexerTest, getToken_int) {
 TEST_F(LexerTest, getToken_int_with_leading_zero) {
     SetUp("01234");
 
-    ASSERT_EQ(std::get<integral_t>(lexer_->getToken().value), 0) << "First part of int";
+    ASSERT_EQ(std::get<Integral>(lexer_->getToken().value), 0) << "First part of int";
 
-    EXPECT_EQ(std::get<integral_t>(lexer_->getToken().value), 1234)
-        << "Second part of int";
+    EXPECT_EQ(std::get<Integral>(lexer_->getToken().value), 1234) << "Second part of int";
 
     EXPECT_EQ(lexer_->getToken().type, Token::Type::ETX) << "Invalid type";
 }

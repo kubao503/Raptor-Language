@@ -58,7 +58,7 @@ struct Token {
     };
 
     Type type;
-    std::variant<std::monostate, integral_t, floating_t, bool, std::string> value = {};
+    std::variant<std::monostate, Integral, Floating, bool, std::string> value = {};
     Position position;
 };
 

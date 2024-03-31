@@ -56,12 +56,12 @@ class NonEscapableChar : public LexerException {
 
 class NumericOverflow : public LexerException {
    public:
-    NumericOverflow(const Position& position, integral_t value, integral_t digit)
+    NumericOverflow(const Position& position, Integral value, Integral digit)
         : LexerException(position), value_(value), digit_(digit) {}
 
    private:
-    integral_t value_;
-    integral_t digit_;
+    Integral value_;
+    Integral digit_;
 
     std::string additionalInfo() const override;
 };

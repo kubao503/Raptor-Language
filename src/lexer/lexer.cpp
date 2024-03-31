@@ -12,7 +12,7 @@ Token Lexer::getToken() {
 
     tokenPosition_ = source_->getPosition();
 
-    for (const auto& builder : builders_) {
+    for (const auto& builder : TokenBuilders_) {
         if (auto token = builder(*this))
             return token.value();
     }
@@ -105,7 +105,7 @@ std::optional<Token> Lexer::buildIntConst() const {
     return std::nullopt;
 }
 
-std::optional<Token> Lexer::buildFloatConst(integral_t integralPart) const {
+std::optional<Token> Lexer::buildFloatConst(Integral integralPart) const {
     if (source_->getChar() != '.')
         return std::nullopt;
 
@@ -115,18 +115,18 @@ std::optional<Token> Lexer::buildFloatConst(integral_t integralPart) const {
         auto [fractionalPart, digitCount] = res.value();
         int exponent{-static_cast<int>(digitCount)};
 
-        floating_t value = integralPart + fractionalPart * std::pow(10, exponent);
+        Floating value = integralPart + fractionalPart * std::pow(10, exponent);
         return {{Token::Type::FLOAT_CONST, value, tokenPosition_}};
     }
 
     throw InvalidFloat(tokenPosition_);
 }
 
-Lexer::number_with_counter_t Lexer::buildNumber() const {
+std::optional<Lexer::IntWithDigitCount> Lexer::buildNumber() const {
     if (!std::isdigit(source_->getChar()))
         return std::nullopt;
 
-    integral_t value{0};
+    Integral value{0};
     unsigned int digitCount{0};
 
     do {
@@ -172,7 +172,7 @@ void Lexer::expectNoEndOfFile() const {
 }
 
 char Lexer::findInEscapedChars(char searched) const {
-    auto pred = [searched](const chars_t& p) { return p.first == searched; };
+    auto pred = [searched](const CharPair& p) { return p.first == searched; };
     auto res = std::find_if(escapedChars_.begin(), escapedChars_.end(), pred);
 
     if (res == escapedChars_.end())
@@ -216,7 +216,7 @@ std::optional<Token> Lexer::buildOneLetterOp(char c, Token::Type type) const {
     return {{type, {}, tokenPosition_}};
 }
 
-std::optional<Token> Lexer::buildTwoLetterOp(chars_t chars, types_t types) const {
+std::optional<Token> Lexer::buildTwoLetterOp(CharPair chars, TokenTypes types) const {
     if (source_->getChar() != chars.first)
         return std::nullopt;
 
@@ -229,13 +229,13 @@ std::optional<Token> Lexer::buildTwoLetterOp(chars_t chars, types_t types) const
     return {{types.second, {}, tokenPosition_}};
 }
 
-bool Lexer::willOverflow(integral_t value, integral_t digit) {
+bool Lexer::willOverflow(Integral value, Integral digit) {
     // 10 * maxSafe + digit <= max
-    auto maxSafe = (std::numeric_limits<integral_t>::max() - digit) / 10;
+    auto maxSafe = (std::numeric_limits<Integral>::max() - digit) / 10;
     return value > maxSafe;
 }
 
-Lexer::builders_t Lexer::builders_{
+Lexer::TokenBuilders Lexer::TokenBuilders_{
     [](Lexer& l) { return l.buildIdOrKeyword(); },
     [](Lexer& l) { return l.buildIntConst(); },
     [](Lexer& l) { return l.buildStrConst(); },
@@ -266,5 +266,5 @@ Lexer::builders_t Lexer::builders_{
     },
 };
 
-Lexer::escaped_chars_t Lexer::escapedChars_{
+Lexer::EscapedChars Lexer::escapedChars_{
     {'n', '\n'}, {'t', '\t'}, {'"', '"'}, {'\\', '\\'}};

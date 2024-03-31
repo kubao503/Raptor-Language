@@ -29,7 +29,7 @@ std::string NonEscapableChar::additionalInfo() const {
 std::string NumericOverflow::additionalInfo() const {
     using std::to_string;
 
-    auto max = std::numeric_limits<integral_t>::max();
+    auto max = std::numeric_limits<Integral>::max();
     return "Detected overflow while constructing numeric literal\n" + to_string(value_)
            + " * 10 + " + to_string(digit_) + " > " + to_string(max)
            + " which is maximum value";
