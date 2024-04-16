@@ -10,8 +10,8 @@ class LexerTest : public testing::Test {
    protected:
     void SetUp(const std::string& input) {
         stream_ = std::istringstream(input);
-        source_ = std::make_unique<Source>(&stream_);
-        lexer_ = std::make_unique<Lexer>(source_.get());
+        source_ = std::make_unique<Source>(stream_);
+        lexer_ = std::make_unique<Lexer>(*source_);
     }
 
     std::istringstream stream_;
@@ -90,9 +90,11 @@ TEST_F(LexerTest, getToken_int) {
 TEST_F(LexerTest, getToken_int_with_leading_zero) {
     SetUp("01234");
 
-    ASSERT_EQ(std::get<Integral>(lexer_->getToken().getValue()), 0) << "First part of int";
+    ASSERT_EQ(std::get<Integral>(lexer_->getToken().getValue()), 0)
+        << "First part of int";
 
-    EXPECT_EQ(std::get<Integral>(lexer_->getToken().getValue()), 1234) << "Second part of int";
+    EXPECT_EQ(std::get<Integral>(lexer_->getToken().getValue()), 1234)
+        << "Second part of int";
 
     EXPECT_EQ(lexer_->getToken().getType(), Token::Type::ETX) << "Invalid type";
 }

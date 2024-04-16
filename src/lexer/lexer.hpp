@@ -19,13 +19,13 @@ class Lexer : public ILexer {
     using IntWithDigitCount = std::pair<Integral, unsigned int>;
 
    public:
-    explicit Lexer(Source* source)
+    explicit Lexer(Source& source)
         : source_(source) {}
 
     Token getToken() override;
 
    private:
-    Source* source_;
+    Source& source_;
     Position tokenPosition_;
 
     void ignoreWhiteSpace() const;

@@ -16,32 +16,32 @@ std::string lexemeToKeyword(std::string_view lexeme);
 Token Lexer::getToken() {
     ignoreWhiteSpace();
 
-    tokenPosition_ = source_->getPosition();
+    tokenPosition_ = source_.getPosition();
 
     for (const auto& builder : TokenBuilders_) {
         if (auto token = builder(*this))
             return token.value();
     }
 
-    throw InvalidToken(tokenPosition_, source_->getChar());
+    throw InvalidToken(tokenPosition_, source_.getChar());
 }
 
 void Lexer::ignoreWhiteSpace() const {
-    while (std::isspace(source_->getChar())) {
-        source_->nextChar();
+    while (std::isspace(source_.getChar())) {
+        source_.nextChar();
     }
 }
 
 std::optional<Token> Lexer::buildIdOrKeyword() const {
-    if (!std::isalpha(source_->getChar()))
+    if (!std::isalpha(source_.getChar()))
         return std::nullopt;
 
     std::string lexeme;
 
     do {
-        lexeme.push_back(source_->getChar());
-        source_->nextChar();
-    } while (isAlnumOrUnderscore(source_->getChar()));
+        lexeme.push_back(source_.getChar());
+        source_.nextChar();
+    } while (isAlnumOrUnderscore(source_.getChar()));
 
     if (auto token = buildKeyword(lexeme))
         return token;
@@ -91,8 +91,8 @@ std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) const {
 }
 
 std::optional<Token> Lexer::buildIntConst() const {
-    if (source_->getChar() == '0') {
-        source_->nextChar();
+    if (source_.getChar() == '0') {
+        source_.nextChar();
 
         if (auto token = buildFloatConst(0u))
             return token;
@@ -113,10 +113,10 @@ std::optional<Token> Lexer::buildIntConst() const {
 }
 
 std::optional<Token> Lexer::buildFloatConst(Integral integralPart) const {
-    if (source_->getChar() != '.')
+    if (source_.getChar() != '.')
         return std::nullopt;
 
-    source_->nextChar();
+    source_.nextChar();
 
     if (auto res = buildNumber()) {
         const auto& [fractionalPart, digitCount] = res.value();
@@ -130,20 +130,20 @@ std::optional<Token> Lexer::buildFloatConst(Integral integralPart) const {
 }
 
 std::optional<Lexer::IntWithDigitCount> Lexer::buildNumber() const {
-    if (!std::isdigit(source_->getChar()))
+    if (!std::isdigit(source_.getChar()))
         return std::nullopt;
 
     Integral value{0};
     unsigned int digitCount{0};
 
     do {
-        auto digit = charToDigit(source_->getChar());
+        auto digit = charToDigit(source_.getChar());
         if (willOverflow(value, digit))
             throw NumericOverflow(tokenPosition_, value, digit);
         value = 10 * value + digit;
-        source_->nextChar();
+        source_.nextChar();
         ++digitCount;
-    } while (std::isdigit(source_->getChar()));
+    } while (std::isdigit(source_.getChar()));
 
     return {{value, digitCount}};
 }
@@ -159,32 +159,32 @@ bool willOverflow(Integral value, Integral digit) {
 }
 
 std::optional<Token> Lexer::buildStrConst() const {
-    if (source_->getChar() != '"')
+    if (source_.getChar() != '"')
         return std::nullopt;
-    source_->nextChar();
+    source_.nextChar();
 
     std::string strConst;
 
-    while (source_->getChar() != '"') {
+    while (source_.getChar() != '"') {
         expectNoEndOfFile();
-        auto strConstChar = source_->getChar();
+        auto strConstChar = source_.getChar();
 
-        if (source_->getChar() == '\\') {
-            source_->nextChar();
+        if (source_.getChar() == '\\') {
+            source_.nextChar();
             expectNoEndOfFile();
-            strConstChar = findInEscapedChars(source_->getChar());
+            strConstChar = findInEscapedChars(source_.getChar());
         }
 
         strConst.push_back(strConstChar);
-        source_->nextChar();
+        source_.nextChar();
     }
 
-    source_->nextChar();
+    source_.nextChar();
     return Token(Token::Type::STR_CONST, std::move(strConst), tokenPosition_);
 }
 
 void Lexer::expectNoEndOfFile() const {
-    if (source_->getChar() == EOF)
+    if (source_.getChar() == EOF)
         throw NotTerminatedStrConst(tokenPosition_);
 }
 
@@ -193,32 +193,32 @@ char Lexer::findInEscapedChars(char searched) const {
     auto res = std::find_if(escapedChars_.begin(), escapedChars_.end(), pred);
 
     if (res == escapedChars_.end())
-        throw NonEscapableChar(tokenPosition_, source_->getChar());
+        throw NonEscapableChar(tokenPosition_, source_.getChar());
     return res->second;
 }
 
 std::optional<Token> Lexer::buildComment() const {
-    if (source_->getChar() != '#')
+    if (source_.getChar() != '#')
         return std::nullopt;
-    source_->nextChar();
+    source_.nextChar();
 
     std::string value;
 
-    while (source_->getChar() != '\n' && source_->getChar() != EOF) {
-        value.push_back(source_->getChar());
-        source_->nextChar();
+    while (source_.getChar() != '\n' && source_.getChar() != EOF) {
+        value.push_back(source_.getChar());
+        source_.nextChar();
     }
     return Token(Token::Type::CMT, std::move(value), tokenPosition_);
 }
 
 std::optional<Token> Lexer::buildNotEqualOp() const {
-    if (source_->getChar() != '!')
+    if (source_.getChar() != '!')
         return std::nullopt;
 
-    source_->nextChar();
+    source_.nextChar();
 
-    if (source_->getChar() == '=') {
-        source_->nextChar();
+    if (source_.getChar() == '=') {
+        source_.nextChar();
         return Token(Token::Type::NEQ_OP, {}, tokenPosition_);
     }
 
@@ -226,23 +226,23 @@ std::optional<Token> Lexer::buildNotEqualOp() const {
 }
 
 std::optional<Token> Lexer::buildOneLetterOp(char c, Token::Type type) const {
-    if (source_->getChar() != c)
+    if (source_.getChar() != c)
         return std::nullopt;
 
-    source_->nextChar();
+    source_.nextChar();
     return Token(type, {}, tokenPosition_);
 }
 
 std::optional<Token> Lexer::buildTwoLetterOp(CharPair chars, TokenTypes types) const {
-    if (source_->getChar() != chars.first)
+    if (source_.getChar() != chars.first)
         return std::nullopt;
 
-    source_->nextChar();
+    source_.nextChar();
 
-    if (source_->getChar() != chars.second)
+    if (source_.getChar() != chars.second)
         return Token(types.first, {}, tokenPosition_);
 
-    source_->nextChar();
+    source_.nextChar();
     return Token(types.second, {}, tokenPosition_);
 }
 
