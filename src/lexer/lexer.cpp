@@ -7,6 +7,12 @@
 #include "errors.hpp"
 #include "magic_enum/magic_enum.hpp"
 
+bool isAlnumOrUnderscore(char c);
+bool isAnyUpperCase(std::string_view s);
+Integral charToDigit(char c);
+bool willOverflow(Integral value, Integral digit);
+std::string lexemeToKeyword(std::string_view lexeme);
+
 Token Lexer::getToken() {
     ignoreWhiteSpace();
 
@@ -24,10 +30,6 @@ void Lexer::ignoreWhiteSpace() const {
     while (std::isspace(source_->getChar())) {
         source_->nextChar();
     }
-}
-
-bool isAlnumOrUnderscore(char c) {
-    return std::isalnum(c) || c == '_';
 }
 
 std::optional<Token> Lexer::buildIdOrKeyword() const {
@@ -50,8 +52,8 @@ std::optional<Token> Lexer::buildIdOrKeyword() const {
     return {Token(Token::Type::ID, lexeme, tokenPosition_)};
 }
 
-bool isAnyUpperCase(std::string_view s) {
-    return std::any_of(s.begin(), s.end(), [](char c) { return std::isupper(c); });
+bool isAlnumOrUnderscore(char c) {
+    return std::isalnum(c) || c == '_';
 }
 
 std::optional<Token> Lexer::buildKeyword(std::string_view lexeme) const {
@@ -65,7 +67,11 @@ std::optional<Token> Lexer::buildKeyword(std::string_view lexeme) const {
     return std::nullopt;
 }
 
-std::string Lexer::lexemeToKeyword(std::string_view lexeme) {
+bool isAnyUpperCase(std::string_view s) {
+    return std::any_of(s.begin(), s.end(), [](char c) { return std::isupper(c); });
+}
+
+std::string lexemeToKeyword(std::string_view lexeme) {
     static const std::string_view suffix{"_KW"};
 
     std::string keyword(lexeme.size(), ' ');
@@ -140,6 +146,16 @@ std::optional<Lexer::IntWithDigitCount> Lexer::buildNumber() const {
     } while (std::isdigit(source_->getChar()));
 
     return {{value, digitCount}};
+}
+
+Integral charToDigit(char c) {
+    return c - '0';
+}
+
+bool willOverflow(Integral value, Integral digit) {
+    // 10 * maxSafe + digit <= max
+    auto maxSafe = (std::numeric_limits<Integral>::max() - digit) / 10;
+    return value > maxSafe;
 }
 
 std::optional<Token> Lexer::buildStrConst() const {
@@ -228,12 +244,6 @@ std::optional<Token> Lexer::buildTwoLetterOp(CharPair chars, TokenTypes types) c
 
     source_->nextChar();
     return {Token(types.second, {}, tokenPosition_)};
-}
-
-bool Lexer::willOverflow(Integral value, Integral digit) {
-    // 10 * maxSafe + digit <= max
-    auto maxSafe = (std::numeric_limits<Integral>::max() - digit) / 10;
-    return value > maxSafe;
 }
 
 Lexer::TokenBuilders Lexer::TokenBuilders_{

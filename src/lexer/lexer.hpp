@@ -45,10 +45,6 @@ class Lexer : public ILexer {
     void expectNoEndOfFile() const;
     char findInEscapedChars(char searched) const;
 
-    static Integral charToDigit(char c) { return c - '0'; }
-    static bool willOverflow(Integral value, Integral digit);
-    static std::string lexemeToKeyword(std::string_view lexeme);
-
     static TokenBuilders TokenBuilders_;
     static EscapedChars escapedChars_;
 };
