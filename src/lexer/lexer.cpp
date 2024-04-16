@@ -47,7 +47,7 @@ std::optional<Token> Lexer::buildIdOrKeyword() const {
     if (auto token = buildBoolConst(lexeme))
         return token;
 
-    return {{Token::Type::ID, lexeme, tokenPosition_}};
+    return {Token(Token::Type::ID, lexeme, tokenPosition_)};
 }
 
 bool isAnyUpperCase(std::string_view s) {
@@ -61,7 +61,7 @@ std::optional<Token> Lexer::buildKeyword(std::string_view lexeme) const {
     auto keyword = lexemeToKeyword(lexeme);
 
     if (auto tokenType = magic_enum::enum_cast<Token::Type>(keyword))
-        return {{tokenType.value(), {}, tokenPosition_}};
+        return {Token(tokenType.value(), {}, tokenPosition_)};
     return std::nullopt;
 }
 
@@ -77,9 +77,9 @@ std::string Lexer::lexemeToKeyword(std::string_view lexeme) {
 
 std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) const {
     if (lexeme == "true")
-        return {{Token::Type::TRUE_CONST, {}, tokenPosition_}};
+        return {Token(Token::Type::TRUE_CONST, {}, tokenPosition_)};
     else if (lexeme == "false")
-        return {{Token::Type::FALSE_CONST, {}, tokenPosition_}};
+        return {Token(Token::Type::FALSE_CONST, {}, tokenPosition_)};
     return std::nullopt;
 }
 
@@ -90,7 +90,7 @@ std::optional<Token> Lexer::buildIntConst() const {
         if (auto token = buildFloatConst(0u))
             return token;
 
-        return {{Token::Type::INT_CONST, 0u, tokenPosition_}};
+        return {Token(Token::Type::INT_CONST, 0u, tokenPosition_)};
     }
 
     if (auto res = buildNumber()) {
@@ -99,7 +99,7 @@ std::optional<Token> Lexer::buildIntConst() const {
         if (auto token = buildFloatConst(integralPart))
             return token;
 
-        return {{Token::Type::INT_CONST, integralPart, tokenPosition_}};
+        return {Token(Token::Type::INT_CONST, integralPart, tokenPosition_)};
     }
 
     return std::nullopt;
@@ -116,7 +116,7 @@ std::optional<Token> Lexer::buildFloatConst(Integral integralPart) const {
         int exponent{-static_cast<int>(digitCount)};
 
         Floating value = integralPart + fractionalPart * std::pow(10, exponent);
-        return {{Token::Type::FLOAT_CONST, value, tokenPosition_}};
+        return {Token(Token::Type::FLOAT_CONST, value, tokenPosition_)};
     }
 
     throw InvalidFloat(tokenPosition_);
@@ -163,7 +163,7 @@ std::optional<Token> Lexer::buildStrConst() const {
     }
 
     source_->nextChar();
-    return {{Token::Type::STR_CONST, strConst, tokenPosition_}};
+    return {Token(Token::Type::STR_CONST, strConst, tokenPosition_)};
 }
 
 void Lexer::expectNoEndOfFile() const {
@@ -191,7 +191,7 @@ std::optional<Token> Lexer::buildComment() const {
         value.push_back(source_->getChar());
         source_->nextChar();
     }
-    return {{Token::Type::CMT, value, tokenPosition_}};
+    return {Token(Token::Type::CMT, value, tokenPosition_)};
 }
 
 std::optional<Token> Lexer::buildNotEqualOp() const {
@@ -202,7 +202,7 @@ std::optional<Token> Lexer::buildNotEqualOp() const {
 
     if (source_->getChar() == '=') {
         source_->nextChar();
-        return {{Token::Type::NEQ_OP, {}, tokenPosition_}};
+        return {Token(Token::Type::NEQ_OP, {}, tokenPosition_)};
     }
 
     throw InvalidToken(tokenPosition_, '!');
@@ -213,7 +213,7 @@ std::optional<Token> Lexer::buildOneLetterOp(char c, Token::Type type) const {
         return std::nullopt;
 
     source_->nextChar();
-    return {{type, {}, tokenPosition_}};
+    return {Token(type, {}, tokenPosition_)};
 }
 
 std::optional<Token> Lexer::buildTwoLetterOp(CharPair chars, TokenTypes types) const {
@@ -223,10 +223,10 @@ std::optional<Token> Lexer::buildTwoLetterOp(CharPair chars, TokenTypes types) c
     source_->nextChar();
 
     if (source_->getChar() != chars.second)
-        return {{types.first, {}, tokenPosition_}};
+        return {Token(types.first, {}, tokenPosition_)};
 
     source_->nextChar();
-    return {{types.second, {}, tokenPosition_}};
+    return {Token(types.second, {}, tokenPosition_)};
 }
 
 bool Lexer::willOverflow(Integral value, Integral digit) {

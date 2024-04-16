@@ -12,9 +12,9 @@ class FakeLexer : public ILexer {
 
     Token getToken() {
         if (current_ != typeSequence_.end()) {
-            return {*current_++, {}, {}};
+            return Token(*current_++, {}, {});
         } else {
-            return {default_, {}, {}};
+            return Token(default_, {}, {});
         }
     }
 

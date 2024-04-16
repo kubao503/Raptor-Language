@@ -19,7 +19,7 @@ class Lexer : public ILexer {
     using IntWithDigitCount = std::pair<Integral, unsigned int>;
 
    public:
-    Lexer(Source* source)
+    explicit Lexer(Source* source)
         : source_(source) {}
 
     Token getToken() override;

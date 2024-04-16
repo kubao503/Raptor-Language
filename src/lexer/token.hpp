@@ -11,6 +11,7 @@ struct Position;
 
 struct Token {
     enum class Type {
+        UNKNOWN,
         IF_KW,
         WHILE_KW,
         RETURN_KW,
@@ -57,8 +58,15 @@ struct Token {
         CMT,
     };
 
+    using Value = std::variant<std::monostate, Integral, Floating, bool, std::string>;
+
+    Token(Type type, Value value, Position position)
+        : type(type), value(value), position(position) {}
+    Token()
+        : type(Type::UNKNOWN) {}
+
     Type type;
-    std::variant<std::monostate, Integral, Floating, bool, std::string> value = {};
+    Value value = {};
     Position position;
 };
 

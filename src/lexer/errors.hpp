@@ -10,7 +10,7 @@
 
 class LexerException : public std::exception {
    public:
-    LexerException(const Position& position)
+    explicit LexerException(const Position& position)
         : position_(position) {}
 
    protected:

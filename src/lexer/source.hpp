@@ -7,7 +7,7 @@
 
 class Source {
    public:
-    Source(std::istream* stream)
+    explicit Source(std::istream* stream)
         : stream_(stream) {
         nextChar();
     }
