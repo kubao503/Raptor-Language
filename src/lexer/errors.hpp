@@ -1,77 +1,62 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 
-#include <exception>
+#include <iostream>
 #include <limits>
+#include <stdexcept>
 #include <string>
 
 #include "position.hpp"
 #include "types.hpp"
 
-class LexerException : public std::exception {
+class LexerException : public std::runtime_error {
    public:
-    explicit LexerException(const Position& position)
-        : position_(position) {}
+    explicit LexerException(const Position& position, const std::string& message)
+        : std::runtime_error(" at " + std::to_string(position.line) + ':'
+                             + std::to_string(position.column) + '\n' + message),
+          position_(position) {}
 
-   protected:
-    virtual std::string additionalInfo() const { return ""; }
+    std::string describe() const;
 
    private:
     Position position_;
-    mutable std::string message_;
 
     std::string getName() const;
-    const char* what() const noexcept override;
 };
 
 class InvalidToken : public LexerException {
    public:
-    InvalidToken(const Position& position, char c)
-        : LexerException(position), c_(c) {}
+    InvalidToken(const Position& position, char c);
 
    private:
     char c_;
-
-    std::string additionalInfo() const override;
 };
 
 class NotTerminatedStrConst : public LexerException {
    public:
-    using LexerException::LexerException;
-
-   private:
-    std::string additionalInfo() const override;
+    explicit NotTerminatedStrConst(const Position& position);
 };
 
 class NonEscapableChar : public LexerException {
    public:
-    NonEscapableChar(const Position& position, char c)
-        : LexerException(position), c_(c) {}
+    NonEscapableChar(const Position& position, char c);
 
    private:
     char c_;
-
-    std::string additionalInfo() const override;
 };
 
 class NumericOverflow : public LexerException {
    public:
-    NumericOverflow(const Position& position, Integral value, Integral digit)
-        : LexerException(position), value_(value), digit_(digit) {}
+    NumericOverflow(const Position& position, Integral value, Integral digit);
 
    private:
     Integral value_;
     Integral digit_;
-
-    std::string additionalInfo() const override;
 };
 
 class InvalidFloat : public LexerException {
    public:
-    using LexerException::LexerException;
-
-   private:
-    std::string additionalInfo() const override;
+    explicit InvalidFloat(const Position& position);
 };
 
 #endif

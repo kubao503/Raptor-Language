@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "errors.hpp"
 #include "filter.hpp"
 #include "lexer.hpp"
 
@@ -19,7 +20,7 @@ int main(int argc, char* argv[]) {
             token = filter.getToken();
             std::cout << token << '\n';
         } while (token.type != Token::Type::ETX);
-    } catch (const std::exception& e) {
-        std::cerr << "\nerr: " << e.what() << '\n';
+    } catch (const LexerException& e) {
+        std::cerr << '\n' << e.describe() << '\n';
     }
 }

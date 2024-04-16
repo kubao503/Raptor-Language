@@ -7,34 +7,31 @@ std::string LexerException::getName() const {
     return boost::core::demangle(name);
 }
 
-const char* LexerException::what() const noexcept {
-    message_ = getName() + " at " + std::to_string(position_.line) + ':'
-               + std::to_string(position_.column) + '\n' + additionalInfo();
-
-    return message_.c_str();
+std::string LexerException::describe() const {
+    return getName() + what();
 }
 
-std::string InvalidToken::additionalInfo() const {
-    return "Unknown token starting with '" + std::string(1, c_) + '\'';
-}
+InvalidToken::InvalidToken(const Position& position, char c)
+    : LexerException(position,
+                     "Unknown token starting with '" + std::string(1, c) + '\''),
+      c_(c) {}
 
-std::string NotTerminatedStrConst::additionalInfo() const {
-    return "Encountered end of file while processing str literal";
-}
+NotTerminatedStrConst::NotTerminatedStrConst(const Position& position)
+    : LexerException(position, "Encountered end of file while processing str literal") {}
 
-std::string NonEscapableChar::additionalInfo() const {
-    return '\'' + std::string(1, c_) + "' cannot be escaped with '\\'";
-}
+NonEscapableChar::NonEscapableChar(const Position& position, char c)
+    : LexerException(position,
+                     '\'' + std::string(1, c) + "' cannot be escaped with '\\'"),
+      c_(c) {}
 
-std::string NumericOverflow::additionalInfo() const {
-    using std::to_string;
+NumericOverflow::NumericOverflow(const Position& position, Integral value, Integral digit)
+    : LexerException(position, "Detected overflow while constructing numeric literal\n"
+                                   + std::to_string(value) + " * 10 + "
+                                   + std::to_string(digit) + " > "
+                                   + std::to_string(std::numeric_limits<Integral>::max())
+                                   + " which is maximum value"),
+      value_(value),
+      digit_(digit) {}
 
-    auto max = std::numeric_limits<Integral>::max();
-    return "Detected overflow while constructing numeric literal\n" + to_string(value_)
-           + " * 10 + " + to_string(digit_) + " > " + to_string(max)
-           + " which is maximum value";
-}
-
-std::string InvalidFloat::additionalInfo() const {
-    return "Expected digit after '.' in float literal";
-}
+InvalidFloat::InvalidFloat(const Position& position)
+    : LexerException(position, "Expected digit after '.' in float literal") {}
