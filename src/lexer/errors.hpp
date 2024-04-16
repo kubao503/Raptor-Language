@@ -11,11 +11,7 @@
 
 class LexerException : public std::runtime_error {
    public:
-    explicit LexerException(const Position& position, const std::string& message)
-        : std::runtime_error(" at " + std::to_string(position.line) + ':'
-                             + std::to_string(position.column) + '\n' + message),
-          position_(position) {}
-
+    explicit LexerException(const Position& position, const std::string& message);
     std::string describe() const;
 
    private:

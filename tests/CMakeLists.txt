@@ -5,6 +5,7 @@ add_executable(
     tests
     test_lexer.cpp
     test_filter.cpp
+    test_source.cpp
 )
 
 target_link_libraries(
