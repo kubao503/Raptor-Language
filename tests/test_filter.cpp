@@ -30,9 +30,9 @@ TEST(FilterTest, basic_filtering) {
 
     auto filter = Filter(&lexer, Token::Type::CMT);
 
-    EXPECT_EQ(filter.getToken().type, Token::Type::SEMI);
-    EXPECT_EQ(filter.getToken().type, Token::Type::DOT);
-    EXPECT_EQ(filter.getToken().type, Token::Type::ETX);
+    EXPECT_EQ(filter.getToken().getType(), Token::Type::SEMI);
+    EXPECT_EQ(filter.getToken().getType(), Token::Type::DOT);
+    EXPECT_EQ(filter.getToken().getType(), Token::Type::ETX);
 }
 
 TEST(FilterTest, forbid_etx_filtering) {

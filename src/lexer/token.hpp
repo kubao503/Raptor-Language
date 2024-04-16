@@ -9,7 +9,8 @@
 
 struct Position;
 
-struct Token {
+class Token {
+   public:
     enum class Type {
         UNKNOWN,
         IF_KW,
@@ -61,13 +62,18 @@ struct Token {
     using Value = std::variant<std::monostate, Integral, Floating, bool, std::string>;
 
     Token(Type type, Value value, Position position)
-        : type(type), value(value), position(position) {}
+        : type_(type), value_(value), position_(position) {}
     Token()
-        : type(Type::UNKNOWN) {}
+        : type_(Type::UNKNOWN) {}
 
-    Type type;
-    Value value = {};
-    Position position;
+    Type getType() const { return type_; }
+    const Value& getValue() const { return value_; }
+    const Position& getPosition() const { return position_; }
+
+   private:
+    Type type_;
+    Value value_ = {};
+    Position position_;
 };
 
 std::ostream& operator<<(std::ostream& stream, const Token& token);

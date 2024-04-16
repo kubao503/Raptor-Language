@@ -23,7 +23,7 @@ class Filter : public ILexer {
 
         do {
             token = lexer_->getToken();
-        } while (token.type == ignore_);
+        } while (token.getType() == ignore_);
 
         return token;
     }

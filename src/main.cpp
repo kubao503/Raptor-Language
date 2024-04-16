@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
         do {
             token = filter.getToken();
             std::cout << token << '\n';
-        } while (token.type != Token::Type::ETX);
+        } while (token.getType() != Token::Type::ETX);
     } catch (const LexerException& e) {
         std::cerr << '\n' << e.describe() << '\n';
     }

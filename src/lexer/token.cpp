@@ -11,8 +11,8 @@ struct ToStringFunctor {
 };
 
 std::ostream& operator<<(std::ostream& stream, const Token& token) {
-    auto tokenType = magic_enum::enum_name(token.type);
-    auto tokenValue = std::visit(ToStringFunctor(), token.value);
+    auto tokenType = magic_enum::enum_name(token.getType());
+    auto tokenValue = std::visit(ToStringFunctor(), token.getValue());
     stream << '<' << tokenType << ", " << tokenValue << "> ";
     return stream;
 }
