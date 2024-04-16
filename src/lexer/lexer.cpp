@@ -66,10 +66,11 @@ std::optional<Token> Lexer::buildKeyword(std::string_view lexeme) const {
 }
 
 std::string Lexer::lexemeToKeyword(std::string_view lexeme) {
-    static std::string suffix{"_KW"};
+    static const std::string_view suffix{"_KW"};
 
     std::string keyword(lexeme.size(), ' ');
-    std::transform(lexeme.begin(), lexeme.end(), keyword.begin(), ::toupper);
+    std::transform(lexeme.begin(), lexeme.end(), keyword.begin(),
+                   [](char c) { return std::toupper(c); });
     keyword += suffix;
 
     return keyword;
@@ -78,7 +79,7 @@ std::string Lexer::lexemeToKeyword(std::string_view lexeme) {
 std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) const {
     if (lexeme == "true")
         return {Token(Token::Type::TRUE_CONST, {}, tokenPosition_)};
-    else if (lexeme == "false")
+    if (lexeme == "false")
         return {Token(Token::Type::FALSE_CONST, {}, tokenPosition_)};
     return std::nullopt;
 }
@@ -94,7 +95,7 @@ std::optional<Token> Lexer::buildIntConst() const {
     }
 
     if (auto res = buildNumber()) {
-        auto [integralPart, _] = res.value();
+        const auto& [integralPart, _] = res.value();
 
         if (auto token = buildFloatConst(integralPart))
             return token;
@@ -112,10 +113,10 @@ std::optional<Token> Lexer::buildFloatConst(Integral integralPart) const {
     source_->nextChar();
 
     if (auto res = buildNumber()) {
-        auto [fractionalPart, digitCount] = res.value();
-        int exponent{-static_cast<int>(digitCount)};
+        const auto& [fractionalPart, digitCount] = res.value();
+        const int exponent{-static_cast<int>(digitCount)};
 
-        Floating value = integralPart + fractionalPart * std::pow(10, exponent);
+        const Floating value = integralPart + fractionalPart * std::pow(10, exponent);
         return {Token(Token::Type::FLOAT_CONST, value, tokenPosition_)};
     }
 
@@ -191,7 +192,7 @@ std::optional<Token> Lexer::buildComment() const {
         value.push_back(source_->getChar());
         source_->nextChar();
     }
-    return {Token(Token::Type::CMT, value, tokenPosition_)};
+    return {Token(Token::Type::CMT, std::move(value), tokenPosition_)};
 }
 
 std::optional<Token> Lexer::buildNotEqualOp() const {
