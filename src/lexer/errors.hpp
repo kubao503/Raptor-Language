@@ -22,6 +22,7 @@ class LexerException : public std::runtime_error {
     Position position_;
 
     std::string getName() const;
+    using std::runtime_error::what;
 };
 
 class InvalidToken : public LexerException {

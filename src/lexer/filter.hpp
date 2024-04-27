@@ -5,11 +5,10 @@
 
 /// @brief Exception thrown when trying to instantiate
 /// a Filter ignoring end-of-text tokens
-class InvalidFilterType : public std::exception {
+class InvalidFilterType : public std::runtime_error {
    public:
-    const char* what() const noexcept override {
-        return "Cannot specify ETX as ignore type";
-    }
+    InvalidFilterType()
+        : std::runtime_error("Cannot specify ETX as ignore type") {}
 };
 
 /// @brief Filter ignoring given token type. Implements the same interface as Lexer.
