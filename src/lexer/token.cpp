@@ -2,6 +2,7 @@
 
 #include "magic_enum/magic_enum.hpp"
 
+/// @brief Visitor converting tokens into strings
 struct ToStringFunctor {
     std::string operator()(std::monostate) const { return ""; }
     std::string operator()(Integral i) const { return std::to_string(i); }

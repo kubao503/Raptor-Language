@@ -9,9 +9,13 @@
 #include "position.hpp"
 #include "types.hpp"
 
+/// @brief Abstract class for exceptions thrown by Lexer
 class LexerException : public std::runtime_error {
    public:
     explicit LexerException(const Position& position, const std::string& message);
+
+    /// @brief Provides std::string representation of exception
+    /// @return std::string representation of exception
     std::string describe() const;
 
    private:

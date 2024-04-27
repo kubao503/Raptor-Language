@@ -9,6 +9,7 @@
 
 struct Position;
 
+/// @brief Token returned by lexer and used by parser
 class Token {
    public:
     enum class Type {
@@ -61,13 +62,21 @@ class Token {
 
     using Value = std::variant<std::monostate, Integral, Floating, bool, std::string>;
 
+    /// @param type
+    /// @param value - additional info that the token carries
+    /// @param position - position of the first character of the token
     Token(Type type, Value value, Position position)
         : type_(type), value_(value), position_(position) {}
+
+    /// @brief Constructs a token of type unknown
     Token()
         : type_(Type::UNKNOWN) {}
 
     Type getType() const { return type_; }
     const Value& getValue() const { return value_; }
+
+    /// @brief Returns position of the first character of the token
+    /// @return Position of the first character of the token
     const Position& getPosition() const { return position_; }
 
    private:

@@ -8,6 +8,7 @@
 #include "source.hpp"
 #include "token.hpp"
 
+/// @brief Lexer that lazily converts characters read from source into tokens
 class Lexer : public ILexer {
     using CharPair = std::pair<char, char>;
     using TokenTypes = std::pair<Token::Type, Token::Type>;
@@ -19,9 +20,13 @@ class Lexer : public ILexer {
     using IntWithDigitCount = std::pair<Integral, unsigned int>;
 
    public:
+    /// @brief Constructs a Lexer that reads characters from the source
+    /// @param source
     explicit Lexer(Source& source)
         : source_(source) {}
 
+    /// @brief Returns next token lazily constructed from characters read from source
+    /// @return Next token
     Token getToken() override;
 
    private:
