@@ -17,7 +17,7 @@ $ ctest
 ### Getting test coverage
 
 ```console
-$ cs build/Debug/
+$ cd build/Debug/
 $ lcov --zerocounters --directory .
 $ ctest
 $ lcov --capture --directory . --output-file coverage.info

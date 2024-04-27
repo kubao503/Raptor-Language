@@ -26,7 +26,7 @@ class Source {
 
    private:
     std::istream& stream_;
-    char currentChar_;
+    char currentChar_{};
     Position currentPosition_;
 };
 
