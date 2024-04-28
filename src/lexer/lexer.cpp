@@ -4,7 +4,7 @@
 #include <limits>
 #include <string_view>
 
-#include "errors.hpp"
+#include "lexer_errors.hpp"
 #include "magic_enum/magic_enum.hpp"
 
 bool isAlnumOrUnderscore(char c);

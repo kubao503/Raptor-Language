@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "errors.hpp"
 #include "lexer.hpp"
+#include "lexer_errors.hpp"
 #include "types.hpp"
 
 using TypeSequence = std::vector<Token::Type>;
