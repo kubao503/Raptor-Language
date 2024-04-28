@@ -1,6 +1,10 @@
 #ifndef PROGRAM_H
 #define PROGRAM_H
 
-class Program {};
+#include "statements.hpp"
+
+struct Program {
+    Statements statements;
+};
 
 #endif

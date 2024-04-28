@@ -15,8 +15,17 @@ class ParserTest : public testing::Test {
     std::unique_ptr<Parser> parser_;
 };
 
-TEST_F(ParserTest, parseProgram) {
+TEST_F(ParserTest, parseProgram_empty) {
     SetUp({});
 
-    parser_->parseProgram();
+    auto prog = parser_->parseProgram();
+    EXPECT_EQ(prog.statements.size(), 0);
+}
+
+TEST_F(ParserTest, parseProgram_if_stmt) {
+    SetUp({Token::Type::IF_KW});
+
+    auto prog = parser_->parseProgram();
+    ASSERT_EQ(prog.statements.size(), 1);
+    EXPECT_TRUE(std::holds_alternative<IfStatement>(prog.statements.at(0)));
 }

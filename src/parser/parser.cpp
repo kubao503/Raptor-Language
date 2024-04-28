@@ -2,5 +2,35 @@
 
 /// PROGRAM = STMTS
 Program Parser::parseProgram() {
-    return Program();
+    return {.statements = parseStatements()};
+}
+
+/// STMTS = { STMT }
+Statements Parser::parseStatements() {
+    Statements statements;
+    while (auto statement = parseStatement()) statements.push_back(statement.value());
+    return statements;
+}
+
+/// STMT = IF_STMT
+///      | WHILE_STMT
+///      | RET_STMT
+///      | PRINT_STMT
+///      | VAR_DECL
+///      | ASGN
+///      | FIELD_ASGN
+///      | FUNC_DECL
+///      | STRUCT_DECL
+///      | VNT_DECL
+std::optional<Statement> Parser::parseStatement() {
+    if (auto statement = parseIfStatement())
+        return statement;
+    return std::nullopt;
+}
+
+std::optional<IfStatement> Parser::parseIfStatement() {
+    if (currentToken_.getType() != Token::Type::IF_KW)
+        return std::nullopt;
+    consumeToken();
+    return IfStatement();
 }
