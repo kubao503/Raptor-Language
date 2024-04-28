@@ -13,6 +13,7 @@ class Parser {
         : lexer_(lexer) {}
 
     /// @brief Builds parse tree from token acquired from lexer
+    /// @return Parse tree
     Program parseProgram();
 
    private:
