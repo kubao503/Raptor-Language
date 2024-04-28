@@ -3,6 +3,7 @@
 #include "fixtures.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "parser_errors.hpp"
 
 class ParserTest : public testing::Test {
    protected:
@@ -22,8 +23,14 @@ TEST_F(ParserTest, parseProgram_empty) {
     EXPECT_EQ(prog.statements.size(), 0);
 }
 
-TEST_F(ParserTest, parseProgram_if_stmt) {
+TEST_F(ParserTest, parseProgram_if_stmt_missing_left_par) {
     SetUp({Token::Type::IF_KW});
+
+    EXPECT_THROW(parser_->parseProgram(), std::exception);
+}
+
+TEST_F(ParserTest, parseProgram_if_stmt) {
+    SetUp({Token::Type::IF_KW, Token::Type::L_PAR});
 
     auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);

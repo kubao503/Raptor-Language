@@ -3,9 +3,9 @@
 
 #include <optional>
 
-#include "../lexer/token.hpp"
 #include "ILexer.hpp"
 #include "program.hpp"
+#include "token.hpp"
 
 /// @brief Parser building parse tree from tokens
 class Parser {
@@ -21,6 +21,7 @@ class Parser {
 
    private:
     void consumeToken() { currentToken_ = lexer_.getToken(); };
+    auto expectAndReturnValue(Token::Type expected, const std::exception& exception);
 
     Statements parseStatements();
     std::optional<Statement> parseStatement();

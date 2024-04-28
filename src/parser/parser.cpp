@@ -1,5 +1,16 @@
 #include "parser.hpp"
 
+#include "parser_errors.hpp"
+
+auto Parser::expectAndReturnValue(Token::Type expected, const std::exception& exception) {
+    if (currentToken_.getType() != expected)
+        throw exception;
+
+    auto value = currentToken_.getValue();
+    consumeToken();
+    return value;
+}
+
 /// PROGRAM = STMTS
 Program Parser::parseProgram() {
     return {.statements = parseStatements()};
@@ -28,9 +39,14 @@ std::optional<Statement> Parser::parseStatement() {
     return std::nullopt;
 }
 
+/// IF_STMT = if EXPR '{' STMTS '}'
 std::optional<IfStatement> Parser::parseIfStatement() {
     if (currentToken_.getType() != Token::Type::IF_KW)
         return std::nullopt;
     consumeToken();
+
+    expectAndReturnValue(Token::Type::L_PAR,
+                         SyntaxException({}, "Missing left parenthesis"));
+
     return IfStatement();
 }
