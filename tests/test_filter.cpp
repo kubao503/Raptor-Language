@@ -14,6 +14,6 @@ TEST(FilterTest, basic_filtering) {
 }
 
 TEST(FilterTest, forbid_etx_filtering) {
-    auto lexer = FakeLexer({});
+    auto lexer = FakeLexer({Token::Type::ETX});
     EXPECT_THROW(Filter(lexer, Token::Type::ETX), InvalidFilterType);
 }

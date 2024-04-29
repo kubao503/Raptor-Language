@@ -17,7 +17,7 @@ class ParserTest : public testing::Test {
 };
 
 TEST_F(ParserTest, parseProgram_empty) {
-    SetUp({});
+    SetUp({Token::Type::ETX});
 
     auto prog = parser_->parseProgram();
     EXPECT_EQ(prog.statements.size(), 0);
