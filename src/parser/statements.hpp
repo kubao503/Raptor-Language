@@ -6,7 +6,13 @@
 
 struct IfStatement {};
 
-struct Param {};
+struct Parameter {
+    Token::Type type;
+    std::string name;
+    bool ref;
+};
+
+using Parameters = std::vector<Parameter>;
 
 struct FuncDef;
 
@@ -15,18 +21,19 @@ using Statements = std::vector<Statement>;
 
 class FuncDef {
    public:
-    FuncDef(const std::string& name
-            //, Token::Type returnType, std::vector<Param> params, Statements statements,
-            // Position position
+    FuncDef(Token::Type returnType, const std::string& name, const Parameters& parameters
+            // Statements statements, Position position
             )
-        : name_{name} {}
+        : returnType_{returnType}, name_{name}, parameters_{parameters} {}
 
+    Token::Type getReturnType() const { return returnType_; }
     std::string_view getName() const { return name_; }
+    const Parameters& getParameters() const { return parameters_; }
 
    private:
+    Token::Type returnType_{Token::Type::UNKNOWN};
     std::string name_;
-    Token::Type returnType_;
-    std::vector<Param> params_;
+    Parameters parameters_;
     Statements statements_;
     Position position_;
 };

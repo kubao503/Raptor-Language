@@ -18,10 +18,7 @@ int main(int argc, char* argv[]) {
 
     Token token;
     try {
-        do {
-            token = filter.getToken();
-            std::cout << token << '\n';
-        } while (token.getType() != Token::Type::ETX);
+        auto program = parser.parseProgram();
     } catch (const BaseException& e) {
         std::cerr << '\n' << e.describe() << '\n';
     }

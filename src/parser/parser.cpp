@@ -15,7 +15,7 @@ auto Parser::expectAndReturnValue(Token::Type expected, const std::exception& ex
     if (currentToken_.getType() != expected)
         throw exception;
 
-    auto value = currentToken_.getValue();
+    const auto value = currentToken_.getValue();
     consumeToken();
     return value;
 }
@@ -67,6 +67,8 @@ std::optional<IfStatement> Parser::parseIfStatement() {
 std::optional<FuncDef> Parser::parseBuiltInDef() {
     if (!isBuiltInType(currentToken_.getType()))
         return std::nullopt;
+
+    defType_ = currentToken_.getType();
     consumeToken();
     return parseDef();
 }
@@ -81,18 +83,62 @@ bool isBuiltInType(Token::Type type) {
 std::optional<FuncDef> Parser::parseDef() {
     auto value =
         expectAndReturnValue(Token::Type::ID, SyntaxException({}, "Expected identifier"));
-    auto name = std::get<std::string>(value);
+    defName_ = std::get<std::string>(value);
 
-    if (auto def = parseFuncDef(name))
+    if (auto def = parseFuncDef())
         return def;
     return std::nullopt;
 }
 
 /// FUNC_DEF = '(' PARAMS ')' '{' STMTS '}'
-std::optional<FuncDef> Parser::parseFuncDef(const std::string& name) {
+std::optional<FuncDef> Parser::parseFuncDef() {
     expectAndReturnValue(Token::Type::L_PAR,
                          SyntaxException({}, "Missing left parenthesis"));
-    return FuncDef(name);
+
+    const auto parameters = parseParameters();
+
+    expectAndReturnValue(Token::Type::R_PAR,
+                         SyntaxException({}, "Missing right parenthesis"));
+    return FuncDef(defType_, defName_, parameters);
+}
+
+/// PARAMS = [ PARAM { ',' PARAM } ]
+Parameters Parser::parseParameters() {
+    Parameters parameters;
+
+    auto parameter = parseParameter();
+    if (!parameter)
+        return parameters;
+
+    parameters.push_back(parameter.value());
+
+    while (currentToken_.getType() == Token::Type::CMA) {
+        consumeToken();
+        parameter = parseParameter();
+        if (!parameter)
+            throw SyntaxException({}, "Expected parameter after comma");
+        parameters.push_back(parameter.value());
+    }
+    return parameters;
+}
+
+/// PARAM = [ ref ] TYPE ID
+std::optional<Parameter> Parser::parseParameter() {
+    bool ref{false};
+    if (currentToken_.getType() == Token::Type::REF_KW) {
+        ref = true;
+        consumeToken();
+    } else if (!isBuiltInType(currentToken_.getType()))
+        return std::nullopt;
+
+    const auto type = currentToken_.getType();
+    consumeToken();
+
+    const auto value = expectAndReturnValue(
+        Token::Type::ID, SyntaxException({}, "Expected parameter name"));
+    const auto name = std::get<std::string>(value);
+
+    return Parameter{.type = type, .name = name, .ref = ref};
 }
 
 Parser::StatementParsers Parser::statementParsers_{

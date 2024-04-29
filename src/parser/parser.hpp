@@ -29,7 +29,9 @@ class Parser {
     std::optional<IfStatement> parseIfStatement();
     std::optional<FuncDef> parseBuiltInDef();
     std::optional<FuncDef> parseDef();
-    std::optional<FuncDef> parseFuncDef(const std::string& name);
+    std::optional<FuncDef> parseFuncDef();
+    Parameters parseParameters();
+    std::optional<Parameter> parseParameter();
 
     using StatementParsers =
         std::initializer_list<std::function<std::optional<Statement>(Parser&)>>;
@@ -37,6 +39,9 @@ class Parser {
 
     ILexer& lexer_;
     Token currentToken_;
+
+    Token::Type defType_;
+    std::string defName_;
 };
 
 #endif

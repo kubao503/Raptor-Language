@@ -41,7 +41,7 @@ TEST_F(ParserTest, parseProgram_if_stmt) {
 TEST_F(ParserTest, parse_func_def) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("add_one"), {}},
+        {Token::Type::ID, std::string("foo"), {}},
         {Token::Type::L_PAR, {}, {}},
         {Token::Type::R_PAR, {}, {}},
         {Token::Type::L_C_BR, {}, {}},
@@ -53,5 +53,126 @@ TEST_F(ParserTest, parse_func_def) {
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
     auto funcDef = std::get<FuncDef>(prog.statements.at(0));
-    ASSERT_EQ(funcDef.getName(), "add_one");
+    EXPECT_EQ(funcDef.getName(), "foo");
+    EXPECT_EQ(funcDef.getReturnType(), Token::Type::INT_KW);
+    EXPECT_EQ(funcDef.getParameters().size(), 0);
+}
+
+TEST_F(ParserTest, parse_func_def_parameter) {
+    SetUp<Token>({
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("num"), {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
+
+    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    ASSERT_EQ(funcDef.getParameters().size(), 1);
+
+    auto param = funcDef.getParameters().at(0);
+    EXPECT_EQ(param.type, Token::Type::INT_KW);
+    EXPECT_EQ(param.name, "num");
+    EXPECT_FALSE(param.ref);
+}
+
+TEST_F(ParserTest, parse_func_def_two_parameters) {
+    SetUp<Token>({
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("num"), {}},
+        {Token::Type::CMA, {}, {}},
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, std::string("truth"), {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
+
+    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    ASSERT_EQ(funcDef.getParameters().size(), 2);
+
+    {
+        auto param = funcDef.getParameters().at(0);
+        EXPECT_EQ(param.type, Token::Type::INT_KW);
+        EXPECT_EQ(param.name, "num");
+        EXPECT_FALSE(param.ref);
+    }
+
+    auto param = funcDef.getParameters().at(1);
+    EXPECT_EQ(param.type, Token::Type::BOOL_KW);
+    EXPECT_EQ(param.name, "truth");
+    EXPECT_FALSE(param.ref);
+}
+
+TEST_F(ParserTest, parse_func_def_no_parameter_after_comma) {
+    SetUp<Token>({
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("num"), {}},
+        {Token::Type::CMA, {}, {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    EXPECT_THROW(parser_->parseProgram(), std::exception);
+}
+
+TEST_F(ParserTest, parse_func_ref_parameter) {
+    SetUp<Token>({
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::REF_KW, {}, {}},
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("num"), {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
+
+    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    ASSERT_EQ(funcDef.getParameters().size(), 1);
+
+    auto param = funcDef.getParameters().at(0);
+    EXPECT_EQ(param.type, Token::Type::INT_KW);
+    EXPECT_EQ(param.name, "num");
+    EXPECT_TRUE(param.ref);
+}
+
+TEST_F(ParserTest, parse_func_no_parameter_after_ref) {
+    SetUp<Token>({
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::REF_KW, {}, {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    EXPECT_THROW(parser_->parseProgram(), std::exception);
 }
