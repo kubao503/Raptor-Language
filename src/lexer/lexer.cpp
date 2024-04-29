@@ -18,7 +18,7 @@ Token Lexer::getToken() {
 
     tokenPosition_ = source_.getPosition();
 
-    for (const auto& builder : TokenBuilders_) {
+    for (const auto& builder : tokenBuilders_) {
         if (auto token = builder(*this))
             return token.value();
     }
@@ -246,7 +246,7 @@ std::optional<Token> Lexer::buildTwoLetterOp(CharPair chars, TokenTypes types) c
     return Token(types.second, {}, tokenPosition_);
 }
 
-Lexer::TokenBuilders Lexer::TokenBuilders_{
+Lexer::TokenBuilders Lexer::tokenBuilders_{
     [](Lexer& l) { return l.buildIdOrKeyword(); },
     [](Lexer& l) { return l.buildIntConst(); },
     [](Lexer& l) { return l.buildStrConst(); },

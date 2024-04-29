@@ -50,7 +50,7 @@ class Lexer : public ILexer {
     void expectNoEndOfFile() const;
     char findInEscapedChars(char searched) const;
 
-    static TokenBuilders TokenBuilders_;
+    static TokenBuilders tokenBuilders_;
     static EscapedChars escapedChars_;
 };
 

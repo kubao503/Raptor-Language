@@ -7,7 +7,8 @@
 
 class ParserTest : public testing::Test {
    protected:
-    void SetUp(std::initializer_list<Token::Type> seq) {
+    template <typename T>
+    void SetUp(std::initializer_list<T> seq) {
         lexer_ = std::make_unique<FakeLexer>(seq);
         parser_ = std::make_unique<Parser>(*lexer_);
     }
@@ -35,4 +36,13 @@ TEST_F(ParserTest, parseProgram_if_stmt) {
     auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
     EXPECT_TRUE(std::holds_alternative<IfStatement>(prog.statements.at(0)));
+}
+
+TEST_F(ParserTest, parse_func_def) {
+    SetUp<Token>({{Token::Type::INT_KW, {}, {}},
+                  {Token::Type::ID, "add_one", {}},
+                  {Token::Type::L_PAR, {}, {}}});
+
+    auto prog = parser_->parseProgram();
+    ASSERT_EQ(prog.statements.size(), 1);
 }

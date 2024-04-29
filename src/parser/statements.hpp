@@ -5,8 +5,9 @@
 #include <vector>
 
 struct IfStatement {};
+struct FuncDef {};
 
-using Statement = std::variant<IfStatement>;
+using Statement = std::variant<IfStatement, FuncDef>;
 using Statements = std::vector<Statement>;
 
 #endif

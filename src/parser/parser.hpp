@@ -1,6 +1,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include <functional>
 #include <optional>
 
 #include "ILexer.hpp"
@@ -26,6 +27,13 @@ class Parser {
     Statements parseStatements();
     std::optional<Statement> parseStatement();
     std::optional<IfStatement> parseIfStatement();
+    std::optional<FuncDef> parseBuiltInDef();
+    std::optional<FuncDef> parseDef();
+    std::optional<FuncDef> parseFuncDef();
+
+    using StatementParsers =
+        std::initializer_list<std::function<std::optional<Statement>(Parser&)>>;
+    static StatementParsers statementParsers_;
 
     ILexer& lexer_;
     Token currentToken_;
