@@ -29,7 +29,7 @@ class Parser {
     std::optional<IfStatement> parseIfStatement();
     std::optional<FuncDef> parseBuiltInDef();
     std::optional<FuncDef> parseDef();
-    std::optional<FuncDef> parseFuncDef();
+    std::optional<FuncDef> parseFuncDef(const std::string& name);
 
     using StatementParsers =
         std::initializer_list<std::function<std::optional<Statement>(Parser&)>>;

@@ -79,18 +79,20 @@ bool isBuiltInType(Token::Type type) {
 /// DEF = ID ( FUNC_DEF
 ///          | ASGN )
 std::optional<FuncDef> Parser::parseDef() {
-    expectAndReturnValue(Token::Type::ID, SyntaxException({}, "Expected identifier"));
+    auto value =
+        expectAndReturnValue(Token::Type::ID, SyntaxException({}, "Expected identifier"));
+    auto name = std::get<std::string>(value);
 
-    if (auto def = parseFuncDef())
+    if (auto def = parseFuncDef(name))
         return def;
     return std::nullopt;
 }
 
 /// FUNC_DEF = '(' PARAMS ')' '{' STMTS '}'
-std::optional<FuncDef> Parser::parseFuncDef() {
+std::optional<FuncDef> Parser::parseFuncDef(const std::string& name) {
     expectAndReturnValue(Token::Type::L_PAR,
                          SyntaxException({}, "Missing left parenthesis"));
-    return FuncDef();
+    return FuncDef(name);
 }
 
 Parser::StatementParsers Parser::statementParsers_{

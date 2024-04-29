@@ -39,10 +39,19 @@ TEST_F(ParserTest, parseProgram_if_stmt) {
 }
 
 TEST_F(ParserTest, parse_func_def) {
-    SetUp<Token>({{Token::Type::INT_KW, {}, {}},
-                  {Token::Type::ID, "add_one", {}},
-                  {Token::Type::L_PAR, {}, {}}});
+    SetUp<Token>({
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("add_one"), {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
 
     auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
+
+    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    ASSERT_EQ(funcDef.getName(), "add_one");
 }
