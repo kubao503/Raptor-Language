@@ -22,7 +22,10 @@ class Parser {
 
    private:
     void consumeToken() { currentToken_ = lexer_.getToken(); };
-    auto expectAndReturnValue(Token::Type expected, const std::exception& exception);
+    void expect(Token::Type expected, const std::exception& exception);
+
+    template <typename T>
+    T expectAndReturnValue(Token::Type expected, const std::exception& exception);
 
     Statements parseStatements();
     std::optional<Statement> parseStatement();
@@ -43,5 +46,12 @@ class Parser {
     ILexer& lexer_;
     Token currentToken_;
 };
+
+template <typename T>
+T Parser::expectAndReturnValue(Token::Type expected, const std::exception& exception) {
+    const auto value = currentToken_.getValue();
+    expect(expected, exception);
+    return std::get<T>(value);
+}
 
 #endif

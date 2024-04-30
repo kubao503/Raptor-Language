@@ -11,13 +11,11 @@ std::initializer_list<Token::Type> builtInTypes{
 
 bool isBuiltInType(Token::Type type);
 
-auto Parser::expectAndReturnValue(Token::Type expected, const std::exception& exception) {
+void Parser::expect(Token::Type expected, const std::exception& exception) {
     if (currentToken_.getType() != expected)
         throw exception;
 
-    const auto value = currentToken_.getValue();
     consumeToken();
-    return value;
 }
 
 /// PROGRAM = STMTS
@@ -57,8 +55,7 @@ std::optional<IfStatement> Parser::parseIfStatement() {
         return std::nullopt;
     consumeToken();
 
-    expectAndReturnValue(Token::Type::L_PAR,
-                         SyntaxException({}, "Missing left parenthesis"));
+    expect(Token::Type::L_PAR, SyntaxException({}, "Missing left parenthesis"));
 
     return IfStatement();
 }
@@ -69,9 +66,8 @@ std::optional<FuncDef> Parser::parseVoidFunc() {
         return std::nullopt;
     consumeToken();
 
-    const auto value = expectAndReturnValue(
+    const auto name = expectAndReturnValue<std::string>(
         Token::Type::ID, SyntaxException({}, "Expected function name"));
-    const auto name = std::get<std::string>(value);
 
     return parseFuncDef(Token::Type::VOID_KW, name);
 }
@@ -102,7 +98,7 @@ std::optional<Assignment> Parser::parseAssignment(const std::string& name) {
     const auto value = currentToken_.getValue();
     consumeToken();
 
-    expectAndReturnValue(Token::Type::SEMI, SyntaxException({}, "Missing semicolon"));
+    expect(Token::Type::SEMI, SyntaxException({}, "Missing semicolon"));
 
     return Assignment{.lhs = name, .rhs = value};
 }
@@ -125,9 +121,8 @@ bool isBuiltInType(Token::Type type) {
 /// DEF = ID ( FUNC_DEF
 ///          | ASGN )
 std::optional<FuncDef> Parser::parseDef(Token::Type type) {
-    const auto value =
-        expectAndReturnValue(Token::Type::ID, SyntaxException({}, "Expected identifier"));
-    const auto name = std::get<std::string>(value);
+    const auto name = expectAndReturnValue<std::string>(
+        Token::Type::ID, SyntaxException({}, "Expected identifier"));
 
     if (auto def = parseFuncDef(type, name))
         return def;
@@ -137,21 +132,17 @@ std::optional<FuncDef> Parser::parseDef(Token::Type type) {
 /// FUNC_DEF = '(' PARAMS ')' '{' STMTS '}'
 std::optional<FuncDef> Parser::parseFuncDef(Token::Type returnType,
                                             const std::string& name) {
-    expectAndReturnValue(Token::Type::L_PAR,
-                         SyntaxException({}, "Missing left parenthesis"));
+    expect(Token::Type::L_PAR, SyntaxException({}, "Missing left parenthesis"));
 
     const auto parameters = parseParameters();
 
-    expectAndReturnValue(Token::Type::R_PAR,
-                         SyntaxException({}, "Missing right parenthesis"));
+    expect(Token::Type::R_PAR, SyntaxException({}, "Missing right parenthesis"));
 
-    expectAndReturnValue(Token::Type::L_C_BR,
-                         SyntaxException({}, "Missing left curly brace"));
+    expect(Token::Type::L_C_BR, SyntaxException({}, "Missing left curly brace"));
 
     const auto statements = parseStatements();
 
-    expectAndReturnValue(Token::Type::R_C_BR,
-                         SyntaxException({}, "Missing right curly brace"));
+    expect(Token::Type::R_C_BR, SyntaxException({}, "Missing right curly brace"));
     return FuncDef(returnType, name, parameters, statements, {});
 }
 
@@ -187,9 +178,8 @@ std::optional<Parameter> Parser::parseParameter() {
     const auto type = currentToken_.getType();
     consumeToken();
 
-    const auto value = expectAndReturnValue(
+    const auto name = expectAndReturnValue<std::string>(
         Token::Type::ID, SyntaxException({}, "Expected parameter name"));
-    const auto name = std::get<std::string>(value);
 
     return Parameter{.type = type, .name = name, .ref = ref};
 }
