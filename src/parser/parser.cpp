@@ -24,13 +24,6 @@ std::optional<Type> getBuiltInOrIdType(const Token& token) {
     return std::get<std::string>(token.getValue());
 }
 
-void Parser::expect(Token::Type expected, const std::exception& exception) {
-    if (currentToken_.getType() != expected)
-        throw exception;
-
-    consumeToken();
-}
-
 /// PROGRAM = STMTS
 Program Parser::parseProgram() {
     return {.statements = parseStatements()};

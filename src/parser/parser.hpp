@@ -22,10 +22,12 @@ class Parser {
 
    private:
     void consumeToken() { currentToken_ = lexer_.getToken(); };
-    void expect(Token::Type expected, const std::exception& exception);
 
-    template <typename T>
-    T expectAndReturnValue(Token::Type expected, const std::exception& exception);
+    template <typename Exception>
+    void expect(Token::Type expected, const Exception& exception);
+
+    template <typename T, typename Exception>
+    T expectAndReturnValue(Token::Type expected, const Exception& exception);
 
     Statements parseStatements();
     std::optional<Statement> parseStatement();
@@ -48,8 +50,16 @@ class Parser {
     Token currentToken_;
 };
 
-template <typename T>
-T Parser::expectAndReturnValue(Token::Type expected, const std::exception& exception) {
+template <typename Exception>
+void Parser::expect(Token::Type expected, const Exception& exception) {
+    if (currentToken_.getType() != expected)
+        throw exception;
+
+    consumeToken();
+}
+
+template <typename T, typename Exception>
+T Parser::expectAndReturnValue(Token::Type expected, const Exception& exception) {
     const auto value = currentToken_.getValue();
     expect(expected, exception);
     return std::get<T>(value);
