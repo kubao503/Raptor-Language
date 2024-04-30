@@ -28,6 +28,8 @@ class Parser {
     std::optional<Statement> parseStatement();
     std::optional<IfStatement> parseIfStatement();
     std::optional<FuncDef> parseVoidFunc();
+    std::optional<Statement> parseDefOrAssignment();
+    std::optional<Assignment> parseAssignment(const std::string& name);
     std::optional<FuncDef> parseBuiltInDef();
     std::optional<FuncDef> parseDef(Token::Type type);
     std::optional<FuncDef> parseFuncDef(Token::Type returnType, const std::string& name);

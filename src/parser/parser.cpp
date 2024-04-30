@@ -76,6 +76,37 @@ std::optional<FuncDef> Parser::parseVoidFunc() {
     return parseFuncDef(Token::Type::VOID_KW, name);
 }
 
+/// DEF_OR_ASGN = ID ( FIELD_ASGN
+///                  | ASGN
+///                  | DEF )
+std::optional<Statement> Parser::parseDefOrAssignment() {
+    if (currentToken_.getType() != Token::Type::ID)
+        return std::nullopt;
+
+    const auto value = currentToken_.getValue();
+    const auto name = std::get<std::string>(value);
+    consumeToken();
+
+    if (auto assignment = parseAssignment(name))
+        return assignment;
+    throw SyntaxException({}, "Expected assignment, field assignment or definition");
+}
+
+/// ASGN = '=' EXPR ';'
+std::optional<Assignment> Parser::parseAssignment(const std::string& name) {
+    if (currentToken_.getType() != Token::Type::EQ_OP)
+        return std::nullopt;
+
+    consumeToken();
+
+    const auto value = currentToken_.getValue();
+    consumeToken();
+
+    expectAndReturnValue(Token::Type::SEMI, SyntaxException({}, "Missing semicolon"));
+
+    return Assignment{.lhs = name, .rhs = value};
+}
+
 /// BUILT_IN_DEF = TYPE DEF
 std::optional<FuncDef> Parser::parseBuiltInDef() {
     if (!isBuiltInType(currentToken_.getType()))
@@ -166,5 +197,6 @@ std::optional<Parameter> Parser::parseParameter() {
 Parser::StatementParsers Parser::statementParsers_{
     [](Parser& p) { return p.parseIfStatement(); },
     [](Parser& p) { return p.parseVoidFunc(); },
+    [](Parser& p) { return p.parseDefOrAssignment(); },
     [](Parser& p) { return p.parseBuiltInDef(); },
 };

@@ -6,6 +6,11 @@
 
 struct IfStatement {};
 
+struct Assignment {
+    std::string lhs;
+    Token::Value rhs;
+};
+
 struct Parameter {
     Token::Type type;
     std::string name;
@@ -16,7 +21,7 @@ using Parameters = std::vector<Parameter>;
 
 struct FuncDef;
 
-using Statement = std::variant<IfStatement, FuncDef>;
+using Statement = std::variant<IfStatement, FuncDef, Assignment>;
 using Statements = std::vector<Statement>;
 
 class FuncDef {

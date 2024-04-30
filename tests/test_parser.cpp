@@ -232,3 +232,32 @@ TEST_F(ParserTest, parse_void_func_no_name_after_void_kw) {
 
     EXPECT_THROW(parser_->parseProgram(), std::exception);
 }
+
+TEST_F(ParserTest, parse_assignment) {
+    SetUp<Token>({
+        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<Assignment>(prog.statements.at(0)));
+
+    auto assignment = std::get<Assignment>(prog.statements.at(0));
+    EXPECT_EQ(assignment.lhs, "var");
+    ASSERT_TRUE(std::holds_alternative<Integral>(assignment.rhs));
+    EXPECT_EQ(std::get<Integral>(assignment.rhs), 42);
+}
+
+TEST_F(ParserTest, parse_assignment_missing_semicolon) {
+    SetUp<Token>({
+        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
+    });
+
+    ASSERT_THROW(parser_->parseProgram(), std::exception);
+}
