@@ -99,7 +99,15 @@ std::optional<FuncDef> Parser::parseFuncDef() {
 
     expectAndReturnValue(Token::Type::R_PAR,
                          SyntaxException({}, "Missing right parenthesis"));
-    return FuncDef(defType_, defName_, parameters);
+
+    expectAndReturnValue(Token::Type::L_C_BR,
+                         SyntaxException({}, "Missing left curly brace"));
+
+    const auto statements = parseStatements();
+
+    expectAndReturnValue(Token::Type::R_C_BR,
+                         SyntaxException({}, "Missing right curly brace"));
+    return FuncDef(defType_, defName_, parameters, statements, {});
 }
 
 /// PARAMS = [ PARAM { ',' PARAM } ]

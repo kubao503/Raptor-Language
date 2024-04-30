@@ -176,3 +176,28 @@ TEST_F(ParserTest, parse_func_no_parameter_after_ref) {
 
     EXPECT_THROW(parser_->parseProgram(), std::exception);
 }
+
+TEST_F(ParserTest, parse_func_statements) {
+    SetUp<Token>({
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::IF_KW, {}, {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
+
+    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    auto statements = funcDef.getStatements();
+
+    ASSERT_EQ(funcDef.getStatements().size(), 1);
+    auto statement = funcDef.getStatements().at(0);
+    ASSERT_TRUE(std::holds_alternative<IfStatement>(statement));
+}
