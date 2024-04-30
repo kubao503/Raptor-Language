@@ -24,18 +24,18 @@ TEST_F(ParserTest, parseProgram_empty) {
     EXPECT_EQ(prog.statements.size(), 0);
 }
 
-TEST_F(ParserTest, parseProgram_if_stmt_missing_left_par) {
-    SetUp({Token::Type::IF_KW});
-
-    EXPECT_THROW(parser_->parseProgram(), std::exception);
-}
-
 TEST_F(ParserTest, parseProgram_if_stmt) {
     SetUp({Token::Type::IF_KW, Token::Type::L_PAR});
 
     auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
     EXPECT_TRUE(std::holds_alternative<IfStatement>(prog.statements.at(0)));
+}
+
+TEST_F(ParserTest, parseProgram_if_stmt_missing_left_par) {
+    SetUp({Token::Type::IF_KW});
+
+    EXPECT_THROW(parser_->parseProgram(), std::exception);
 }
 
 TEST_F(ParserTest, parse_func_def) {
@@ -56,6 +56,25 @@ TEST_F(ParserTest, parse_func_def) {
     EXPECT_EQ(funcDef.getName(), "foo");
     EXPECT_EQ(std::get<Token::Type>(funcDef.getReturnType()), Token::Type::INT_KW);
     EXPECT_EQ(funcDef.getParameters().size(), 0);
+}
+
+TEST_F(ParserTest, parse_func_def_id_ret_type) {
+    SetUp<Token>({
+        {Token::Type::ID, std::string("MyStruct"), {}},
+        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
+
+    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    ASSERT_TRUE(std::holds_alternative<std::string>(funcDef.getReturnType()));
+    EXPECT_EQ(std::get<std::string>(funcDef.getReturnType()), "MyStruct");
 }
 
 TEST_F(ParserTest, parse_func_def_parameter) {
@@ -232,6 +251,86 @@ TEST_F(ParserTest, parse_func_def_statements) {
     ASSERT_TRUE(std::holds_alternative<IfStatement>(statement));
 }
 
+TEST_F(ParserTest, parse_void_func_def) {
+    SetUp<Token>({
+        {Token::Type::VOID_KW, {}, {}},
+        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
+
+    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    EXPECT_EQ(std::get<Token::Type>(funcDef.getReturnType()), Token::Type::VOID_KW);
+}
+
+TEST_F(ParserTest, parse_void_func_def_no_name_after_void_kw) {
+    SetUp<Token>({
+        {Token::Type::VOID_KW, {}, {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    EXPECT_THROW(parser_->parseProgram(), std::exception);
+}
+
+TEST_F(ParserTest, parse_assignment) {
+    SetUp<Token>({
+        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<Assignment>(prog.statements.at(0)));
+
+    auto assignment = std::get<Assignment>(prog.statements.at(0));
+    EXPECT_EQ(assignment.lhs, "var");
+    ASSERT_TRUE(std::holds_alternative<Integral>(assignment.rhs));
+    EXPECT_EQ(std::get<Integral>(assignment.rhs), 42);
+}
+
+TEST_F(ParserTest, parse_assignment_missing_semicolon) {
+    SetUp<Token>({
+        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
+    });
+
+    ASSERT_THROW(parser_->parseProgram(), std::exception);
+}
+
+TEST_F(ParserTest, parse_var_def) {
+    SetUp<Token>({
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto varDef = std::get<VarDef>(prog.statements.at(0));
+    EXPECT_EQ(varDef.name, "var");
+    ASSERT_TRUE(std::holds_alternative<Integral>(varDef.value));
+    EXPECT_EQ(std::get<Integral>(varDef.value), 42);
+}
+
 TEST_F(ParserTest, parse_const_var_def) {
     SetUp<Token>({
         {Token::Type::CONST_KW, {}, {}},
@@ -286,102 +385,4 @@ TEST_F(ParserTest, parse_const_var_def_invalid_type) {
     });
 
     EXPECT_THROW(parser_->parseProgram(), std::exception);
-}
-TEST_F(ParserTest, parse_void_func_def) {
-    SetUp<Token>({
-        {Token::Type::VOID_KW, {}, {}},
-        {Token::Type::ID, std::string("foo"), {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
-
-    auto prog = parser_->parseProgram();
-
-    ASSERT_EQ(prog.statements.size(), 1);
-    ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
-
-    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
-    EXPECT_EQ(std::get<Token::Type>(funcDef.getReturnType()), Token::Type::VOID_KW);
-}
-
-TEST_F(ParserTest, parse_void_func_def_no_name_after_void_kw) {
-    SetUp<Token>({
-        {Token::Type::VOID_KW, {}, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
-
-    EXPECT_THROW(parser_->parseProgram(), std::exception);
-}
-
-TEST_F(ParserTest, parse_id_func_def) {
-    SetUp<Token>({
-        {Token::Type::ID, std::string("MyStruct"), {}},
-        {Token::Type::ID, std::string("foo"), {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
-
-    auto prog = parser_->parseProgram();
-    ASSERT_EQ(prog.statements.size(), 1);
-    ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
-
-    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
-    ASSERT_TRUE(std::holds_alternative<std::string>(funcDef.getReturnType()));
-    EXPECT_EQ(std::get<std::string>(funcDef.getReturnType()), "MyStruct");
-}
-
-TEST_F(ParserTest, parse_assignment) {
-    SetUp<Token>({
-        {Token::Type::ID, std::string("var"), {}},
-        {Token::Type::EQ_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
-        {Token::Type::SEMI, {}, {}},
-    });
-
-    auto prog = parser_->parseProgram();
-
-    ASSERT_EQ(prog.statements.size(), 1);
-    ASSERT_TRUE(std::holds_alternative<Assignment>(prog.statements.at(0)));
-
-    auto assignment = std::get<Assignment>(prog.statements.at(0));
-    EXPECT_EQ(assignment.lhs, "var");
-    ASSERT_TRUE(std::holds_alternative<Integral>(assignment.rhs));
-    EXPECT_EQ(std::get<Integral>(assignment.rhs), 42);
-}
-
-TEST_F(ParserTest, parse_assignment_missing_semicolon) {
-    SetUp<Token>({
-        {Token::Type::ID, std::string("var"), {}},
-        {Token::Type::EQ_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
-    });
-
-    ASSERT_THROW(parser_->parseProgram(), std::exception);
-}
-
-TEST_F(ParserTest, parse_var_def) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("var"), {}},
-        {Token::Type::EQ_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
-        {Token::Type::SEMI, {}, {}},
-    });
-
-    auto prog = parser_->parseProgram();
-
-    ASSERT_EQ(prog.statements.size(), 1);
-    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
-
-    const auto varDef = std::get<VarDef>(prog.statements.at(0));
-    EXPECT_EQ(varDef.name, "var");
-    ASSERT_TRUE(std::holds_alternative<Integral>(varDef.value));
-    EXPECT_EQ(std::get<Integral>(varDef.value), 42);
 }
