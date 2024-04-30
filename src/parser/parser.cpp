@@ -34,7 +34,7 @@ Statements Parser::parseStatements() {
 ///      | WHILE_STMT
 ///      | RET_STMT
 ///      | PRINT_STMT
-///      | CONST_VAR
+///      | CONST_VAR_DEF
 ///      | VOID_FUNC
 ///      | DEF_OR_ASGN
 ///      | BUILT_IN_DEF
@@ -58,6 +58,30 @@ std::optional<IfStatement> Parser::parseIfStatement() {
     expect(Token::Type::L_PAR, SyntaxException({}, "Missing left parenthesis"));
 
     return IfStatement();
+}
+
+/// CONST_VAR_DEF = const ( TYPE | ID ) ID ASGN
+std::optional<VarDef> Parser::parseConstVarDef() {
+    if (currentToken_.getType() != Token::Type::CONST_KW)
+        return std::nullopt;
+    consumeToken();
+
+    const auto type = currentToken_.getType();
+    if (!isBuiltInType(type))
+        throw SyntaxException({}, "Expected variable type");
+    consumeToken();
+
+    const auto name = expectAndReturnValue<std::string>(
+        Token::Type::ID, SyntaxException({}, "Expected variable name"));
+
+    const auto assignment = parseAssignment(name);
+
+    return VarDef{
+        .isConst = true,
+        .type = type,
+        .name = name,
+        .value = assignment.value().rhs,
+    };
 }
 
 /// VOID_FUNC = void ID FUNC_DEF
@@ -127,7 +151,9 @@ std::optional<Statement> Parser::parseDef(Token::Type type) {
     if (auto def = parseFuncDef(type, name))
         return def;
     if (auto assignment = parseAssignment(name)) {
-        return VarDef{.name = assignment.value().lhs, .value = assignment.value().rhs};
+        return VarDef{.type = type,
+                      .name = assignment.value().lhs,
+                      .value = assignment.value().rhs};
     }
     throw SyntaxException({}, "Expected function or variable definition");
 }
@@ -191,6 +217,7 @@ std::optional<Parameter> Parser::parseParameter() {
 
 Parser::StatementParsers Parser::statementParsers_{
     [](Parser& p) { return p.parseIfStatement(); },
+    [](Parser& p) { return p.parseConstVarDef(); },
     [](Parser& p) { return p.parseVoidFunc(); },
     [](Parser& p) { return p.parseDefOrAssignment(); },
     [](Parser& p) { return p.parseBuiltInDef(); },

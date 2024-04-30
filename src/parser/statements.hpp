@@ -12,12 +12,14 @@ struct Assignment {
 };
 
 struct VarDef {
+    bool isConst{false};
+    Token::Type type{Token::Type::UNKNOWN};
     std::string name;
     Token::Value value;
 };
 
 struct Parameter {
-    Token::Type type;
+    Token::Type type{Token::Type::UNKNOWN};
     std::string name;
     bool ref{false};
 };

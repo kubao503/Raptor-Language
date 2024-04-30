@@ -202,6 +202,40 @@ TEST_F(ParserTest, parse_func_statements) {
     ASSERT_TRUE(std::holds_alternative<IfStatement>(statement));
 }
 
+TEST_F(ParserTest, parse_const_var_def) {
+    SetUp<Token>({
+        {Token::Type::CONST_KW, {}, {}},
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto varDef = std::get<VarDef>(prog.statements.at(0));
+    EXPECT_EQ(varDef.name, "var");
+    ASSERT_TRUE(std::holds_alternative<Integral>(varDef.value));
+    EXPECT_EQ(std::get<Integral>(varDef.value), 42);
+    EXPECT_TRUE(varDef.isConst);
+}
+
+TEST_F(ParserTest, parse_const_var_def_invalid_type) {
+    SetUp<Token>({
+        {Token::Type::CONST_KW, {}, {}},
+        {Token::Type::UNKNOWN, {}, {}},
+        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    EXPECT_THROW(parser_->parseProgram(), std::exception);
+}
 TEST_F(ParserTest, parse_void_func) {
     SetUp<Token>({
         {Token::Type::VOID_KW, {}, {}},
