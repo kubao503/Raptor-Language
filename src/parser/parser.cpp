@@ -63,6 +63,21 @@ std::optional<IfStatement> Parser::parseIfStatement() {
     return IfStatement();
 }
 
+/// VOID_FUNC = void ID FUNC_DEF
+std::optional<FuncDef> Parser::parseVoidFunc() {
+    if (currentToken_.getType() != Token::Type::VOID_KW)
+        return std::nullopt;
+    consumeToken();
+
+    defType_ = Token::Type::VOID_KW;
+
+    const auto value = expectAndReturnValue(
+        Token::Type::ID, SyntaxException({}, "Expected function name"));
+    defName_ = std::get<std::string>(value);
+
+    return parseFuncDef();
+}
+
 /// BUILT_IN_DEF = TYPE DEF
 std::optional<FuncDef> Parser::parseBuiltInDef() {
     if (!isBuiltInType(currentToken_.getType()))
@@ -81,7 +96,7 @@ bool isBuiltInType(Token::Type type) {
 /// DEF = ID ( FUNC_DEF
 ///          | ASGN )
 std::optional<FuncDef> Parser::parseDef() {
-    auto value =
+    const auto value =
         expectAndReturnValue(Token::Type::ID, SyntaxException({}, "Expected identifier"));
     defName_ = std::get<std::string>(value);
 
@@ -151,5 +166,6 @@ std::optional<Parameter> Parser::parseParameter() {
 
 Parser::StatementParsers Parser::statementParsers_{
     [](Parser& p) { return p.parseIfStatement(); },
+    [](Parser& p) { return p.parseVoidFunc(); },
     [](Parser& p) { return p.parseBuiltInDef(); },
 };

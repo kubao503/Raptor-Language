@@ -201,3 +201,34 @@ TEST_F(ParserTest, parse_func_statements) {
     auto statement = funcDef.getStatements().at(0);
     ASSERT_TRUE(std::holds_alternative<IfStatement>(statement));
 }
+
+TEST_F(ParserTest, parse_void_func) {
+    SetUp<Token>({
+        {Token::Type::VOID_KW, {}, {}},
+        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
+
+    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    EXPECT_EQ(funcDef.getReturnType(), Token::Type::VOID_KW);
+}
+
+TEST_F(ParserTest, parse_void_func_no_name_after_void_kw) {
+    SetUp<Token>({
+        {Token::Type::VOID_KW, {}, {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    EXPECT_THROW(parser_->parseProgram(), std::exception);
+}
