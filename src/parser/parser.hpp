@@ -29,8 +29,8 @@ class Parser {
     std::optional<IfStatement> parseIfStatement();
     std::optional<FuncDef> parseVoidFunc();
     std::optional<FuncDef> parseBuiltInDef();
-    std::optional<FuncDef> parseDef();
-    std::optional<FuncDef> parseFuncDef();
+    std::optional<FuncDef> parseDef(Token::Type type);
+    std::optional<FuncDef> parseFuncDef(Token::Type returnType, const std::string& name);
     Parameters parseParameters();
     std::optional<Parameter> parseParameter();
 
@@ -40,9 +40,6 @@ class Parser {
 
     ILexer& lexer_;
     Token currentToken_;
-
-    Token::Type defType_{Token::Type::UNKNOWN};
-    std::string defName_;
 };
 
 #endif

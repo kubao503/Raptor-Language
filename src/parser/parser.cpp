@@ -69,13 +69,11 @@ std::optional<FuncDef> Parser::parseVoidFunc() {
         return std::nullopt;
     consumeToken();
 
-    defType_ = Token::Type::VOID_KW;
-
     const auto value = expectAndReturnValue(
         Token::Type::ID, SyntaxException({}, "Expected function name"));
-    defName_ = std::get<std::string>(value);
+    const auto name = std::get<std::string>(value);
 
-    return parseFuncDef();
+    return parseFuncDef(Token::Type::VOID_KW, name);
 }
 
 /// BUILT_IN_DEF = TYPE DEF
@@ -83,9 +81,9 @@ std::optional<FuncDef> Parser::parseBuiltInDef() {
     if (!isBuiltInType(currentToken_.getType()))
         return std::nullopt;
 
-    defType_ = currentToken_.getType();
+    const auto type = currentToken_.getType();
     consumeToken();
-    return parseDef();
+    return parseDef(type);
 }
 
 bool isBuiltInType(Token::Type type) {
@@ -95,18 +93,19 @@ bool isBuiltInType(Token::Type type) {
 
 /// DEF = ID ( FUNC_DEF
 ///          | ASGN )
-std::optional<FuncDef> Parser::parseDef() {
+std::optional<FuncDef> Parser::parseDef(Token::Type type) {
     const auto value =
         expectAndReturnValue(Token::Type::ID, SyntaxException({}, "Expected identifier"));
-    defName_ = std::get<std::string>(value);
+    const auto name = std::get<std::string>(value);
 
-    if (auto def = parseFuncDef())
+    if (auto def = parseFuncDef(type, name))
         return def;
     return std::nullopt;
 }
 
 /// FUNC_DEF = '(' PARAMS ')' '{' STMTS '}'
-std::optional<FuncDef> Parser::parseFuncDef() {
+std::optional<FuncDef> Parser::parseFuncDef(Token::Type returnType,
+                                            const std::string& name) {
     expectAndReturnValue(Token::Type::L_PAR,
                          SyntaxException({}, "Missing left parenthesis"));
 
@@ -122,7 +121,7 @@ std::optional<FuncDef> Parser::parseFuncDef() {
 
     expectAndReturnValue(Token::Type::R_C_BR,
                          SyntaxException({}, "Missing right curly brace"));
-    return FuncDef(defType_, defName_, parameters, statements, {});
+    return FuncDef(returnType, name, parameters, statements, {});
 }
 
 /// PARAMS = [ PARAM { ',' PARAM } ]
