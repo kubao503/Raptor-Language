@@ -9,7 +9,20 @@ std::initializer_list<Token::Type> builtInTypes{
     Token::Type::STR_KW,
 };
 
-bool isBuiltInType(Token::Type type);
+bool isBuiltInType(Token::Type type) {
+    return std::find(builtInTypes.begin(), builtInTypes.end(), type)
+           != builtInTypes.end();
+}
+
+std::optional<Type> getBuiltInOrIdType(const Token& token) {
+    const auto type = token.getType();
+    if (isBuiltInType(type))
+        return type;
+    if (type != Token::Type::ID)
+        return std::nullopt;
+
+    return std::get<std::string>(token.getValue());
+}
 
 void Parser::expect(Token::Type expected, const std::exception& exception) {
     if (currentToken_.getType() != expected)
@@ -66,8 +79,8 @@ std::optional<VarDef> Parser::parseConstVarDef() {
         return std::nullopt;
     consumeToken();
 
-    const auto type = currentToken_.getType();
-    if (!isBuiltInType(type))
+    const auto type = getBuiltInOrIdType(currentToken_);
+    if (!type)
         throw SyntaxException({}, "Expected variable type");
     consumeToken();
 
@@ -78,7 +91,7 @@ std::optional<VarDef> Parser::parseConstVarDef() {
 
     return VarDef{
         .isConst = true,
-        .type = type,
+        .type = type.value(),
         .name = name,
         .value = assignment.value().rhs,
     };
@@ -109,6 +122,8 @@ std::optional<Statement> Parser::parseDefOrAssignment() {
 
     if (auto assignment = parseAssignment(name))
         return assignment;
+    if (auto def = parseDef(name))
+        return def;
     throw SyntaxException({}, "Expected assignment, field assignment or definition");
 }
 
@@ -137,14 +152,9 @@ std::optional<Statement> Parser::parseBuiltInDef() {
     return parseDef(type);
 }
 
-bool isBuiltInType(Token::Type type) {
-    return std::find(builtInTypes.begin(), builtInTypes.end(), type)
-           != builtInTypes.end();
-}
-
 /// DEF = ID ( FUNC_DEF
 ///          | ASGN )
-std::optional<Statement> Parser::parseDef(Token::Type type) {
+std::optional<Statement> Parser::parseDef(Type type) {
     const auto name = expectAndReturnValue<std::string>(
         Token::Type::ID, SyntaxException({}, "Expected identifier"));
 
@@ -159,8 +169,7 @@ std::optional<Statement> Parser::parseDef(Token::Type type) {
 }
 
 /// FUNC_DEF = '(' PARAMS ')' '{' STMTS '}'
-std::optional<FuncDef> Parser::parseFuncDef(Token::Type returnType,
-                                            const std::string& name) {
+std::optional<FuncDef> Parser::parseFuncDef(Type returnType, const std::string& name) {
     if (currentToken_.getType() != Token::Type::L_PAR)
         return std::nullopt;
     consumeToken();
@@ -199,20 +208,22 @@ Parameters Parser::parseParameters() {
 
 /// PARAM = [ ref ] TYPE ID
 std::optional<Parameter> Parser::parseParameter() {
-    bool ref{false};
-    if (currentToken_.getType() == Token::Type::REF_KW) {
-        ref = true;
+    const bool ref{currentToken_.getType() == Token::Type::REF_KW};
+    if (ref)
         consumeToken();
-    } else if (!isBuiltInType(currentToken_.getType()))
-        return std::nullopt;
 
-    const auto type = currentToken_.getType();
+    const auto type = getBuiltInOrIdType(currentToken_);
+    if (!type) {
+        if (ref)
+            throw SyntaxException({}, "Expected parameter type after ref keyword");
+        return std::nullopt;
+    }
     consumeToken();
 
     const auto name = expectAndReturnValue<std::string>(
         Token::Type::ID, SyntaxException({}, "Expected parameter name"));
 
-    return Parameter{.type = type, .name = name, .ref = ref};
+    return Parameter{.type = *type, .name = name, .ref = ref};
 }
 
 Parser::StatementParsers Parser::statementParsers_{

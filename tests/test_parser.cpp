@@ -54,7 +54,7 @@ TEST_F(ParserTest, parse_func_def) {
 
     auto funcDef = std::get<FuncDef>(prog.statements.at(0));
     EXPECT_EQ(funcDef.getName(), "foo");
-    EXPECT_EQ(funcDef.getReturnType(), Token::Type::INT_KW);
+    EXPECT_EQ(std::get<Token::Type>(funcDef.getReturnType()), Token::Type::INT_KW);
     EXPECT_EQ(funcDef.getParameters().size(), 0);
 }
 
@@ -79,9 +79,36 @@ TEST_F(ParserTest, parse_func_def_parameter) {
     ASSERT_EQ(funcDef.getParameters().size(), 1);
 
     auto param = funcDef.getParameters().at(0);
-    EXPECT_EQ(param.type, Token::Type::INT_KW);
+    ASSERT_TRUE(std::holds_alternative<Token::Type>(param.type));
+    EXPECT_EQ(std::get<Token::Type>(param.type), Token::Type::INT_KW);
     EXPECT_EQ(param.name, "num");
     EXPECT_FALSE(param.ref);
+}
+
+TEST_F(ParserTest, parse_func_def_id_parameter) {
+    SetUp<Token>({
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::ID, std::string("MyInt"), {}},
+        {Token::Type::ID, std::string("num"), {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
+
+    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    ASSERT_EQ(funcDef.getParameters().size(), 1);
+
+    auto param = funcDef.getParameters().at(0);
+    ASSERT_TRUE(std::holds_alternative<std::string>(param.type));
+    EXPECT_EQ(std::get<std::string>(param.type), "MyInt");
+    EXPECT_EQ(param.name, "num");
 }
 
 TEST_F(ParserTest, parse_func_def_two_parameters) {
@@ -109,13 +136,15 @@ TEST_F(ParserTest, parse_func_def_two_parameters) {
 
     {
         auto param = funcDef.getParameters().at(0);
-        EXPECT_EQ(param.type, Token::Type::INT_KW);
+        ASSERT_TRUE(std::holds_alternative<Token::Type>(param.type));
+        EXPECT_EQ(std::get<Token::Type>(param.type), Token::Type::INT_KW);
         EXPECT_EQ(param.name, "num");
         EXPECT_FALSE(param.ref);
     }
 
     auto param = funcDef.getParameters().at(1);
-    EXPECT_EQ(param.type, Token::Type::BOOL_KW);
+    ASSERT_TRUE(std::holds_alternative<Token::Type>(param.type));
+    EXPECT_EQ(std::get<Token::Type>(param.type), Token::Type::BOOL_KW);
     EXPECT_EQ(param.name, "truth");
     EXPECT_FALSE(param.ref);
 }
@@ -136,7 +165,7 @@ TEST_F(ParserTest, parse_func_def_no_parameter_after_comma) {
     EXPECT_THROW(parser_->parseProgram(), std::exception);
 }
 
-TEST_F(ParserTest, parse_func_ref_parameter) {
+TEST_F(ParserTest, parse_func_def_ref_parameter) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
         {Token::Type::ID, std::string("foo"), {}},
@@ -158,12 +187,13 @@ TEST_F(ParserTest, parse_func_ref_parameter) {
     ASSERT_EQ(funcDef.getParameters().size(), 1);
 
     auto param = funcDef.getParameters().at(0);
-    EXPECT_EQ(param.type, Token::Type::INT_KW);
+    ASSERT_TRUE(std::holds_alternative<Token::Type>(param.type));
+    EXPECT_EQ(std::get<Token::Type>(param.type), Token::Type::INT_KW);
     EXPECT_EQ(param.name, "num");
     EXPECT_TRUE(param.ref);
 }
 
-TEST_F(ParserTest, parse_func_no_parameter_after_ref) {
+TEST_F(ParserTest, parse_func_def_no_parameter_after_ref) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
         {Token::Type::ID, std::string("foo"), {}},
@@ -177,7 +207,7 @@ TEST_F(ParserTest, parse_func_no_parameter_after_ref) {
     EXPECT_THROW(parser_->parseProgram(), std::exception);
 }
 
-TEST_F(ParserTest, parse_func_statements) {
+TEST_F(ParserTest, parse_func_def_statements) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
         {Token::Type::ID, std::string("foo"), {}},
@@ -224,6 +254,27 @@ TEST_F(ParserTest, parse_const_var_def) {
     EXPECT_TRUE(varDef.isConst);
 }
 
+TEST_F(ParserTest, parse_const_var_def_id_type) {
+    SetUp<Token>({
+        {Token::Type::CONST_KW, {}, {}},
+        {Token::Type::ID, std::string("MyStruct"), {}},
+        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(std::holds_alternative<std::string>(varDef.type));
+
+    EXPECT_EQ(std::get<std::string>(varDef.type), "MyStruct");
+}
+
 TEST_F(ParserTest, parse_const_var_def_invalid_type) {
     SetUp<Token>({
         {Token::Type::CONST_KW, {}, {}},
@@ -236,7 +287,7 @@ TEST_F(ParserTest, parse_const_var_def_invalid_type) {
 
     EXPECT_THROW(parser_->parseProgram(), std::exception);
 }
-TEST_F(ParserTest, parse_void_func) {
+TEST_F(ParserTest, parse_void_func_def) {
     SetUp<Token>({
         {Token::Type::VOID_KW, {}, {}},
         {Token::Type::ID, std::string("foo"), {}},
@@ -252,10 +303,10 @@ TEST_F(ParserTest, parse_void_func) {
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
     auto funcDef = std::get<FuncDef>(prog.statements.at(0));
-    EXPECT_EQ(funcDef.getReturnType(), Token::Type::VOID_KW);
+    EXPECT_EQ(std::get<Token::Type>(funcDef.getReturnType()), Token::Type::VOID_KW);
 }
 
-TEST_F(ParserTest, parse_void_func_no_name_after_void_kw) {
+TEST_F(ParserTest, parse_void_func_def_no_name_after_void_kw) {
     SetUp<Token>({
         {Token::Type::VOID_KW, {}, {}},
         {Token::Type::L_PAR, {}, {}},
@@ -265,6 +316,25 @@ TEST_F(ParserTest, parse_void_func_no_name_after_void_kw) {
     });
 
     EXPECT_THROW(parser_->parseProgram(), std::exception);
+}
+
+TEST_F(ParserTest, parse_id_func_def) {
+    SetUp<Token>({
+        {Token::Type::ID, std::string("MyStruct"), {}},
+        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
+
+    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    ASSERT_TRUE(std::holds_alternative<std::string>(funcDef.getReturnType()));
+    EXPECT_EQ(std::get<std::string>(funcDef.getReturnType()), "MyStruct");
 }
 
 TEST_F(ParserTest, parse_assignment) {
