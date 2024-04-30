@@ -104,7 +104,7 @@ std::optional<Assignment> Parser::parseAssignment(const std::string& name) {
 }
 
 /// BUILT_IN_DEF = TYPE DEF
-std::optional<FuncDef> Parser::parseBuiltInDef() {
+std::optional<Statement> Parser::parseBuiltInDef() {
     if (!isBuiltInType(currentToken_.getType()))
         return std::nullopt;
 
@@ -120,19 +120,24 @@ bool isBuiltInType(Token::Type type) {
 
 /// DEF = ID ( FUNC_DEF
 ///          | ASGN )
-std::optional<FuncDef> Parser::parseDef(Token::Type type) {
+std::optional<Statement> Parser::parseDef(Token::Type type) {
     const auto name = expectAndReturnValue<std::string>(
         Token::Type::ID, SyntaxException({}, "Expected identifier"));
 
     if (auto def = parseFuncDef(type, name))
         return def;
-    return std::nullopt;
+    if (auto assignment = parseAssignment(name)) {
+        return VarDef{.name = assignment.value().lhs, .value = assignment.value().rhs};
+    }
+    throw SyntaxException({}, "Expected function or variable definition");
 }
 
 /// FUNC_DEF = '(' PARAMS ')' '{' STMTS '}'
 std::optional<FuncDef> Parser::parseFuncDef(Token::Type returnType,
                                             const std::string& name) {
-    expect(Token::Type::L_PAR, SyntaxException({}, "Missing left parenthesis"));
+    if (currentToken_.getType() != Token::Type::L_PAR)
+        return std::nullopt;
+    consumeToken();
 
     const auto parameters = parseParameters();
 

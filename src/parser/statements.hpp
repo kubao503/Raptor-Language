@@ -11,17 +11,22 @@ struct Assignment {
     Token::Value rhs;
 };
 
+struct VarDef {
+    std::string name;
+    Token::Value value;
+};
+
 struct Parameter {
     Token::Type type;
     std::string name;
-    bool ref;
+    bool ref{false};
 };
 
 using Parameters = std::vector<Parameter>;
 
 struct FuncDef;
 
-using Statement = std::variant<IfStatement, FuncDef, Assignment>;
+using Statement = std::variant<IfStatement, FuncDef, Assignment, VarDef>;
 using Statements = std::vector<Statement>;
 
 class FuncDef {

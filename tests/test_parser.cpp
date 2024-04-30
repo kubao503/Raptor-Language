@@ -261,3 +261,23 @@ TEST_F(ParserTest, parse_assignment_missing_semicolon) {
 
     ASSERT_THROW(parser_->parseProgram(), std::exception);
 }
+
+TEST_F(ParserTest, parse_var_def) {
+    SetUp<Token>({
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto varDef = std::get<VarDef>(prog.statements.at(0));
+    EXPECT_EQ(varDef.name, "var");
+    ASSERT_TRUE(std::holds_alternative<Integral>(varDef.value));
+    EXPECT_EQ(std::get<Integral>(varDef.value), 42);
+}
