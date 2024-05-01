@@ -31,7 +31,7 @@ Program Parser::parseProgram() {
 /// STMTS = { STMT }
 Statements Parser::parseStatements() {
     Statements statements;
-    while (auto statement = parseStatement()) statements.push_back(*statement);
+    while (auto statement = parseStatement()) statements.push_back(std::move(*statement));
     return statements;
 }
 
@@ -84,13 +84,13 @@ std::optional<VarDef> Parser::parseConstVarDef() {
     const auto name = expectAndReturnValue<std::string>(
         Token::Type::ID, SyntaxException({}, "Expected variable name"));
 
-    const auto assignment = parseAssignment(name);
+    auto assignment = parseAssignment(name);
 
     return VarDef{
         .isConst = true,
         .type = *type,
         .name = name,
-        .expression = assignment->rhs,
+        .expression = std::move(assignment->rhs),
     };
 }
 
@@ -131,12 +131,11 @@ std::optional<Assignment> Parser::parseAssignment(const std::string& name) {
 
     consumeToken();
 
-    const auto value = currentToken_.getValue();
-    consumeToken();
+    auto expression = parseExpression();
 
     expect(Token::Type::SEMI, SyntaxException({}, "Missing semicolon"));
 
-    return Assignment{.lhs = name, .rhs = Constant{.value = value}};
+    return Assignment{.lhs = name, .rhs = std::move(*expression)};
 }
 
 /// BUILT_IN_DEF = TYPE DEF
@@ -159,8 +158,9 @@ std::optional<Statement> Parser::parseDef(const Type& type) {
     if (auto def = parseFuncDef(returnType, name))
         return def;
     if (auto assignment = parseAssignment(name)) {
-        return VarDef{
-            .type = type, .name = assignment->lhs, .expression = assignment->rhs};
+        return VarDef{.type = type,
+                      .name = assignment->lhs,
+                      .expression = std::move(assignment->rhs)};
     }
     throw SyntaxException({}, "Expected function or variable definition");
 }
@@ -178,10 +178,10 @@ std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
 
     expect(Token::Type::L_C_BR, SyntaxException({}, "Missing left curly brace"));
 
-    const auto statements = parseStatements();
+    auto statements = parseStatements();
 
     expect(Token::Type::R_C_BR, SyntaxException({}, "Missing right curly brace"));
-    return FuncDef(returnType, name, parameters, statements, {});
+    return FuncDef(returnType, name, parameters, std::move(statements), {});
 }
 
 /// PARAMS = [ PARAM { ',' PARAM } ]
@@ -227,9 +227,19 @@ std::optional<Parameter> Parser::parseParameter() {
 /// EXPR = DISJ { or DISJ }
 ///      | '{' { EXPRS } '}'
 std::optional<Expression> Parser::parseExpression() {
-    const auto leftLogicFactor = parseConstant();
+    auto leftLogicFactor = parseConstant();
     if (!leftLogicFactor)
         return std::nullopt;
+
+    while (currentToken_.getType() == Token::Type::OR_KW) {
+        consumeToken();
+        auto rightLogicFactor = parseConstant();
+        if (!rightLogicFactor)
+            throw SyntaxException(currentToken_.getPosition(),
+                                  "Expected expression after 'or' keyword");
+        leftLogicFactor = std::unique_ptr<DisjuctionExpression>(new DisjuctionExpression{
+            .lhs = std::move(*leftLogicFactor), .rhs = std::move(*rightLogicFactor)});
+    }
 
     return leftLogicFactor;
 }

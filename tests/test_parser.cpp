@@ -35,8 +35,8 @@ TEST_F(ParserTest, parse_if_statement) {
     auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<IfStatement>(prog.statements.at(0)));
-    const auto ifStatement = std::get<IfStatement>(prog.statements.at(0));
-    const auto condition = ifStatement.condition;
+    const auto& ifStatement = std::get<IfStatement>(prog.statements.at(0));
+    const auto& condition = ifStatement.condition;
     ASSERT_TRUE(std::holds_alternative<Constant>(condition));
 }
 
@@ -64,7 +64,7 @@ TEST_F(ParserTest, parse_func_def) {
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
-    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    const auto& funcDef = std::get<FuncDef>(prog.statements.at(0));
     EXPECT_EQ(funcDef.getName(), "foo");
     EXPECT_EQ(std::get<BuiltInType>(funcDef.getReturnType()), BuiltInType::INT);
     EXPECT_EQ(funcDef.getParameters().size(), 0);
@@ -84,7 +84,7 @@ TEST_F(ParserTest, parse_func_def_id_ret_type) {
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
-    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    const auto& funcDef = std::get<FuncDef>(prog.statements.at(0));
     ASSERT_TRUE(std::holds_alternative<std::string>(funcDef.getReturnType()));
     EXPECT_EQ(std::get<std::string>(funcDef.getReturnType()), "MyStruct");
 }
@@ -106,7 +106,7 @@ TEST_F(ParserTest, parse_func_def_parameter) {
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
-    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    const auto& funcDef = std::get<FuncDef>(prog.statements.at(0));
     ASSERT_EQ(funcDef.getParameters().size(), 1);
 
     auto param = funcDef.getParameters().at(0);
@@ -133,7 +133,7 @@ TEST_F(ParserTest, parse_func_def_id_parameter) {
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
-    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    const auto& funcDef = std::get<FuncDef>(prog.statements.at(0));
     ASSERT_EQ(funcDef.getParameters().size(), 1);
 
     auto param = funcDef.getParameters().at(0);
@@ -162,7 +162,7 @@ TEST_F(ParserTest, parse_func_def_two_parameters) {
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
-    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    const auto& funcDef = std::get<FuncDef>(prog.statements.at(0));
     ASSERT_EQ(funcDef.getParameters().size(), 2);
 
     {
@@ -214,7 +214,7 @@ TEST_F(ParserTest, parse_func_def_ref_parameter) {
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
-    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    const auto& funcDef = std::get<FuncDef>(prog.statements.at(0));
     ASSERT_EQ(funcDef.getParameters().size(), 1);
 
     auto param = funcDef.getParameters().at(0);
@@ -257,11 +257,11 @@ TEST_F(ParserTest, parse_func_def_statements) {
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
-    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    auto& funcDef = std::get<FuncDef>(prog.statements.at(0));
     auto statements = funcDef.getStatements();
 
-    ASSERT_EQ(funcDef.getStatements().size(), 1);
-    auto statement = funcDef.getStatements().at(0);
+    ASSERT_EQ(statements.size(), 1);
+    const auto& statement = statements.at(0);
     ASSERT_TRUE(std::holds_alternative<IfStatement>(statement));
 }
 
@@ -280,7 +280,7 @@ TEST_F(ParserTest, parse_void_func_def) {
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
-    auto funcDef = std::get<FuncDef>(prog.statements.at(0));
+    const auto& funcDef = std::get<FuncDef>(prog.statements.at(0));
     EXPECT_TRUE(std::holds_alternative<VoidType>(funcDef.getReturnType()));
 }
 
@@ -309,7 +309,7 @@ TEST_F(ParserTest, parse_assignment) {
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<Assignment>(prog.statements.at(0)));
 
-    auto assignment = std::get<Assignment>(prog.statements.at(0));
+    const auto& assignment = std::get<Assignment>(prog.statements.at(0));
     EXPECT_EQ(assignment.lhs, "var");
     ASSERT_TRUE(std::holds_alternative<Constant>(assignment.rhs));
 
@@ -341,7 +341,7 @@ TEST_F(ParserTest, parse_var_def) {
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
-    const auto varDef = std::get<VarDef>(prog.statements.at(0));
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
     EXPECT_EQ(varDef.name, "var");
     ASSERT_TRUE(std::holds_alternative<Constant>(varDef.expression));
 
@@ -364,7 +364,7 @@ TEST_F(ParserTest, parse_const_var_def) {
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
-    const auto varDef = std::get<VarDef>(prog.statements.at(0));
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
     EXPECT_EQ(varDef.name, "var");
     ASSERT_TRUE(std::holds_alternative<Constant>(varDef.expression));
 
@@ -389,7 +389,7 @@ TEST_F(ParserTest, parse_const_var_def_id_type) {
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
-    const auto varDef = std::get<VarDef>(prog.statements.at(0));
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
     ASSERT_TRUE(std::holds_alternative<std::string>(varDef.type));
 
     EXPECT_EQ(std::get<std::string>(varDef.type), "MyStruct");
@@ -406,4 +406,80 @@ TEST_F(ParserTest, parse_const_var_def_invalid_type) {
     });
 
     EXPECT_THROW(parser_->parseProgram(), std::exception);
+}
+
+TEST_F(ParserTest, parse_disjuction_expression) {
+    SetUp<Token>({
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::OR_KW, {}, {}},
+        {Token::Type::FALSE_CONST, false, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<DisjuctionExpression>>(varDef.expression));
+    const auto& expression =
+        std::get<std::unique_ptr<DisjuctionExpression>>(varDef.expression);
+
+    const auto& lhs = expression->lhs;
+    ASSERT_TRUE(std::holds_alternative<Constant>(lhs));
+    const auto& lhsConstant = std::get<Constant>(lhs);
+    ASSERT_TRUE(std::holds_alternative<bool>(lhsConstant.value));
+    EXPECT_TRUE(std::get<bool>(lhsConstant.value));
+
+    const auto& rhs = expression->rhs;
+    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
+    const auto& rhsConstant = std::get<Constant>(rhs);
+    EXPECT_FALSE(std::get<bool>(rhsConstant.value));
+}
+
+TEST_F(ParserTest, parse_nested_disjuction_expressions) {
+    SetUp<Token>({
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::OR_KW, {}, {}},
+        {Token::Type::FALSE_CONST, false, {}},
+        {Token::Type::OR_KW, {}, {}},
+        {Token::Type::FALSE_CONST, false, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<DisjuctionExpression>>(varDef.expression));
+    const auto& expression =
+        std::get<std::unique_ptr<DisjuctionExpression>>(varDef.expression);
+
+    const auto& lhs = expression->lhs;
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<DisjuctionExpression>>(lhs));
+    const auto& lhsExpression = std::get<std::unique_ptr<DisjuctionExpression>>(lhs);
+
+    ASSERT_TRUE(std::holds_alternative<Constant>(lhsExpression->lhs));
+    const auto& lhslhsConstant = std::get<Constant>(lhsExpression->lhs);
+    EXPECT_TRUE(std::get<bool>(lhslhsConstant.value));
+
+    ASSERT_TRUE(std::holds_alternative<Constant>(lhsExpression->rhs));
+    const auto& lhsrhsConstant = std::get<Constant>(lhsExpression->rhs);
+    EXPECT_FALSE(std::get<bool>(lhsrhsConstant.value));
+
+    const auto& rhs = expression->rhs;
+    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
+    const auto& rhsConstant = std::get<Constant>(rhs);
+    EXPECT_FALSE(std::get<bool>(rhsConstant.value));
 }

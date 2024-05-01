@@ -1,6 +1,7 @@
 #ifndef PARSE_TREE_H
 #define PARSE_TREE_H
 
+#include <memory>
 #include <string>
 #include <variant>
 #include <vector>
@@ -23,7 +24,14 @@ struct Constant {
     Token::Value value;
 };
 
-using Expression = std::variant<Constant>;
+struct DisjuctionExpression;
+
+using Expression = std::variant<Constant, std::unique_ptr<DisjuctionExpression>>;
+
+struct DisjuctionExpression {
+    Expression lhs;
+    Expression rhs;
+};
 
 struct IfStatement {
     Expression condition;
@@ -57,18 +65,17 @@ using Statements = std::vector<Statement>;
 class FuncDef {
    public:
     FuncDef(const ReturnType& returnType, const std::string& name,
-            const Parameters& parameters, const Statements& statements,
-            const Position& position)
+            const Parameters& parameters, Statements statements, const Position& position)
         : returnType_{returnType},
           name_{name},
           parameters_{parameters},
-          statements_{statements},
+          statements_{std::move(statements)},
           position_{position} {}
 
     const ReturnType& getReturnType() const { return returnType_; }
     std::string_view getName() const { return name_; }
     const Parameters& getParameters() const { return parameters_; }
-    const Statements& getStatements() const { return statements_; }
+    Statements getStatements() { return std::move(statements_); }
 
    private:
     ReturnType returnType_{""};
