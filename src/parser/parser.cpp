@@ -31,7 +31,7 @@ Program Parser::parseProgram() {
 /// STMTS = { STMT }
 Statements Parser::parseStatements() {
     Statements statements;
-    while (auto statement = parseStatement()) statements.push_back(statement.value());
+    while (auto statement = parseStatement()) statements.push_back(*statement);
     return statements;
 }
 
@@ -88,9 +88,9 @@ std::optional<VarDef> Parser::parseConstVarDef() {
 
     return VarDef{
         .isConst = true,
-        .type = type.value(),
+        .type = *type,
         .name = name,
-        .value = assignment.value().rhs,
+        .expression = assignment->rhs,
     };
 }
 
@@ -136,7 +136,7 @@ std::optional<Assignment> Parser::parseAssignment(const std::string& name) {
 
     expect(Token::Type::SEMI, SyntaxException({}, "Missing semicolon"));
 
-    return Assignment{.lhs = name, .rhs = value};
+    return Assignment{.lhs = name, .rhs = Constant{.value = value}};
 }
 
 /// BUILT_IN_DEF = TYPE DEF
@@ -159,9 +159,8 @@ std::optional<Statement> Parser::parseDef(const Type& type) {
     if (auto def = parseFuncDef(returnType, name))
         return def;
     if (auto assignment = parseAssignment(name)) {
-        return VarDef{.type = type,
-                      .name = assignment.value().lhs,
-                      .value = assignment.value().rhs};
+        return VarDef{
+            .type = type, .name = assignment->lhs, .expression = assignment->rhs};
     }
     throw SyntaxException({}, "Expected function or variable definition");
 }
@@ -193,14 +192,14 @@ Parameters Parser::parseParameters() {
     if (!parameter)
         return parameters;
 
-    parameters.push_back(parameter.value());
+    parameters.push_back(*parameter);
 
     while (currentToken_.getType() == Token::Type::CMA) {
         consumeToken();
         parameter = parseParameter();
         if (!parameter)
             throw SyntaxException({}, "Expected parameter after comma");
-        parameters.push_back(parameter.value());
+        parameters.push_back(*parameter);
     }
     return parameters;
 }
@@ -234,11 +233,6 @@ std::optional<Expression> Parser::parseExpression() {
 
     return leftLogicFactor;
 }
-
-/// CNTNR = '(' EXPR ')'
-///       | CONST
-///       | ID
-///       | ID '(' ARGS ')'
 
 std::optional<Expression> Parser::parseConstant() {
     const auto value = currentToken_.getValue();

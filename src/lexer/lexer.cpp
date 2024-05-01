@@ -84,9 +84,9 @@ std::string lexemeToKeyword(std::string_view lexeme) {
 
 std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) const {
     if (lexeme == "true")
-        return Token(Token::Type::TRUE_CONST, {}, tokenPosition_);
+        return Token(Token::Type::TRUE_CONST, true, tokenPosition_);
     if (lexeme == "false")
-        return Token(Token::Type::FALSE_CONST, {}, tokenPosition_);
+        return Token(Token::Type::FALSE_CONST, false, tokenPosition_);
     return std::nullopt;
 }
 

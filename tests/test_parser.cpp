@@ -27,7 +27,7 @@ TEST_F(ParserTest, parse_empty_program) {
 TEST_F(ParserTest, parse_if_statement) {
     SetUp<Token>({
         {Token::Type::IF_KW, {}, {}},
-        {Token::Type::TRUE_CONST, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
         {Token::Type::L_C_BR, {}, {}},
         {Token::Type::R_C_BR, {}, {}},
     });
@@ -246,7 +246,7 @@ TEST_F(ParserTest, parse_func_def_statements) {
         {Token::Type::R_PAR, {}, {}},
         {Token::Type::L_C_BR, {}, {}},
         {Token::Type::IF_KW, {}, {}},
-        {Token::Type::TRUE_CONST, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
         {Token::Type::L_C_BR, {}, {}},
         {Token::Type::R_C_BR, {}, {}},
         {Token::Type::R_C_BR, {}, {}},
@@ -311,8 +311,10 @@ TEST_F(ParserTest, parse_assignment) {
 
     auto assignment = std::get<Assignment>(prog.statements.at(0));
     EXPECT_EQ(assignment.lhs, "var");
-    ASSERT_TRUE(std::holds_alternative<Integral>(assignment.rhs));
-    EXPECT_EQ(std::get<Integral>(assignment.rhs), 42);
+    ASSERT_TRUE(std::holds_alternative<Constant>(assignment.rhs));
+
+    const auto expression = std::get<Constant>(assignment.rhs);
+    EXPECT_EQ(std::get<Integral>(expression.value), 42);
 }
 
 TEST_F(ParserTest, parse_assignment_missing_semicolon) {
@@ -341,8 +343,10 @@ TEST_F(ParserTest, parse_var_def) {
 
     const auto varDef = std::get<VarDef>(prog.statements.at(0));
     EXPECT_EQ(varDef.name, "var");
-    ASSERT_TRUE(std::holds_alternative<Integral>(varDef.value));
-    EXPECT_EQ(std::get<Integral>(varDef.value), 42);
+    ASSERT_TRUE(std::holds_alternative<Constant>(varDef.expression));
+
+    const auto expression = std::get<Constant>(varDef.expression);
+    ASSERT_EQ(std::get<Integral>(expression.value), 42);
 }
 
 TEST_F(ParserTest, parse_const_var_def) {
@@ -362,8 +366,11 @@ TEST_F(ParserTest, parse_const_var_def) {
 
     const auto varDef = std::get<VarDef>(prog.statements.at(0));
     EXPECT_EQ(varDef.name, "var");
-    ASSERT_TRUE(std::holds_alternative<Integral>(varDef.value));
-    EXPECT_EQ(std::get<Integral>(varDef.value), 42);
+    ASSERT_TRUE(std::holds_alternative<Constant>(varDef.expression));
+
+    const auto expression = std::get<Constant>(varDef.expression);
+    ASSERT_TRUE(std::holds_alternative<Integral>(expression.value));
+    EXPECT_EQ(std::get<Integral>(expression.value), 42);
     EXPECT_TRUE(varDef.isConst);
 }
 

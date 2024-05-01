@@ -5,6 +5,8 @@
 #include <variant>
 #include <vector>
 
+#include "position.hpp"
+
 enum class BuiltInType {
     INT,
     FLOAT,
@@ -29,14 +31,14 @@ struct IfStatement {
 
 struct Assignment {
     std::string lhs;
-    Token::Value rhs;
+    Expression rhs;
 };
 
 struct VarDef {
     bool isConst{false};
     Type type{""};
     std::string name;
-    Token::Value value;
+    Expression expression;
 };
 
 struct Parameter {
