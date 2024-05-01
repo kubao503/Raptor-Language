@@ -126,7 +126,7 @@ std::optional<Statement> Parser::parseDefOrAssignment() {
 
 /// ASGN = '=' EXPR ';'
 std::optional<Assignment> Parser::parseAssignment(const std::string& name) {
-    if (currentToken_.getType() != Token::Type::EQ_OP)
+    if (currentToken_.getType() != Token::Type::ASGN_OP)
         return std::nullopt;
 
     consumeToken();

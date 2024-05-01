@@ -299,7 +299,7 @@ TEST_F(ParserTest, parse_void_func_def_no_name_after_void_kw) {
 TEST_F(ParserTest, parse_assignment) {
     SetUp<Token>({
         {Token::Type::ID, std::string("var"), {}},
-        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
         {Token::Type::SEMI, {}, {}},
     });
@@ -318,7 +318,7 @@ TEST_F(ParserTest, parse_assignment) {
 TEST_F(ParserTest, parse_assignment_missing_semicolon) {
     SetUp<Token>({
         {Token::Type::ID, std::string("var"), {}},
-        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
     });
 
@@ -329,7 +329,7 @@ TEST_F(ParserTest, parse_var_def) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
         {Token::Type::ID, std::string("var"), {}},
-        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
         {Token::Type::SEMI, {}, {}},
     });
@@ -350,7 +350,7 @@ TEST_F(ParserTest, parse_const_var_def) {
         {Token::Type::CONST_KW, {}, {}},
         {Token::Type::INT_KW, {}, {}},
         {Token::Type::ID, std::string("var"), {}},
-        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
         {Token::Type::SEMI, {}, {}},
     });
@@ -372,7 +372,7 @@ TEST_F(ParserTest, parse_const_var_def_id_type) {
         {Token::Type::CONST_KW, {}, {}},
         {Token::Type::ID, std::string("MyStruct"), {}},
         {Token::Type::ID, std::string("var"), {}},
-        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
         {Token::Type::SEMI, {}, {}},
     });
@@ -393,7 +393,7 @@ TEST_F(ParserTest, parse_const_var_def_invalid_type) {
         {Token::Type::CONST_KW, {}, {}},
         {Token::Type::UNKNOWN, {}, {}},
         {Token::Type::ID, std::string("var"), {}},
-        {Token::Type::EQ_OP, {}, {}},
+        {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
         {Token::Type::SEMI, {}, {}},
     });
