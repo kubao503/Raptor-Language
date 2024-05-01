@@ -42,6 +42,8 @@ class Parser {
                                         const std::string& name);
     Parameters parseParameters();
     std::optional<Parameter> parseParameter();
+    std::optional<Expression> parseExpression();
+    std::optional<Expression> parseConstant();
 
     using StatementParsers =
         std::initializer_list<std::function<std::optional<Statement>(Parser&)>>;

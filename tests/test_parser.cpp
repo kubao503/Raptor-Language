@@ -17,25 +17,37 @@ class ParserTest : public testing::Test {
     std::unique_ptr<Parser> parser_;
 };
 
-TEST_F(ParserTest, parseProgram_empty) {
+TEST_F(ParserTest, parse_empty_program) {
     SetUp({Token::Type::ETX});
 
     auto prog = parser_->parseProgram();
     EXPECT_EQ(prog.statements.size(), 0);
 }
 
-TEST_F(ParserTest, parseProgram_if_stmt) {
-    SetUp({Token::Type::IF_KW, Token::Type::L_PAR});
+TEST_F(ParserTest, parse_if_statement) {
+    SetUp<Token>({
+        {Token::Type::IF_KW, {}, {}},
+        {Token::Type::TRUE_CONST, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
 
     auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
-    EXPECT_TRUE(std::holds_alternative<IfStatement>(prog.statements.at(0)));
+    ASSERT_TRUE(std::holds_alternative<IfStatement>(prog.statements.at(0)));
+    const auto ifStatement = std::get<IfStatement>(prog.statements.at(0));
+    const auto condition = ifStatement.condition;
+    ASSERT_TRUE(std::holds_alternative<Constant>(condition));
 }
 
-TEST_F(ParserTest, parseProgram_if_stmt_missing_left_par) {
-    SetUp({Token::Type::IF_KW});
+TEST_F(ParserTest, parse_if_statement_missing_expression) {
+    SetUp<Token>({
+        {Token::Type::IF_KW, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
 
-    EXPECT_THROW(parser_->parseProgram(), std::exception);
+    EXPECT_THROW(parser_->parseProgram(), SyntaxException);
 }
 
 TEST_F(ParserTest, parse_func_def) {
@@ -234,7 +246,9 @@ TEST_F(ParserTest, parse_func_def_statements) {
         {Token::Type::R_PAR, {}, {}},
         {Token::Type::L_C_BR, {}, {}},
         {Token::Type::IF_KW, {}, {}},
-        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::TRUE_CONST, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
         {Token::Type::R_C_BR, {}, {}},
     });
 

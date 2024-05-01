@@ -60,7 +60,12 @@ std::optional<IfStatement> Parser::parseIfStatement() {
         return std::nullopt;
     consumeToken();
 
-    expect(Token::Type::L_PAR, SyntaxException({}, "Missing left parenthesis"));
+    const auto expression = parseExpression();
+    if (!expression)
+        throw SyntaxException({}, "Expected expression (bool)");
+
+    expect(Token::Type::L_C_BR, SyntaxException({}, "Missing left curly brace"));
+    expect(Token::Type::R_C_BR, SyntaxException({}, "Missing right curly brace"));
 
     return IfStatement();
 }
@@ -218,6 +223,27 @@ std::optional<Parameter> Parser::parseParameter() {
         Token::Type::ID, SyntaxException({}, "Expected parameter name"));
 
     return Parameter{.type = *type, .name = name, .ref = ref};
+}
+
+/// EXPR = DISJ { or DISJ }
+///      | '{' { EXPRS } '}'
+std::optional<Expression> Parser::parseExpression() {
+    const auto leftLogicFactor = parseConstant();
+    if (!leftLogicFactor)
+        return std::nullopt;
+
+    return leftLogicFactor;
+}
+
+/// CNTNR = '(' EXPR ')'
+///       | CONST
+///       | ID
+///       | ID '(' ARGS ')'
+
+std::optional<Expression> Parser::parseConstant() {
+    const auto value = currentToken_.getValue();
+    consumeToken();
+    return Constant{.value = value};
 }
 
 Parser::StatementParsers Parser::statementParsers_{

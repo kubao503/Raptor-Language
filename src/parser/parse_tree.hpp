@@ -17,7 +17,15 @@ struct VoidType {};
 using Type = std::variant<std::string, BuiltInType>;
 using ReturnType = std::variant<std::string, BuiltInType, VoidType>;
 
-struct IfStatement {};
+struct Constant {
+    Token::Value value;
+};
+
+using Expression = std::variant<Constant>;
+
+struct IfStatement {
+    Expression condition;
+};
 
 struct Assignment {
     std::string lhs;
