@@ -1,8 +1,10 @@
-#ifndef STATEMENTS_H
-#define STATEMENTS_H
+#ifndef PARSE_TREE_H
+#define PARSE_TREE_H
 
 #include <variant>
 #include <vector>
+
+#include "token.hpp"
 
 struct IfStatement {};
 
@@ -54,6 +56,10 @@ class FuncDef {
     Parameters parameters_;
     Statements statements_;
     Position position_;
+};
+
+struct Program {
+    Statements statements;
 };
 
 #endif

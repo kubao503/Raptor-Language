@@ -5,7 +5,7 @@
 #include <optional>
 
 #include "ILexer.hpp"
-#include "program.hpp"
+#include "parse_tree.hpp"
 #include "token.hpp"
 
 /// @brief Parser building parse tree from tokens
