@@ -1,27 +1,26 @@
 #include "parser.hpp"
 
+#include "magic_enum/magic_enum.hpp"
 #include "parser_errors.hpp"
 
-std::initializer_list<Token::Type> builtInTypes{
-    Token::Type::INT_KW,
-    Token::Type::FLOAT_KW,
-    Token::Type::BOOL_KW,
-    Token::Type::STR_KW,
-};
+std::optional<BuiltInType> getBuiltInType(const Token& token) {
+    auto name = magic_enum::enum_name(token.getType());
 
-bool isBuiltInType(Token::Type type) {
-    return std::find(builtInTypes.begin(), builtInTypes.end(), type)
-           != builtInTypes.end();
-}
-
-std::optional<Type> getBuiltInOrIdType(const Token& token) {
-    const auto type = token.getType();
-    if (isBuiltInType(type))
-        return type;
-    if (type != Token::Type::ID)
+    static constexpr std::size_t suffixSize{3};
+    if (name.size() < suffixSize)
         return std::nullopt;
 
-    return std::get<std::string>(token.getValue());
+    name.remove_suffix(suffixSize);
+    return magic_enum::enum_cast<BuiltInType>(name);
+}
+
+std::optional<Type> getType(const Token& token) {
+    if (auto type = getBuiltInType(token))
+        return type;
+    if (token.getType() == Token::Type::ID)
+        return std::get<std::string>(token.getValue());
+
+    return std::nullopt;
 }
 
 /// PROGRAM = STMTS
@@ -72,7 +71,7 @@ std::optional<VarDef> Parser::parseConstVarDef() {
         return std::nullopt;
     consumeToken();
 
-    const auto type = getBuiltInOrIdType(currentToken_);
+    const auto type = getType(currentToken_);
     if (!type)
         throw SyntaxException({}, "Expected variable type");
     consumeToken();
@@ -99,7 +98,7 @@ std::optional<FuncDef> Parser::parseVoidFunc() {
     const auto name = expectAndReturnValue<std::string>(
         Token::Type::ID, SyntaxException({}, "Expected function name"));
 
-    return parseFuncDef(Token::Type::VOID_KW, name);
+    return parseFuncDef(VoidType(), name);
 }
 
 /// DEF_OR_ASGN = ID ( FIELD_ASGN
@@ -137,21 +136,22 @@ std::optional<Assignment> Parser::parseAssignment(const std::string& name) {
 
 /// BUILT_IN_DEF = TYPE DEF
 std::optional<Statement> Parser::parseBuiltInDef() {
-    if (!isBuiltInType(currentToken_.getType()))
+    const auto type = getBuiltInType(currentToken_);
+    if (!type)
         return std::nullopt;
 
-    const auto type = currentToken_.getType();
     consumeToken();
-    return parseDef(type);
+    return parseDef(*type);
 }
 
 /// DEF = ID ( FUNC_DEF
 ///          | ASGN )
-std::optional<Statement> Parser::parseDef(Type type) {
+std::optional<Statement> Parser::parseDef(const Type& type) {
     const auto name = expectAndReturnValue<std::string>(
         Token::Type::ID, SyntaxException({}, "Expected identifier"));
 
-    if (auto def = parseFuncDef(type, name))
+    const auto returnType = std::visit([](auto s) -> ReturnType { return s; }, type);
+    if (auto def = parseFuncDef(returnType, name))
         return def;
     if (auto assignment = parseAssignment(name)) {
         return VarDef{.type = type,
@@ -162,7 +162,8 @@ std::optional<Statement> Parser::parseDef(Type type) {
 }
 
 /// FUNC_DEF = '(' PARAMS ')' '{' STMTS '}'
-std::optional<FuncDef> Parser::parseFuncDef(Type returnType, const std::string& name) {
+std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
+                                            const std::string& name) {
     if (currentToken_.getType() != Token::Type::L_PAR)
         return std::nullopt;
     consumeToken();
@@ -205,7 +206,7 @@ std::optional<Parameter> Parser::parseParameter() {
     if (ref)
         consumeToken();
 
-    const auto type = getBuiltInOrIdType(currentToken_);
+    const auto type = getType(currentToken_);
     if (!type) {
         if (ref)
             throw SyntaxException({}, "Expected parameter type after ref keyword");

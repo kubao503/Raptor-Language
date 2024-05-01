@@ -1,10 +1,21 @@
 #ifndef PARSE_TREE_H
 #define PARSE_TREE_H
 
+#include <string>
 #include <variant>
 #include <vector>
 
-#include "token.hpp"
+enum class BuiltInType {
+    INT,
+    FLOAT,
+    BOOL,
+    STR,
+};
+
+struct VoidType {};
+
+using Type = std::variant<std::string, BuiltInType>;
+using ReturnType = std::variant<std::string, BuiltInType, VoidType>;
 
 struct IfStatement {};
 
@@ -13,17 +24,15 @@ struct Assignment {
     Token::Value rhs;
 };
 
-using Type = std::variant<Token::Type, std::string>;
-
 struct VarDef {
     bool isConst{false};
-    Type type{Token::Type::UNKNOWN};
+    Type type{""};
     std::string name;
     Token::Value value;
 };
 
 struct Parameter {
-    Type type{Token::Type::UNKNOWN};
+    Type type{""};
     std::string name;
     bool ref{false};
 };
@@ -37,21 +46,22 @@ using Statements = std::vector<Statement>;
 
 class FuncDef {
    public:
-    FuncDef(Type returnType, const std::string& name, const Parameters& parameters,
-            Statements statements, Position position)
+    FuncDef(const ReturnType& returnType, const std::string& name,
+            const Parameters& parameters, const Statements& statements,
+            const Position& position)
         : returnType_{returnType},
           name_{name},
           parameters_{parameters},
           statements_{statements},
           position_{position} {}
 
-    Type getReturnType() const { return returnType_; }
+    const ReturnType& getReturnType() const { return returnType_; }
     std::string_view getName() const { return name_; }
     const Parameters& getParameters() const { return parameters_; }
     const Statements& getStatements() const { return statements_; }
 
    private:
-    Type returnType_{Token::Type::UNKNOWN};
+    ReturnType returnType_{""};
     std::string name_;
     Parameters parameters_;
     Statements statements_;

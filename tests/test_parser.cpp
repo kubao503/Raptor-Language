@@ -54,7 +54,7 @@ TEST_F(ParserTest, parse_func_def) {
 
     auto funcDef = std::get<FuncDef>(prog.statements.at(0));
     EXPECT_EQ(funcDef.getName(), "foo");
-    EXPECT_EQ(std::get<Token::Type>(funcDef.getReturnType()), Token::Type::INT_KW);
+    EXPECT_EQ(std::get<BuiltInType>(funcDef.getReturnType()), BuiltInType::INT);
     EXPECT_EQ(funcDef.getParameters().size(), 0);
 }
 
@@ -98,8 +98,8 @@ TEST_F(ParserTest, parse_func_def_parameter) {
     ASSERT_EQ(funcDef.getParameters().size(), 1);
 
     auto param = funcDef.getParameters().at(0);
-    ASSERT_TRUE(std::holds_alternative<Token::Type>(param.type));
-    EXPECT_EQ(std::get<Token::Type>(param.type), Token::Type::INT_KW);
+    ASSERT_TRUE(std::holds_alternative<BuiltInType>(param.type));
+    EXPECT_EQ(std::get<BuiltInType>(param.type), BuiltInType::INT);
     EXPECT_EQ(param.name, "num");
     EXPECT_FALSE(param.ref);
 }
@@ -155,15 +155,15 @@ TEST_F(ParserTest, parse_func_def_two_parameters) {
 
     {
         auto param = funcDef.getParameters().at(0);
-        ASSERT_TRUE(std::holds_alternative<Token::Type>(param.type));
-        EXPECT_EQ(std::get<Token::Type>(param.type), Token::Type::INT_KW);
+        ASSERT_TRUE(std::holds_alternative<BuiltInType>(param.type));
+        EXPECT_EQ(std::get<BuiltInType>(param.type), BuiltInType::INT);
         EXPECT_EQ(param.name, "num");
         EXPECT_FALSE(param.ref);
     }
 
     auto param = funcDef.getParameters().at(1);
-    ASSERT_TRUE(std::holds_alternative<Token::Type>(param.type));
-    EXPECT_EQ(std::get<Token::Type>(param.type), Token::Type::BOOL_KW);
+    ASSERT_TRUE(std::holds_alternative<BuiltInType>(param.type));
+    EXPECT_EQ(std::get<BuiltInType>(param.type), BuiltInType::BOOL);
     EXPECT_EQ(param.name, "truth");
     EXPECT_FALSE(param.ref);
 }
@@ -206,8 +206,8 @@ TEST_F(ParserTest, parse_func_def_ref_parameter) {
     ASSERT_EQ(funcDef.getParameters().size(), 1);
 
     auto param = funcDef.getParameters().at(0);
-    ASSERT_TRUE(std::holds_alternative<Token::Type>(param.type));
-    EXPECT_EQ(std::get<Token::Type>(param.type), Token::Type::INT_KW);
+    ASSERT_TRUE(std::holds_alternative<BuiltInType>(param.type));
+    EXPECT_EQ(std::get<BuiltInType>(param.type), BuiltInType::INT);
     EXPECT_EQ(param.name, "num");
     EXPECT_TRUE(param.ref);
 }
@@ -267,7 +267,7 @@ TEST_F(ParserTest, parse_void_func_def) {
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
     auto funcDef = std::get<FuncDef>(prog.statements.at(0));
-    EXPECT_EQ(std::get<Token::Type>(funcDef.getReturnType()), Token::Type::VOID_KW);
+    EXPECT_TRUE(std::holds_alternative<VoidType>(funcDef.getReturnType()));
 }
 
 TEST_F(ParserTest, parse_void_func_def_no_name_after_void_kw) {
