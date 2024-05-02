@@ -427,10 +427,10 @@ TEST_F(ParserTest, parse_disjuction_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<DisjuctionExpression>>(varDef.expression));
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<DisjunctionExpression>>(
+        varDef.expression));
     const auto& expression =
-        std::get<std::unique_ptr<DisjuctionExpression>>(varDef.expression);
+        std::get<std::unique_ptr<DisjunctionExpression>>(varDef.expression);
 
     const auto& lhs = expression->lhs;
     ASSERT_TRUE(std::holds_alternative<Constant>(lhs));
@@ -463,14 +463,90 @@ TEST_F(ParserTest, parse_nested_disjuction_expressions) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<DisjuctionExpression>>(varDef.expression));
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<DisjunctionExpression>>(
+        varDef.expression));
     const auto& expression =
-        std::get<std::unique_ptr<DisjuctionExpression>>(varDef.expression);
+        std::get<std::unique_ptr<DisjunctionExpression>>(varDef.expression);
 
     const auto& lhs = expression->lhs;
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<DisjuctionExpression>>(lhs));
-    const auto& lhsExpression = std::get<std::unique_ptr<DisjuctionExpression>>(lhs);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<DisjunctionExpression>>(lhs));
+    const auto& lhsExpression = std::get<std::unique_ptr<DisjunctionExpression>>(lhs);
+
+    ASSERT_TRUE(std::holds_alternative<Constant>(lhsExpression->lhs));
+    const auto& lhslhsConstant = std::get<Constant>(lhsExpression->lhs);
+    EXPECT_TRUE(std::get<bool>(lhslhsConstant.value));
+
+    ASSERT_TRUE(std::holds_alternative<Constant>(lhsExpression->rhs));
+    const auto& lhsrhsConstant = std::get<Constant>(lhsExpression->rhs);
+    EXPECT_FALSE(std::get<bool>(lhsrhsConstant.value));
+
+    const auto& rhs = expression->rhs;
+    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
+    const auto& rhsConstant = std::get<Constant>(rhs);
+    EXPECT_FALSE(std::get<bool>(rhsConstant.value));
+}
+
+TEST_F(ParserTest, parse_conjunction_expression) {
+    SetUp<Token>({
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::AND_KW, {}, {}},
+        {Token::Type::FALSE_CONST, false, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<ConjunctionExpression>>(
+        varDef.expression));
+    const auto& expression =
+        std::get<std::unique_ptr<ConjunctionExpression>>(varDef.expression);
+
+    const auto& lhs = expression->lhs;
+    ASSERT_TRUE(std::holds_alternative<Constant>(lhs));
+    const auto& lhsConstant = std::get<Constant>(lhs);
+    ASSERT_TRUE(std::holds_alternative<bool>(lhsConstant.value));
+    EXPECT_TRUE(std::get<bool>(lhsConstant.value));
+
+    const auto& rhs = expression->rhs;
+    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
+    const auto& rhsConstant = std::get<Constant>(rhs);
+    EXPECT_FALSE(std::get<bool>(rhsConstant.value));
+}
+
+TEST_F(ParserTest, parse_nested_conjunction_expressions) {
+    SetUp<Token>({
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::AND_KW, {}, {}},
+        {Token::Type::FALSE_CONST, false, {}},
+        {Token::Type::AND_KW, {}, {}},
+        {Token::Type::FALSE_CONST, false, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<ConjunctionExpression>>(
+        varDef.expression));
+    const auto& expression =
+        std::get<std::unique_ptr<ConjunctionExpression>>(varDef.expression);
+
+    const auto& lhs = expression->lhs;
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<ConjunctionExpression>>(lhs));
+    const auto& lhsExpression = std::get<std::unique_ptr<ConjunctionExpression>>(lhs);
 
     ASSERT_TRUE(std::holds_alternative<Constant>(lhsExpression->lhs));
     const auto& lhslhsConstant = std::get<Constant>(lhsExpression->lhs);

@@ -42,7 +42,8 @@ class Parser {
                                         const std::string& name);
     Parameters parseParameters();
     std::optional<Parameter> parseParameter();
-    std::optional<Expression> parseExpression();
+    std::optional<Expression> parseDisjunctionExpression();
+    std::optional<Expression> parseConjunctionExpression();
     std::optional<Expression> parseConstant();
 
     using StatementParsers =

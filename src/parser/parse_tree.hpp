@@ -25,11 +25,18 @@ struct Constant {
     Value value;
 };
 
-struct DisjuctionExpression;
+struct DisjunctionExpression;
+struct ConjunctionExpression;
 
-using Expression = std::variant<Constant, std::unique_ptr<DisjuctionExpression>>;
+using Expression = std::variant<Constant, std::unique_ptr<DisjunctionExpression>,
+                                std::unique_ptr<ConjunctionExpression>>;
 
-struct DisjuctionExpression {
+struct DisjunctionExpression {
+    Expression lhs;
+    Expression rhs;
+};
+
+struct ConjunctionExpression {
     Expression lhs;
     Expression rhs;
 };

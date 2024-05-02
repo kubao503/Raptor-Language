@@ -60,7 +60,7 @@ std::optional<IfStatement> Parser::parseIfStatement() {
         return std::nullopt;
     consumeToken();
 
-    const auto expression = parseExpression();
+    const auto expression = parseDisjunctionExpression();
     if (!expression)
         throw SyntaxException({}, "Expected expression (bool)");
 
@@ -131,7 +131,7 @@ std::optional<Assignment> Parser::parseAssignment(const std::string& name) {
 
     consumeToken();
 
-    auto expression = parseExpression();
+    auto expression = parseDisjunctionExpression();
 
     expect(Token::Type::SEMI, SyntaxException({}, "Missing semicolon"));
 
@@ -226,19 +226,40 @@ std::optional<Parameter> Parser::parseParameter() {
 
 /// EXPR = DISJ { or DISJ }
 ///      | '{' { EXPRS } '}'
-std::optional<Expression> Parser::parseExpression() {
-    auto leftLogicFactor = parseConstant();
+std::optional<Expression> Parser::parseDisjunctionExpression() {
+    auto leftLogicFactor = parseConjunctionExpression();
     if (!leftLogicFactor)
         return std::nullopt;
 
     while (currentToken_.getType() == Token::Type::OR_KW) {
         consumeToken();
-        auto rightLogicFactor = parseConstant();
+        auto rightLogicFactor = parseConjunctionExpression();
         if (!rightLogicFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after 'or' keyword");
-        leftLogicFactor = std::unique_ptr<DisjuctionExpression>(new DisjuctionExpression{
-            .lhs = std::move(*leftLogicFactor), .rhs = std::move(*rightLogicFactor)});
+        leftLogicFactor =
+            std::unique_ptr<DisjunctionExpression>(new DisjunctionExpression{
+                .lhs = std::move(*leftLogicFactor), .rhs = std::move(*rightLogicFactor)});
+    }
+
+    return leftLogicFactor;
+}
+
+/// DISJ = CONJ { and CONJ }
+std::optional<Expression> Parser::parseConjunctionExpression() {
+    auto leftLogicFactor = parseConstant();
+    if (!leftLogicFactor)
+        return std::nullopt;
+
+    while (currentToken_.getType() == Token::Type::AND_KW) {
+        consumeToken();
+        auto rightLogicFactor = parseConstant();
+        if (!rightLogicFactor)
+            throw SyntaxException(currentToken_.getPosition(),
+                                  "Expected expression after 'and' keyword");
+        leftLogicFactor =
+            std::unique_ptr<ConjunctionExpression>(new ConjunctionExpression{
+                .lhs = std::move(*leftLogicFactor), .rhs = std::move(*rightLogicFactor)});
     }
 
     return leftLogicFactor;
