@@ -5,6 +5,8 @@
 #include "parser.hpp"
 #include "parser_errors.hpp"
 
+using namespace std::string_literals;
+
 class ParserTest : public testing::Test {
    protected:
     template <typename T>
@@ -53,7 +55,7 @@ TEST_F(ParserTest, parse_if_statement_missing_expression) {
 TEST_F(ParserTest, parse_func_def) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::ID, "foo"s, {}},
         {Token::Type::L_PAR, {}, {}},
         {Token::Type::R_PAR, {}, {}},
         {Token::Type::L_C_BR, {}, {}},
@@ -72,8 +74,8 @@ TEST_F(ParserTest, parse_func_def) {
 
 TEST_F(ParserTest, parse_func_def_id_ret_type) {
     SetUp<Token>({
-        {Token::Type::ID, std::string("MyStruct"), {}},
-        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::ID, "MyStruct"s, {}},
+        {Token::Type::ID, "foo"s, {}},
         {Token::Type::L_PAR, {}, {}},
         {Token::Type::R_PAR, {}, {}},
         {Token::Type::L_C_BR, {}, {}},
@@ -92,10 +94,10 @@ TEST_F(ParserTest, parse_func_def_id_ret_type) {
 TEST_F(ParserTest, parse_func_def_parameter) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::ID, "foo"s, {}},
         {Token::Type::L_PAR, {}, {}},
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("num"), {}},
+        {Token::Type::ID, "num"s, {}},
         {Token::Type::R_PAR, {}, {}},
         {Token::Type::L_C_BR, {}, {}},
         {Token::Type::R_C_BR, {}, {}},
@@ -119,10 +121,10 @@ TEST_F(ParserTest, parse_func_def_parameter) {
 TEST_F(ParserTest, parse_func_def_id_parameter) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::ID, "foo"s, {}},
         {Token::Type::L_PAR, {}, {}},
-        {Token::Type::ID, std::string("MyInt"), {}},
-        {Token::Type::ID, std::string("num"), {}},
+        {Token::Type::ID, "MyInt"s, {}},
+        {Token::Type::ID, "num"s, {}},
         {Token::Type::R_PAR, {}, {}},
         {Token::Type::L_C_BR, {}, {}},
         {Token::Type::R_C_BR, {}, {}},
@@ -145,13 +147,13 @@ TEST_F(ParserTest, parse_func_def_id_parameter) {
 TEST_F(ParserTest, parse_func_def_two_parameters) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::ID, "foo"s, {}},
         {Token::Type::L_PAR, {}, {}},
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("num"), {}},
+        {Token::Type::ID, "num"s, {}},
         {Token::Type::CMA, {}, {}},
         {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, std::string("truth"), {}},
+        {Token::Type::ID, "truth"s, {}},
         {Token::Type::R_PAR, {}, {}},
         {Token::Type::L_C_BR, {}, {}},
         {Token::Type::R_C_BR, {}, {}},
@@ -183,10 +185,10 @@ TEST_F(ParserTest, parse_func_def_two_parameters) {
 TEST_F(ParserTest, parse_func_def_no_parameter_after_comma) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::ID, "foo"s, {}},
         {Token::Type::L_PAR, {}, {}},
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("num"), {}},
+        {Token::Type::ID, "num"s, {}},
         {Token::Type::CMA, {}, {}},
         {Token::Type::R_PAR, {}, {}},
         {Token::Type::L_C_BR, {}, {}},
@@ -199,11 +201,11 @@ TEST_F(ParserTest, parse_func_def_no_parameter_after_comma) {
 TEST_F(ParserTest, parse_func_def_ref_parameter) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::ID, "foo"s, {}},
         {Token::Type::L_PAR, {}, {}},
         {Token::Type::REF_KW, {}, {}},
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("num"), {}},
+        {Token::Type::ID, "num"s, {}},
         {Token::Type::R_PAR, {}, {}},
         {Token::Type::L_C_BR, {}, {}},
         {Token::Type::R_C_BR, {}, {}},
@@ -227,7 +229,7 @@ TEST_F(ParserTest, parse_func_def_ref_parameter) {
 TEST_F(ParserTest, parse_func_def_no_parameter_after_ref) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::ID, "foo"s, {}},
         {Token::Type::L_PAR, {}, {}},
         {Token::Type::REF_KW, {}, {}},
         {Token::Type::R_PAR, {}, {}},
@@ -241,7 +243,7 @@ TEST_F(ParserTest, parse_func_def_no_parameter_after_ref) {
 TEST_F(ParserTest, parse_func_def_statements) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::ID, "foo"s, {}},
         {Token::Type::L_PAR, {}, {}},
         {Token::Type::R_PAR, {}, {}},
         {Token::Type::L_C_BR, {}, {}},
@@ -268,7 +270,7 @@ TEST_F(ParserTest, parse_func_def_statements) {
 TEST_F(ParserTest, parse_void_func_def) {
     SetUp<Token>({
         {Token::Type::VOID_KW, {}, {}},
-        {Token::Type::ID, std::string("foo"), {}},
+        {Token::Type::ID, "foo"s, {}},
         {Token::Type::L_PAR, {}, {}},
         {Token::Type::R_PAR, {}, {}},
         {Token::Type::L_C_BR, {}, {}},
@@ -298,7 +300,7 @@ TEST_F(ParserTest, parse_void_func_def_no_name_after_void_kw) {
 
 TEST_F(ParserTest, parse_assignment) {
     SetUp<Token>({
-        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::ID, "var"s, {}},
         {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
         {Token::Type::SEMI, {}, {}},
@@ -319,7 +321,7 @@ TEST_F(ParserTest, parse_assignment) {
 
 TEST_F(ParserTest, parse_assignment_missing_semicolon) {
     SetUp<Token>({
-        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::ID, "var"s, {}},
         {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
     });
@@ -330,7 +332,7 @@ TEST_F(ParserTest, parse_assignment_missing_semicolon) {
 TEST_F(ParserTest, parse_var_def) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::ID, "var"s, {}},
         {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
         {Token::Type::SEMI, {}, {}},
@@ -353,7 +355,7 @@ TEST_F(ParserTest, parse_const_var_def) {
     SetUp<Token>({
         {Token::Type::CONST_KW, {}, {}},
         {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::ID, "var"s, {}},
         {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
         {Token::Type::SEMI, {}, {}},
@@ -377,8 +379,8 @@ TEST_F(ParserTest, parse_const_var_def) {
 TEST_F(ParserTest, parse_const_var_def_id_type) {
     SetUp<Token>({
         {Token::Type::CONST_KW, {}, {}},
-        {Token::Type::ID, std::string("MyStruct"), {}},
-        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::ID, "MyStruct"s, {}},
+        {Token::Type::ID, "var"s, {}},
         {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
         {Token::Type::SEMI, {}, {}},
@@ -399,7 +401,7 @@ TEST_F(ParserTest, parse_const_var_def_invalid_type) {
     SetUp<Token>({
         {Token::Type::CONST_KW, {}, {}},
         {Token::Type::UNKNOWN, {}, {}},
-        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::ID, "var"s, {}},
         {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
         {Token::Type::SEMI, {}, {}},
@@ -411,7 +413,7 @@ TEST_F(ParserTest, parse_const_var_def_invalid_type) {
 TEST_F(ParserTest, parse_disjuction_expression) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::ID, "var"s, {}},
         {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::TRUE_CONST, true, {}},
         {Token::Type::OR_KW, {}, {}},
@@ -445,7 +447,7 @@ TEST_F(ParserTest, parse_disjuction_expression) {
 TEST_F(ParserTest, parse_nested_disjuction_expressions) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, std::string("var"), {}},
+        {Token::Type::ID, "var"s, {}},
         {Token::Type::ASGN_OP, {}, {}},
         {Token::Type::TRUE_CONST, true, {}},
         {Token::Type::OR_KW, {}, {}},
