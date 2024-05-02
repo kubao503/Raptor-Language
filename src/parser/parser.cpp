@@ -60,7 +60,7 @@ std::optional<IfStatement> Parser::parseIfStatement() {
         return std::nullopt;
     consumeToken();
 
-    const auto expression = parseDisjunctionExpression();
+    const auto expression = parseExpression();
     if (!expression)
         throw SyntaxException({}, "Expected expression (bool)");
 
@@ -131,7 +131,7 @@ std::optional<Assignment> Parser::parseAssignment(const std::string& name) {
 
     consumeToken();
 
-    auto expression = parseDisjunctionExpression();
+    auto expression = parseExpression();
 
     expect(Token::Type::SEMI, SyntaxException({}, "Missing semicolon"));
 
@@ -224,9 +224,9 @@ std::optional<Parameter> Parser::parseParameter() {
     return Parameter{.type = *type, .name = name, .ref = ref};
 }
 
-/// EXPR = DISJ { or DISJ }
+/// EXPR = CONJ { or CONJ }
 ///      | '{' { EXPRS } '}'
-std::optional<Expression> Parser::parseDisjunctionExpression() {
+std::optional<Expression> Parser::parseExpression() {
     auto leftLogicFactor = parseConjunctionExpression();
     if (!leftLogicFactor)
         return std::nullopt;
@@ -245,7 +245,7 @@ std::optional<Expression> Parser::parseDisjunctionExpression() {
     return leftLogicFactor;
 }
 
-/// DISJ = CONJ { and CONJ }
+/// CONJ = EQ { and EQ }
 std::optional<Expression> Parser::parseConjunctionExpression() {
     auto leftLogicFactor = parseConstant();
     if (!leftLogicFactor)
