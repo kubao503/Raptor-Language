@@ -289,13 +289,13 @@ std::optional<Expression> Parser::parseEqualExpression() {
 ///     | ADD [ '<=' ADD ]
 ///     | ADD [ '>=' ADD ]
 std::optional<Expression> Parser::parseRelExpression() {
-    auto leftRelFactor = parseConstant();
+    auto leftRelFactor = parseAdditiveExpression();
     if (!leftRelFactor)
         return std::nullopt;
 
     if (auto ctor = getRelExprCtor()) {
         consumeToken();
-        auto rightRelFactor = parseConstant();
+        auto rightRelFactor = parseAdditiveExpression();
         if (!rightRelFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after relation operator");
@@ -305,13 +305,32 @@ std::optional<Expression> Parser::parseRelExpression() {
     return leftRelFactor;
 }
 
+/// ADD = TERM { '+' TERM }
+///     | TERM { '-' TERM }
+std::optional<Expression> Parser::parseAdditiveExpression() {
+    auto leftTerm = parseConstant();
+    if (!leftTerm)
+        return std::nullopt;
+
+    while (auto ctor = getAddExprCtor()) {
+        consumeToken();
+        auto rightTerm = parseConstant();
+        if (!rightTerm)
+            throw SyntaxException(currentToken_.getPosition(),
+                                  "Expected expression after 'and' keyword");
+        leftTerm = (*ctor)(std::move(*leftTerm), std::move(*rightTerm));
+    }
+
+    return leftTerm;
+}
+
 std::optional<Expression> Parser::parseConstant() {
     const auto value = currentToken_.getValue();
     consumeToken();
     return Constant{.value = value};
 }
 
-Parser::EqualExprCtor Parser::getEqualExprCtor() {
+Parser::BinaryExprCtor Parser::getEqualExprCtor() {
     switch (currentToken_.getType()) {
         case Token::Type::EQ_OP:
             return [](Expression lhs, Expression rhs) {
@@ -328,7 +347,7 @@ Parser::EqualExprCtor Parser::getEqualExprCtor() {
     }
 }
 
-Parser::EqualExprCtor Parser::getRelExprCtor() {
+Parser::BinaryExprCtor Parser::getRelExprCtor() {
     switch (currentToken_.getType()) {
         case Token::Type::LT_OP:
             return [](Expression lhs, Expression rhs) {
@@ -351,6 +370,23 @@ Parser::EqualExprCtor Parser::getRelExprCtor() {
                 return std::unique_ptr<GreaterThanOrEqualExpression>(
                     new GreaterThanOrEqualExpression{.lhs = std::move(lhs),
                                                      .rhs = std::move(rhs)});
+            };
+        default:
+            return std::nullopt;
+    }
+}
+
+Parser::BinaryExprCtor Parser::getAddExprCtor() {
+    switch (currentToken_.getType()) {
+        case Token::Type::ADD_OP:
+            return [](Expression lhs, Expression rhs) {
+                return std::unique_ptr<AdditionExpression>(
+                    new AdditionExpression{.lhs = std::move(lhs), .rhs = std::move(rhs)});
+            };
+        case Token::Type::MIN_OP:
+            return [](Expression lhs, Expression rhs) {
+                return std::unique_ptr<SubtractionExpression>(new SubtractionExpression{
+                    .lhs = std::move(lhs), .rhs = std::move(rhs)});
             };
         default:
             return std::nullopt;

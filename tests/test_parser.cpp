@@ -679,3 +679,38 @@ TEST_F(ParserTest, parse_rel_expression) {
     const auto& rhsConstant = std::get<Constant>(rhs);
     EXPECT_FALSE(std::get<bool>(rhsConstant.value));
 }
+
+TEST_F(ParserTest, parse_additive_expression) {
+    SetUp<Token>({
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(4), {}},
+        {Token::Type::ADD_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(2), {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<AdditionExpression>>(varDef.expression));
+    const auto& expression =
+        std::get<std::unique_ptr<AdditionExpression>>(varDef.expression);
+
+    const auto& lhs = expression->lhs;
+    ASSERT_TRUE(std::holds_alternative<Constant>(lhs));
+    const auto& lhsConstant = std::get<Constant>(lhs);
+    ASSERT_TRUE(std::holds_alternative<Integral>(lhsConstant.value));
+    EXPECT_EQ(std::get<Integral>(lhsConstant.value), 4);
+
+    const auto& rhs = expression->rhs;
+    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
+    const auto& rhsConstant = std::get<Constant>(rhs);
+    ASSERT_TRUE(std::holds_alternative<Integral>(rhsConstant.value));
+    EXPECT_EQ(std::get<Integral>(rhsConstant.value), 2);
+}

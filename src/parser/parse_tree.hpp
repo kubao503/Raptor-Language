@@ -35,13 +35,16 @@ struct LessThanOrEqualExpression;
 struct GreaterThanExpression;
 struct GreaterThanOrEqualExpression;
 
-using Expression =
-    std::variant<Constant, std::unique_ptr<DisjunctionExpression>,
-                 std::unique_ptr<ConjunctionExpression>, std::unique_ptr<EqualExpression>,
-                 std::unique_ptr<NotEqualExpression>, std::unique_ptr<LessThanExpression>,
-                 std::unique_ptr<LessThanOrEqualExpression>,
-                 std::unique_ptr<GreaterThanExpression>,
-                 std::unique_ptr<GreaterThanOrEqualExpression>>;
+struct AdditionExpression;
+struct SubtractionExpression;
+
+using Expression = std::variant<
+    Constant, std::unique_ptr<DisjunctionExpression>,
+    std::unique_ptr<ConjunctionExpression>, std::unique_ptr<EqualExpression>,
+    std::unique_ptr<NotEqualExpression>, std::unique_ptr<LessThanExpression>,
+    std::unique_ptr<LessThanOrEqualExpression>, std::unique_ptr<GreaterThanExpression>,
+    std::unique_ptr<GreaterThanOrEqualExpression>, std::unique_ptr<AdditionExpression>,
+    std::unique_ptr<SubtractionExpression>>;
 
 struct DisjunctionExpression {
     Expression lhs;
@@ -79,6 +82,16 @@ struct GreaterThanExpression {
 };
 
 struct GreaterThanOrEqualExpression {
+    Expression lhs;
+    Expression rhs;
+};
+
+struct AdditionExpression {
+    Expression lhs;
+    Expression rhs;
+};
+
+struct SubtractionExpression {
     Expression lhs;
     Expression rhs;
 };
