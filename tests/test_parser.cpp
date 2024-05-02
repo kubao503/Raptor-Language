@@ -22,7 +22,7 @@ class ParserTest : public testing::Test {
 TEST_F(ParserTest, parse_empty_program) {
     SetUp({Token::Type::ETX});
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
     EXPECT_EQ(prog.statements.size(), 0);
 }
 
@@ -34,7 +34,7 @@ TEST_F(ParserTest, parse_if_statement) {
         {Token::Type::R_C_BR, {}, {}},
     });
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<IfStatement>(prog.statements.at(0)));
     const auto& ifStatement = std::get<IfStatement>(prog.statements.at(0));
@@ -62,7 +62,7 @@ TEST_F(ParserTest, parse_func_def) {
         {Token::Type::R_C_BR, {}, {}},
     });
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
@@ -82,7 +82,7 @@ TEST_F(ParserTest, parse_func_def_id_ret_type) {
         {Token::Type::R_C_BR, {}, {}},
     });
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
@@ -103,7 +103,7 @@ TEST_F(ParserTest, parse_func_def_parameter) {
         {Token::Type::R_C_BR, {}, {}},
     });
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
@@ -111,7 +111,7 @@ TEST_F(ParserTest, parse_func_def_parameter) {
     const auto& funcDef = std::get<FuncDef>(prog.statements.at(0));
     ASSERT_EQ(funcDef.getParameters().size(), 1);
 
-    auto param = funcDef.getParameters().at(0);
+    const auto& param = funcDef.getParameters().at(0);
     ASSERT_TRUE(std::holds_alternative<BuiltInType>(param.type));
     EXPECT_EQ(std::get<BuiltInType>(param.type), BuiltInType::INT);
     EXPECT_EQ(param.name, "num");
@@ -130,7 +130,7 @@ TEST_F(ParserTest, parse_func_def_id_parameter) {
         {Token::Type::R_C_BR, {}, {}},
     });
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
@@ -138,7 +138,7 @@ TEST_F(ParserTest, parse_func_def_id_parameter) {
     const auto& funcDef = std::get<FuncDef>(prog.statements.at(0));
     ASSERT_EQ(funcDef.getParameters().size(), 1);
 
-    auto param = funcDef.getParameters().at(0);
+    const auto& param = funcDef.getParameters().at(0);
     ASSERT_TRUE(std::holds_alternative<std::string>(param.type));
     EXPECT_EQ(std::get<std::string>(param.type), "MyInt");
     EXPECT_EQ(param.name, "num");
@@ -159,7 +159,7 @@ TEST_F(ParserTest, parse_func_def_two_parameters) {
         {Token::Type::R_C_BR, {}, {}},
     });
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
@@ -168,14 +168,14 @@ TEST_F(ParserTest, parse_func_def_two_parameters) {
     ASSERT_EQ(funcDef.getParameters().size(), 2);
 
     {
-        auto param = funcDef.getParameters().at(0);
+        const auto& param = funcDef.getParameters().at(0);
         ASSERT_TRUE(std::holds_alternative<BuiltInType>(param.type));
         EXPECT_EQ(std::get<BuiltInType>(param.type), BuiltInType::INT);
         EXPECT_EQ(param.name, "num");
         EXPECT_FALSE(param.ref);
     }
 
-    auto param = funcDef.getParameters().at(1);
+    const auto& param = funcDef.getParameters().at(1);
     ASSERT_TRUE(std::holds_alternative<BuiltInType>(param.type));
     EXPECT_EQ(std::get<BuiltInType>(param.type), BuiltInType::BOOL);
     EXPECT_EQ(param.name, "truth");
@@ -211,7 +211,7 @@ TEST_F(ParserTest, parse_func_def_ref_parameter) {
         {Token::Type::R_C_BR, {}, {}},
     });
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
@@ -219,7 +219,7 @@ TEST_F(ParserTest, parse_func_def_ref_parameter) {
     const auto& funcDef = std::get<FuncDef>(prog.statements.at(0));
     ASSERT_EQ(funcDef.getParameters().size(), 1);
 
-    auto param = funcDef.getParameters().at(0);
+    const auto& param = funcDef.getParameters().at(0);
     ASSERT_TRUE(std::holds_alternative<BuiltInType>(param.type));
     EXPECT_EQ(std::get<BuiltInType>(param.type), BuiltInType::INT);
     EXPECT_EQ(param.name, "num");
@@ -277,7 +277,7 @@ TEST_F(ParserTest, parse_void_func_def) {
         {Token::Type::R_C_BR, {}, {}},
     });
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
@@ -306,7 +306,7 @@ TEST_F(ParserTest, parse_assignment) {
         {Token::Type::SEMI, {}, {}},
     });
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<Assignment>(prog.statements.at(0)));
@@ -338,7 +338,7 @@ TEST_F(ParserTest, parse_var_def) {
         {Token::Type::SEMI, {}, {}},
     });
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
@@ -361,7 +361,7 @@ TEST_F(ParserTest, parse_const_var_def) {
         {Token::Type::SEMI, {}, {}},
     });
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
@@ -370,7 +370,7 @@ TEST_F(ParserTest, parse_const_var_def) {
     EXPECT_EQ(varDef.name, "var");
     ASSERT_TRUE(std::holds_alternative<Constant>(varDef.expression));
 
-    const auto expression = std::get<Constant>(varDef.expression);
+    const auto& expression = std::get<Constant>(varDef.expression);
     ASSERT_TRUE(std::holds_alternative<Integral>(expression.value));
     EXPECT_EQ(std::get<Integral>(expression.value), 42);
     EXPECT_TRUE(varDef.isConst);
@@ -386,7 +386,7 @@ TEST_F(ParserTest, parse_const_var_def_id_type) {
         {Token::Type::SEMI, {}, {}},
     });
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
