@@ -28,10 +28,12 @@ struct Constant {
 struct DisjunctionExpression;
 struct ConjunctionExpression;
 struct EqualExpression;
+struct NotEqualExpression;
 
-using Expression = std::variant<Constant, std::unique_ptr<DisjunctionExpression>,
-                                std::unique_ptr<ConjunctionExpression>,
-                                std::unique_ptr<EqualExpression>>;
+using Expression =
+    std::variant<Constant, std::unique_ptr<DisjunctionExpression>,
+                 std::unique_ptr<ConjunctionExpression>, std::unique_ptr<EqualExpression>,
+                 std::unique_ptr<NotEqualExpression>>;
 
 struct DisjunctionExpression {
     Expression lhs;
@@ -44,6 +46,11 @@ struct ConjunctionExpression {
 };
 
 struct EqualExpression {
+    Expression lhs;
+    Expression rhs;
+};
+
+struct NotEqualExpression {
     Expression lhs;
     Expression rhs;
 };

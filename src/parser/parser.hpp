@@ -47,6 +47,9 @@ class Parser {
     std::optional<Expression> parseEqualExpression();
     std::optional<Expression> parseConstant();
 
+    using EqualExprCtor = std::optional<std::function<Expression(Expression, Expression)>>;
+    EqualExprCtor getEqualExprCtor();
+
     using StatementParsers =
         std::initializer_list<std::function<std::optional<Statement>(Parser&)>>;
     static StatementParsers statementParsers_;

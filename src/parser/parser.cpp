@@ -272,17 +272,30 @@ std::optional<Expression> Parser::parseEqualExpression() {
     if (!leftEqFactor)
         return std::nullopt;
 
-    if (currentToken_.getType() == Token::Type::EQ_OP) {
+    if (auto ctor = getEqualExprCtor()) {
         consumeToken();
         auto rightEqFactor = parseConstant();
         if (!rightEqFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after '==' operator");
-        leftEqFactor = std::unique_ptr<EqualExpression>(new EqualExpression{
-            .lhs = std::move(*leftEqFactor), .rhs = std::move(*rightEqFactor)});
+        leftEqFactor = (*ctor)(std::move(*leftEqFactor), std::move(*rightEqFactor));
     }
 
     return leftEqFactor;
+}
+
+Parser::EqualExprCtor Parser::getEqualExprCtor() {
+    if (currentToken_.getType() == Token::Type::EQ_OP)
+        return [](Expression lhs, Expression rhs) {
+            return std::unique_ptr<EqualExpression>(
+                new EqualExpression{.lhs = std::move(lhs), .rhs = std::move(rhs)});
+        };
+    if (currentToken_.getType() == Token::Type::NEQ_OP)
+        return [](Expression lhs, Expression rhs) {
+            return std::unique_ptr<NotEqualExpression>(
+                new NotEqualExpression{.lhs = std::move(lhs), .rhs = std::move(rhs)});
+        };
+    return std::nullopt;
 }
 
 std::optional<Expression> Parser::parseConstant() {
