@@ -75,7 +75,7 @@ class FuncDef {
     const ReturnType& getReturnType() const { return returnType_; }
     std::string_view getName() const { return name_; }
     const Parameters& getParameters() const { return parameters_; }
-    Statements getStatements() { return std::move(statements_); }
+    const Statements& getStatements() const { return statements_; }
 
    private:
     ReturnType returnType_{""};

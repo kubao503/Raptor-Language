@@ -254,13 +254,13 @@ TEST_F(ParserTest, parse_func_def_statements) {
         {Token::Type::R_C_BR, {}, {}},
     });
 
-    auto prog = parser_->parseProgram();
+    const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<FuncDef>(prog.statements.at(0)));
 
     auto& funcDef = std::get<FuncDef>(prog.statements.at(0));
-    auto statements = funcDef.getStatements();
+    const auto& statements = funcDef.getStatements();
 
     ASSERT_EQ(statements.size(), 1);
     const auto& statement = statements.at(0);
