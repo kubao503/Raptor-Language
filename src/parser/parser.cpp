@@ -285,17 +285,20 @@ std::optional<Expression> Parser::parseEqualExpression() {
 }
 
 Parser::EqualExprCtor Parser::getEqualExprCtor() {
-    if (currentToken_.getType() == Token::Type::EQ_OP)
-        return [](Expression lhs, Expression rhs) {
-            return std::unique_ptr<EqualExpression>(
-                new EqualExpression{.lhs = std::move(lhs), .rhs = std::move(rhs)});
-        };
-    if (currentToken_.getType() == Token::Type::NEQ_OP)
-        return [](Expression lhs, Expression rhs) {
-            return std::unique_ptr<NotEqualExpression>(
-                new NotEqualExpression{.lhs = std::move(lhs), .rhs = std::move(rhs)});
-        };
-    return std::nullopt;
+    switch (currentToken_.getType()) {
+        case Token::Type::EQ_OP:
+            return [](Expression lhs, Expression rhs) {
+                return std::unique_ptr<EqualExpression>(
+                    new EqualExpression{.lhs = std::move(lhs), .rhs = std::move(rhs)});
+            };
+        case Token::Type::NEQ_OP:
+            return [](Expression lhs, Expression rhs) {
+                return std::unique_ptr<NotEqualExpression>(
+                    new NotEqualExpression{.lhs = std::move(lhs), .rhs = std::move(rhs)});
+            };
+        default:
+            return std::nullopt;
+    }
 }
 
 std::optional<Expression> Parser::parseConstant() {
