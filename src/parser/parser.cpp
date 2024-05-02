@@ -247,13 +247,13 @@ std::optional<Expression> Parser::parseExpression() {
 
 /// CONJ = EQ { and EQ }
 std::optional<Expression> Parser::parseConjunctionExpression() {
-    auto leftLogicFactor = parseConstant();
+    auto leftLogicFactor = parseEqualExpression();
     if (!leftLogicFactor)
         return std::nullopt;
 
     while (currentToken_.getType() == Token::Type::AND_KW) {
         consumeToken();
-        auto rightLogicFactor = parseConstant();
+        auto rightLogicFactor = parseEqualExpression();
         if (!rightLogicFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after 'and' keyword");
@@ -263,6 +263,26 @@ std::optional<Expression> Parser::parseConjunctionExpression() {
     }
 
     return leftLogicFactor;
+}
+
+/// EQ = REL [ '==' REL ]
+///    | REL [ '!=' REL ]
+std::optional<Expression> Parser::parseEqualExpression() {
+    auto leftEqFactor = parseConstant();
+    if (!leftEqFactor)
+        return std::nullopt;
+
+    if (currentToken_.getType() == Token::Type::EQ_OP) {
+        consumeToken();
+        auto rightEqFactor = parseConstant();
+        if (!rightEqFactor)
+            throw SyntaxException(currentToken_.getPosition(),
+                                  "Expected expression after '==' operator");
+        leftEqFactor = std::unique_ptr<EqualExpression>(new EqualExpression{
+            .lhs = std::move(*leftEqFactor), .rhs = std::move(*rightEqFactor)});
+    }
+
+    return leftEqFactor;
 }
 
 std::optional<Expression> Parser::parseConstant() {

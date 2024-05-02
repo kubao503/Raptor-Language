@@ -44,6 +44,7 @@ class Parser {
     std::optional<Parameter> parseParameter();
     std::optional<Expression> parseExpression();
     std::optional<Expression> parseConjunctionExpression();
+    std::optional<Expression> parseEqualExpression();
     std::optional<Expression> parseConstant();
 
     using StatementParsers =
