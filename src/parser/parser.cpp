@@ -268,13 +268,13 @@ std::optional<Expression> Parser::parseConjunctionExpression() {
 /// EQ = REL [ '==' REL ]
 ///    | REL [ '!=' REL ]
 std::optional<Expression> Parser::parseEqualExpression() {
-    auto leftEqFactor = parseConstant();
+    auto leftEqFactor = parseRelExpression();
     if (!leftEqFactor)
         return std::nullopt;
 
     if (auto ctor = getEqualExprCtor()) {
         consumeToken();
-        auto rightEqFactor = parseConstant();
+        auto rightEqFactor = parseRelExpression();
         if (!rightEqFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after '==' operator");
@@ -282,6 +282,33 @@ std::optional<Expression> Parser::parseEqualExpression() {
     }
 
     return leftEqFactor;
+}
+
+/// REL = ADD [ '<' ADD ]
+///     | ADD [ '>' ADD ]
+///     | ADD [ '<=' ADD ]
+///     | ADD [ '>=' ADD ]
+std::optional<Expression> Parser::parseRelExpression() {
+    auto leftRelFactor = parseConstant();
+    if (!leftRelFactor)
+        return std::nullopt;
+
+    if (auto ctor = getRelExprCtor()) {
+        consumeToken();
+        auto rightRelFactor = parseConstant();
+        if (!rightRelFactor)
+            throw SyntaxException(currentToken_.getPosition(),
+                                  "Expected expression after relation operator");
+        leftRelFactor = (*ctor)(std::move(*leftRelFactor), std::move(*rightRelFactor));
+    }
+
+    return leftRelFactor;
+}
+
+std::optional<Expression> Parser::parseConstant() {
+    const auto value = currentToken_.getValue();
+    consumeToken();
+    return Constant{.value = value};
 }
 
 Parser::EqualExprCtor Parser::getEqualExprCtor() {
@@ -301,10 +328,33 @@ Parser::EqualExprCtor Parser::getEqualExprCtor() {
     }
 }
 
-std::optional<Expression> Parser::parseConstant() {
-    const auto value = currentToken_.getValue();
-    consumeToken();
-    return Constant{.value = value};
+Parser::EqualExprCtor Parser::getRelExprCtor() {
+    switch (currentToken_.getType()) {
+        case Token::Type::LT_OP:
+            return [](Expression lhs, Expression rhs) {
+                return std::unique_ptr<LessThanExpression>(
+                    new LessThanExpression{.lhs = std::move(lhs), .rhs = std::move(rhs)});
+            };
+        case Token::Type::LTE_OP:
+            return [](Expression lhs, Expression rhs) {
+                return std::unique_ptr<LessThanOrEqualExpression>(
+                    new LessThanOrEqualExpression{.lhs = std::move(lhs),
+                                                  .rhs = std::move(rhs)});
+            };
+        case Token::Type::GT_OP:
+            return [](Expression lhs, Expression rhs) {
+                return std::unique_ptr<GreaterThanExpression>(new GreaterThanExpression{
+                    .lhs = std::move(lhs), .rhs = std::move(rhs)});
+            };
+        case Token::Type::GTE_OP:
+            return [](Expression lhs, Expression rhs) {
+                return std::unique_ptr<GreaterThanOrEqualExpression>(
+                    new GreaterThanOrEqualExpression{.lhs = std::move(lhs),
+                                                     .rhs = std::move(rhs)});
+            };
+        default:
+            return std::nullopt;
+    }
 }
 
 Parser::StatementParsers Parser::statementParsers_{

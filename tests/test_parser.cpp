@@ -645,3 +645,37 @@ TEST_F(ParserTest, parse_not_equal_expression) {
     const auto& rhsConstant = std::get<Constant>(rhs);
     EXPECT_FALSE(std::get<bool>(rhsConstant.value));
 }
+
+TEST_F(ParserTest, parse_rel_expression) {
+    SetUp<Token>({
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::LT_OP, {}, {}},
+        {Token::Type::FALSE_CONST, false, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<LessThanExpression>>(varDef.expression));
+    const auto& expression =
+        std::get<std::unique_ptr<LessThanExpression>>(varDef.expression);
+
+    const auto& lhs = expression->lhs;
+    ASSERT_TRUE(std::holds_alternative<Constant>(lhs));
+    const auto& lhsConstant = std::get<Constant>(lhs);
+    ASSERT_TRUE(std::holds_alternative<bool>(lhsConstant.value));
+    EXPECT_TRUE(std::get<bool>(lhsConstant.value));
+
+    const auto& rhs = expression->rhs;
+    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
+    const auto& rhsConstant = std::get<Constant>(rhs);
+    EXPECT_FALSE(std::get<bool>(rhsConstant.value));
+}
