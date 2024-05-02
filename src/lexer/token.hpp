@@ -60,10 +60,8 @@ class Token {
         CMT,
     };
 
-    using Value = std::variant<std::monostate, Integral, Floating, bool, std::string>;
-
     /// @param type
-    /// @param value - additional info that the token carries
+    /// @param value
     /// @param position - position of the first character of the token
     Token(Type type, Value value, Position position)
         : type_(type), value_(value), position_(position) {}

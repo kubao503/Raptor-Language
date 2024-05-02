@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "position.hpp"
+#include "types.hpp"
 
 enum class BuiltInType {
     INT,
@@ -21,7 +22,7 @@ using Type = std::variant<std::string, BuiltInType>;
 using ReturnType = std::variant<std::string, BuiltInType, VoidType>;
 
 struct Constant {
-    Token::Value value;
+    Value value;
 };
 
 struct DisjuctionExpression;
