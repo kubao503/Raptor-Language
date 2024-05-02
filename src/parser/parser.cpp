@@ -330,18 +330,19 @@ std::optional<Expression> Parser::parseConstant() {
     return Constant{.value = value};
 }
 
+template <typename T>
+auto getExprCtor() {
+    return [](Expression lhs, Expression rhs) {
+        return std::unique_ptr<T>(new T{.lhs = std::move(lhs), .rhs = std::move(rhs)});
+    };
+}
+
 Parser::BinaryExprCtor Parser::getEqualExprCtor() {
     switch (currentToken_.getType()) {
         case Token::Type::EQ_OP:
-            return [](Expression lhs, Expression rhs) {
-                return std::unique_ptr<EqualExpression>(
-                    new EqualExpression{.lhs = std::move(lhs), .rhs = std::move(rhs)});
-            };
+            return getExprCtor<EqualExpression>();
         case Token::Type::NEQ_OP:
-            return [](Expression lhs, Expression rhs) {
-                return std::unique_ptr<NotEqualExpression>(
-                    new NotEqualExpression{.lhs = std::move(lhs), .rhs = std::move(rhs)});
-            };
+            return getExprCtor<NotEqualExpression>();
         default:
             return std::nullopt;
     }
@@ -350,27 +351,13 @@ Parser::BinaryExprCtor Parser::getEqualExprCtor() {
 Parser::BinaryExprCtor Parser::getRelExprCtor() {
     switch (currentToken_.getType()) {
         case Token::Type::LT_OP:
-            return [](Expression lhs, Expression rhs) {
-                return std::unique_ptr<LessThanExpression>(
-                    new LessThanExpression{.lhs = std::move(lhs), .rhs = std::move(rhs)});
-            };
+            return getExprCtor<LessThanExpression>();
         case Token::Type::LTE_OP:
-            return [](Expression lhs, Expression rhs) {
-                return std::unique_ptr<LessThanOrEqualExpression>(
-                    new LessThanOrEqualExpression{.lhs = std::move(lhs),
-                                                  .rhs = std::move(rhs)});
-            };
+            return getExprCtor<LessThanOrEqualExpression>();
         case Token::Type::GT_OP:
-            return [](Expression lhs, Expression rhs) {
-                return std::unique_ptr<GreaterThanExpression>(new GreaterThanExpression{
-                    .lhs = std::move(lhs), .rhs = std::move(rhs)});
-            };
+            return getExprCtor<GreaterThanExpression>();
         case Token::Type::GTE_OP:
-            return [](Expression lhs, Expression rhs) {
-                return std::unique_ptr<GreaterThanOrEqualExpression>(
-                    new GreaterThanOrEqualExpression{.lhs = std::move(lhs),
-                                                     .rhs = std::move(rhs)});
-            };
+            return getExprCtor<GreaterThanOrEqualExpression>();
         default:
             return std::nullopt;
     }
@@ -379,15 +366,9 @@ Parser::BinaryExprCtor Parser::getRelExprCtor() {
 Parser::BinaryExprCtor Parser::getAddExprCtor() {
     switch (currentToken_.getType()) {
         case Token::Type::ADD_OP:
-            return [](Expression lhs, Expression rhs) {
-                return std::unique_ptr<AdditionExpression>(
-                    new AdditionExpression{.lhs = std::move(lhs), .rhs = std::move(rhs)});
-            };
+            return getExprCtor<AdditionExpression>();
         case Token::Type::MIN_OP:
-            return [](Expression lhs, Expression rhs) {
-                return std::unique_ptr<SubtractionExpression>(new SubtractionExpression{
-                    .lhs = std::move(lhs), .rhs = std::move(rhs)});
-            };
+            return getExprCtor<SubtractionExpression>();
         default:
             return std::nullopt;
     }
