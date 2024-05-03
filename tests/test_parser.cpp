@@ -807,3 +807,102 @@ TEST_F(ParserTest, parse_negation_expression) {
     ASSERT_TRUE(std::holds_alternative<bool>(nestedExpConstant.value));
     EXPECT_TRUE(std::get<bool>(nestedExpConstant.value));
 }
+
+TEST_F(ParserTest, parse_type_conversion_expression) {
+    SetUp<Token>({
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(4), {}},
+        {Token::Type::AS_KW, {}, {}},
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<ConversionExpression>>(varDef.expression));
+    const auto& expression =
+        std::get<std::unique_ptr<ConversionExpression>>(varDef.expression);
+
+    const auto& convertedExpr = expression->expr;
+    ASSERT_TRUE(std::holds_alternative<Constant>(convertedExpr));
+    const auto& constant = std::get<Constant>(convertedExpr);
+    ASSERT_TRUE(std::holds_alternative<Integral>(constant.value));
+    EXPECT_EQ(std::get<Integral>(constant.value), 4);
+
+    const auto& type = expression->type;
+    ASSERT_TRUE(std::holds_alternative<BuiltInType>(type));
+    EXPECT_EQ(std::get<BuiltInType>(type), BuiltInType::BOOL);
+}
+
+TEST_F(ParserTest, parse_type_conversion_to_id_type) {
+    SetUp<Token>({
+        {Token::Type::ID, "MyStruct"s, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(4), {}},
+        {Token::Type::AS_KW, {}, {}},
+        {Token::Type::ID, "MyStruct"s, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<ConversionExpression>>(varDef.expression));
+    const auto& expression =
+        std::get<std::unique_ptr<ConversionExpression>>(varDef.expression);
+
+    const auto& convertedExpr = expression->expr;
+    ASSERT_TRUE(std::holds_alternative<Constant>(convertedExpr));
+    const auto& constant = std::get<Constant>(convertedExpr);
+    ASSERT_TRUE(std::holds_alternative<Integral>(constant.value));
+    EXPECT_EQ(std::get<Integral>(constant.value), 4);
+
+    const auto& type = expression->type;
+    ASSERT_TRUE(std::holds_alternative<std::string>(type));
+    EXPECT_EQ(std::get<std::string>(type), "MyStruct");
+}
+
+TEST_F(ParserTest, parse_type_check_expression) {
+    SetUp<Token>({
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::ID, "checked"s, {}},
+        {Token::Type::IS_KW, {}, {}},
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<TypeCheckExpression>>(varDef.expression));
+    const auto& expression =
+        std::get<std::unique_ptr<TypeCheckExpression>>(varDef.expression);
+
+    const auto& convertedExpr = expression->expr;
+    ASSERT_TRUE(std::holds_alternative<Constant>(convertedExpr));
+    const auto& constant = std::get<Constant>(convertedExpr);
+    ASSERT_TRUE(std::holds_alternative<std::string>(constant.value));
+    EXPECT_EQ(std::get<std::string>(constant.value), "checked");
+
+    const auto& type = expression->type;
+    ASSERT_TRUE(std::holds_alternative<BuiltInType>(type));
+    EXPECT_EQ(std::get<BuiltInType>(type), BuiltInType::BOOL);
+}

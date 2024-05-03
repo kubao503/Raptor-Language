@@ -44,6 +44,9 @@ struct DivisionExpression;
 struct SignChangeExpression;
 struct NegationExpression;
 
+struct ConversionExpression;
+struct TypeCheckExpression;
+
 using Expression = std::variant<
     Constant, std::unique_ptr<DisjunctionExpression>,
     std::unique_ptr<ConjunctionExpression>, std::unique_ptr<EqualExpression>,
@@ -52,7 +55,8 @@ using Expression = std::variant<
     std::unique_ptr<GreaterThanOrEqualExpression>, std::unique_ptr<AdditionExpression>,
     std::unique_ptr<SubtractionExpression>, std::unique_ptr<MultiplicationExpression>,
     std::unique_ptr<DivisionExpression>, std::unique_ptr<SignChangeExpression>,
-    std::unique_ptr<NegationExpression> >;
+    std::unique_ptr<NegationExpression>, std::unique_ptr<ConversionExpression>,
+    std::unique_ptr<TypeCheckExpression> >;
 
 struct DisjunctionExpression {
     Expression lhs;
@@ -120,6 +124,16 @@ struct SignChangeExpression {
 
 struct NegationExpression {
     Expression expr;
+};
+
+struct ConversionExpression {
+    Expression expr;
+    Type type;
+};
+
+struct TypeCheckExpression {
+    Expression expr;
+    Type type;
 };
 
 struct IfStatement {

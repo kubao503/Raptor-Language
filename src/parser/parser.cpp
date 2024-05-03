@@ -349,9 +349,30 @@ std::optional<Expression> Parser::parseNegationExpression() {
     if (ctor)
         consumeToken();
 
-    auto expr = parseConstant();
+    auto expr = parseTypeExpression();
     if (ctor)
         return (*ctor)(std::move(*expr));
+    return expr;
+}
+
+/// UNARY = SRC [ as TYPE ]
+///       | SRC [ is TYPE ]
+std::optional<Expression> Parser::parseTypeExpression() {
+    auto expr = parseConstant();
+    if (!expr)
+        return std::nullopt;
+
+    if (const auto& ctor = getTypeExprCtor()) {
+        consumeToken();
+
+        auto type = getType(currentToken_);
+        consumeToken();
+        if (!type)
+            throw SyntaxException(currentToken_.getPosition(),
+                                  "Expected type after is/as keyword");
+
+        expr = (*ctor)(std::move(*expr), *type);
+    }
     return expr;
 }
 
@@ -429,6 +450,23 @@ std::optional<Parser::UnaryExprCtor> Parser::getNegationExprCtor() {
             return getUnaryExprCtor<SignChangeExpression>();
         case Token::Type::NOT_KW:
             return getUnaryExprCtor<NegationExpression>();
+        default:
+            return std::nullopt;
+    }
+}
+
+std::optional<std::function<Expression(Expression, Type)>> Parser::getTypeExprCtor() {
+    switch (currentToken_.getType()) {
+        case Token::Type::AS_KW:
+            return [](Expression expr, Type type) {
+                return std::unique_ptr<ConversionExpression>(
+                    new ConversionExpression{.expr = std::move(expr), .type = type});
+            };
+        case Token::Type::IS_KW:
+            return [](Expression expr, Type type) {
+                return std::unique_ptr<TypeCheckExpression>(
+                    new TypeCheckExpression{.expr = std::move(expr), .type = type});
+            };
         default:
             return std::nullopt;
     }

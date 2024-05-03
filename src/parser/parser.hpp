@@ -49,6 +49,7 @@ class Parser {
     std::optional<Expression> parseAdditiveExpression();
     std::optional<Expression> parseMultiplicativeExpression();
     std::optional<Expression> parseNegationExpression();
+    std::optional<Expression> parseTypeExpression();
     std::optional<Expression> parseConstant();
 
     using BinaryExprCtor = std::function<Expression(Expression, Expression)>;
@@ -59,6 +60,7 @@ class Parser {
     std::optional<BinaryExprCtor> getAddExprCtor();
     std::optional<BinaryExprCtor> getMultExprCtor();
     std::optional<UnaryExprCtor> getNegationExprCtor();
+    std::optional<std::function<Expression(Expression, Type)>> getTypeExprCtor();
 
     using StatementParsers =
         std::initializer_list<std::function<std::optional<Statement>(Parser&)>>;
