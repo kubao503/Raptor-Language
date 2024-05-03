@@ -272,7 +272,7 @@ std::optional<Expression> Parser::parseEqualExpression() {
     if (!leftEqFactor)
         return std::nullopt;
 
-    if (auto ctor = getEqualExprCtor()) {
+    if (const auto& ctor = getEqualExprCtor()) {
         consumeToken();
         auto rightEqFactor = parseRelExpression();
         if (!rightEqFactor)
@@ -293,7 +293,7 @@ std::optional<Expression> Parser::parseRelExpression() {
     if (!leftRelFactor)
         return std::nullopt;
 
-    if (auto ctor = getRelExprCtor()) {
+    if (const auto& ctor = getRelExprCtor()) {
         consumeToken();
         auto rightRelFactor = parseAdditiveExpression();
         if (!rightRelFactor)
@@ -312,7 +312,7 @@ std::optional<Expression> Parser::parseAdditiveExpression() {
     if (!leftTerm)
         return std::nullopt;
 
-    while (auto ctor = getAddExprCtor()) {
+    while (const auto& ctor = getAddExprCtor()) {
         consumeToken();
         auto rightTerm = parseMultiplicativeExpression();
         if (!rightTerm)
@@ -327,20 +327,32 @@ std::optional<Expression> Parser::parseAdditiveExpression() {
 /// TERM = FACTOR { '*' FACTOR }
 ///      | FACTOR { '/' FACTOR }
 std::optional<Expression> Parser::parseMultiplicativeExpression() {
-    auto leftTerm = parseConstant();
-    if (!leftTerm)
+    auto leftFactor = parseNegationExpression();
+    if (!leftFactor)
         return std::nullopt;
 
-    while (auto ctor = getMultExprCtor()) {
+    while (const auto& ctor = getMultExprCtor()) {
         consumeToken();
-        auto rightTerm = parseConstant();
-        if (!rightTerm)
+        auto rightFactor = parseNegationExpression();
+        if (!rightFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after multiplicative operator");
-        leftTerm = (*ctor)(std::move(*leftTerm), std::move(*rightTerm));
+        leftFactor = (*ctor)(std::move(*leftFactor), std::move(*rightFactor));
     }
 
-    return leftTerm;
+    return leftFactor;
+}
+
+/// FACTOR = [ '-' | not ] UNARY
+std::optional<Expression> Parser::parseNegationExpression() {
+    const auto& ctor = getNegationExprCtor();
+    if (ctor)
+        consumeToken();
+
+    auto expr = parseConstant();
+    if (ctor)
+        return (*ctor)(std::move(*expr));
+    return expr;
 }
 
 std::optional<Expression> Parser::parseConstant() {
@@ -350,55 +362,73 @@ std::optional<Expression> Parser::parseConstant() {
 }
 
 template <typename T>
-auto getExprCtor() {
+auto getBinaryExprCtor() {
     return [](Expression lhs, Expression rhs) {
         return std::unique_ptr<T>(new T{.lhs = std::move(lhs), .rhs = std::move(rhs)});
     };
 }
 
-Parser::BinaryExprCtor Parser::getEqualExprCtor() {
+template <typename T>
+auto getUnaryExprCtor() {
+    return [](Expression expr) {
+        return std::unique_ptr<T>(new T{.expr = std::move(expr)});
+    };
+}
+
+std::optional<Parser::BinaryExprCtor> Parser::getEqualExprCtor() {
     switch (currentToken_.getType()) {
         case Token::Type::EQ_OP:
-            return getExprCtor<EqualExpression>();
+            return getBinaryExprCtor<EqualExpression>();
         case Token::Type::NEQ_OP:
-            return getExprCtor<NotEqualExpression>();
+            return getBinaryExprCtor<NotEqualExpression>();
         default:
             return std::nullopt;
     }
 }
 
-Parser::BinaryExprCtor Parser::getRelExprCtor() {
+std::optional<Parser::BinaryExprCtor> Parser::getRelExprCtor() {
     switch (currentToken_.getType()) {
         case Token::Type::LT_OP:
-            return getExprCtor<LessThanExpression>();
+            return getBinaryExprCtor<LessThanExpression>();
         case Token::Type::LTE_OP:
-            return getExprCtor<LessThanOrEqualExpression>();
+            return getBinaryExprCtor<LessThanOrEqualExpression>();
         case Token::Type::GT_OP:
-            return getExprCtor<GreaterThanExpression>();
+            return getBinaryExprCtor<GreaterThanExpression>();
         case Token::Type::GTE_OP:
-            return getExprCtor<GreaterThanOrEqualExpression>();
+            return getBinaryExprCtor<GreaterThanOrEqualExpression>();
         default:
             return std::nullopt;
     }
 }
 
-Parser::BinaryExprCtor Parser::getAddExprCtor() {
+std::optional<Parser::BinaryExprCtor> Parser::getAddExprCtor() {
     switch (currentToken_.getType()) {
         case Token::Type::ADD_OP:
-            return getExprCtor<AdditionExpression>();
+            return getBinaryExprCtor<AdditionExpression>();
         case Token::Type::MIN_OP:
-            return getExprCtor<SubtractionExpression>();
+            return getBinaryExprCtor<SubtractionExpression>();
         default:
             return std::nullopt;
     }
 }
 
-Parser::BinaryExprCtor Parser::getMultExprCtor() {
+std::optional<Parser::BinaryExprCtor> Parser::getMultExprCtor() {
     switch (currentToken_.getType()) {
         case Token::Type::MULT_OP:
-            return getExprCtor<MultiplicationExpression>();
+            return getBinaryExprCtor<MultiplicationExpression>();
         case Token::Type::DIV_OP:
-            return getExprCtor<DivisionExpression>();
+            return getBinaryExprCtor<DivisionExpression>();
+        default:
+            return std::nullopt;
+    }
+}
+
+std::optional<Parser::UnaryExprCtor> Parser::getNegationExprCtor() {
+    switch (currentToken_.getType()) {
+        case Token::Type::MIN_OP:
+            return getUnaryExprCtor<SignChangeExpression>();
+        case Token::Type::NOT_KW:
+            return getUnaryExprCtor<NegationExpression>();
         default:
             return std::nullopt;
     }

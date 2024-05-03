@@ -732,8 +732,8 @@ TEST_F(ParserTest, parse_multiplicative_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<MultiplicationExpression>>(varDef.expression));
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MultiplicationExpression>>(
+        varDef.expression));
     const auto& expression =
         std::get<std::unique_ptr<MultiplicationExpression>>(varDef.expression);
 
@@ -748,4 +748,62 @@ TEST_F(ParserTest, parse_multiplicative_expression) {
     const auto& rhsConstant = std::get<Constant>(rhs);
     ASSERT_TRUE(std::holds_alternative<Integral>(rhsConstant.value));
     EXPECT_EQ(std::get<Integral>(rhsConstant.value), 2);
+}
+
+TEST_F(ParserTest, parse_sign_change_expression) {
+    SetUp<Token>({
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::MIN_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(4), {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<SignChangeExpression>>(varDef.expression));
+    const auto& expression =
+        std::get<std::unique_ptr<SignChangeExpression>>(varDef.expression);
+
+    const auto& nestedExp = expression->expr;
+    ASSERT_TRUE(std::holds_alternative<Constant>(nestedExp));
+
+    const auto& nestedExpConstant = std::get<Constant>(nestedExp);
+    ASSERT_TRUE(std::holds_alternative<Integral>(nestedExpConstant.value));
+    EXPECT_EQ(std::get<Integral>(nestedExpConstant.value), 4);
+}
+
+TEST_F(ParserTest, parse_negation_expression) {
+    SetUp<Token>({
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::NOT_KW, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<NegationExpression>>(varDef.expression));
+    const auto& expression =
+        std::get<std::unique_ptr<NegationExpression>>(varDef.expression);
+
+    const auto& nestedExp = expression->expr;
+    ASSERT_TRUE(std::holds_alternative<Constant>(nestedExp));
+
+    const auto& nestedExpConstant = std::get<Constant>(nestedExp);
+    ASSERT_TRUE(std::holds_alternative<bool>(nestedExpConstant.value));
+    EXPECT_TRUE(std::get<bool>(nestedExpConstant.value));
 }

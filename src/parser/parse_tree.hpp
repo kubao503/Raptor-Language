@@ -41,6 +41,9 @@ struct SubtractionExpression;
 struct MultiplicationExpression;
 struct DivisionExpression;
 
+struct SignChangeExpression;
+struct NegationExpression;
+
 using Expression = std::variant<
     Constant, std::unique_ptr<DisjunctionExpression>,
     std::unique_ptr<ConjunctionExpression>, std::unique_ptr<EqualExpression>,
@@ -48,7 +51,8 @@ using Expression = std::variant<
     std::unique_ptr<LessThanOrEqualExpression>, std::unique_ptr<GreaterThanExpression>,
     std::unique_ptr<GreaterThanOrEqualExpression>, std::unique_ptr<AdditionExpression>,
     std::unique_ptr<SubtractionExpression>, std::unique_ptr<MultiplicationExpression>,
-    std::unique_ptr<DivisionExpression>>;
+    std::unique_ptr<DivisionExpression>, std::unique_ptr<SignChangeExpression>,
+    std::unique_ptr<NegationExpression> >;
 
 struct DisjunctionExpression {
     Expression lhs;
@@ -108,6 +112,14 @@ struct MultiplicationExpression {
 struct DivisionExpression {
     Expression lhs;
     Expression rhs;
+};
+
+struct SignChangeExpression {
+    Expression expr;
+};
+
+struct NegationExpression {
+    Expression expr;
 };
 
 struct IfStatement {
