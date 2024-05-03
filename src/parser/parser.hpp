@@ -53,8 +53,11 @@ class Parser {
     std::optional<Expression> parseFieldAccessExpression();
     std::optional<Expression> parseContainerExpression();
     std::optional<Expression> parseNestedExpression();
-    std::optional<Expression> parseVariableAccess();
     std::optional<Expression> parseConstant();
+    std::optional<Expression> parseVariableAccessOrFuncCall();
+    std::optional<Expression> parseFuncCallExpression(const std::string& name);
+    Arguments parseArguments();
+    std::optional<Argument> parseArgument();
 
     using BinaryExprCtor = std::function<Expression(Expression, Expression)>;
     using UnaryExprCtor = std::function<Expression(Expression)>;

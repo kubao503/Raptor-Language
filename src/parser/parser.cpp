@@ -403,7 +403,7 @@ std::optional<Expression> Parser::parseContainerExpression() {
         return expr;
     if (auto expr = parseConstant())
         return expr;
-    if (auto expr = parseVariableAccess())
+    if (auto expr = parseVariableAccessOrFuncCall())
         return expr;
     return std::nullopt;
 }
@@ -430,12 +430,61 @@ std::optional<Expression> Parser::parseConstant() {
     return Constant{.value = value};
 }
 
-std::optional<Expression> Parser::parseVariableAccess() {
+std::optional<Expression> Parser::parseVariableAccessOrFuncCall() {
     if (currentToken_.getType() != Token::Type::ID)
         return std::nullopt;
-    const auto& name = std::get<std::string>(currentToken_.getValue());
+    const auto name = std::get<std::string>(currentToken_.getValue());
     consumeToken();
+
+    if (auto expr = parseFuncCallExpression(name))
+        return expr;
     return VariableAccess{.name = name};
+}
+
+std::optional<Expression> Parser::parseFuncCallExpression(const std::string& name) {
+    if (currentToken_.getType() != Token::Type::L_PAR)
+        return std::nullopt;
+    consumeToken();
+
+    auto arguments = parseArguments();
+
+    expect(Token::Type::R_PAR,
+           SyntaxException(currentToken_.getPosition(),
+                           "Missing right parenthesis after function call arguments"));
+    return FuncCall{.name = name, .arguments = std::move(arguments)};
+}
+
+/// ARGS = [ ARG { ',' ARG } ]
+Arguments Parser::parseArguments() {
+    Arguments arguments;
+
+    auto argument = parseArgument();
+    if (!argument)
+        return arguments;
+
+    arguments.push_back(std::move(*argument));
+
+    while (currentToken_.getType() == Token::Type::CMA) {
+        consumeToken();
+        argument = parseArgument();
+        if (!argument)
+            throw SyntaxException({}, "Expected argument after comma");
+        arguments.push_back(std::move(*argument));
+    }
+    return arguments;
+}
+
+/// ARG = [ ref ] EXPR
+std::optional<Argument> Parser::parseArgument() {
+    const bool ref{currentToken_.getType() == Token::Type::REF_KW};
+    if (ref)
+        consumeToken();
+
+    auto expr = parseExpression();
+    if (!expr)
+        return std::nullopt;
+
+    return Argument{.value = std::move(*expr)};
 }
 
 template <typename T>
