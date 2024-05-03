@@ -906,3 +906,36 @@ TEST_F(ParserTest, parse_type_check_expression) {
     ASSERT_TRUE(std::holds_alternative<BuiltInType>(type));
     EXPECT_EQ(std::get<BuiltInType>(type), BuiltInType::BOOL);
 }
+
+TEST_F(ParserTest, parse_field_access_expression) {
+    SetUp<Token>({
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::ID, "myStruct"s, {}},
+        {Token::Type::DOT, {}, {}},
+        {Token::Type::ID, "firstField"s, {}},
+        {Token::Type::DOT, {}, {}},
+        {Token::Type::ID, "secondField"s, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<FieldAccessExpression>>(
+        varDef.expression));
+
+    const auto& container =
+        std::get<std::unique_ptr<FieldAccessExpression>>(varDef.expression);
+    EXPECT_EQ(container->field, "secondField");
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<FieldAccessExpression>>(container->expr));
+
+    const auto& nestedContainer =
+        std::get<std::unique_ptr<FieldAccessExpression>>(container->expr);
+    EXPECT_EQ(nestedContainer->field, "firstField");
+}

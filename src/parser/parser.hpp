@@ -50,6 +50,7 @@ class Parser {
     std::optional<Expression> parseMultiplicativeExpression();
     std::optional<Expression> parseNegationExpression();
     std::optional<Expression> parseTypeExpression();
+    std::optional<Expression> parseFieldAccessExpression();
     std::optional<Expression> parseConstant();
 
     using BinaryExprCtor = std::function<Expression(Expression, Expression)>;

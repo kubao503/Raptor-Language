@@ -47,6 +47,8 @@ struct NegationExpression;
 struct ConversionExpression;
 struct TypeCheckExpression;
 
+struct FieldAccessExpression;
+
 using Expression = std::variant<
     Constant, std::unique_ptr<DisjunctionExpression>,
     std::unique_ptr<ConjunctionExpression>, std::unique_ptr<EqualExpression>,
@@ -56,7 +58,7 @@ using Expression = std::variant<
     std::unique_ptr<SubtractionExpression>, std::unique_ptr<MultiplicationExpression>,
     std::unique_ptr<DivisionExpression>, std::unique_ptr<SignChangeExpression>,
     std::unique_ptr<NegationExpression>, std::unique_ptr<ConversionExpression>,
-    std::unique_ptr<TypeCheckExpression> >;
+    std::unique_ptr<TypeCheckExpression>, std::unique_ptr<FieldAccessExpression> >;
 
 struct DisjunctionExpression {
     Expression lhs;
@@ -134,6 +136,11 @@ struct ConversionExpression {
 struct TypeCheckExpression {
     Expression expr;
     Type type;
+};
+
+struct FieldAccessExpression {
+    Expression expr;
+    std::string field;
 };
 
 struct IfStatement {

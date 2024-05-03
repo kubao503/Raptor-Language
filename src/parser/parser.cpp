@@ -358,7 +358,7 @@ std::optional<Expression> Parser::parseNegationExpression() {
 /// UNARY = SRC [ as TYPE ]
 ///       | SRC [ is TYPE ]
 std::optional<Expression> Parser::parseTypeExpression() {
-    auto expr = parseConstant();
+    auto expr = parseFieldAccessExpression();
     if (!expr)
         return std::nullopt;
 
@@ -373,6 +373,25 @@ std::optional<Expression> Parser::parseTypeExpression() {
 
         expr = (*ctor)(std::move(*expr), *type);
     }
+    return expr;
+}
+
+/// SRC = CNTNR { '.' ID }
+std::optional<Expression> Parser::parseFieldAccessExpression() {
+    auto expr = parseConstant();
+    if (!expr)
+        return std::nullopt;
+
+    while (currentToken_.getType() == Token::Type::DOT) {
+        consumeToken();
+        auto field = expectAndReturnValue<std::string>(
+            Token::Type::ID,
+            SyntaxException(currentToken_.getPosition(),
+                            "Expected field name after dot"));
+        expr = std::unique_ptr<FieldAccessExpression>(new FieldAccessExpression{.expr = std::move(*expr),
+                                                         .field = std::move(field)});
+    }
+
     return expr;
 }
 
