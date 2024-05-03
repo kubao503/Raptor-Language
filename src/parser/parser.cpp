@@ -308,16 +308,35 @@ std::optional<Expression> Parser::parseRelExpression() {
 /// ADD = TERM { '+' TERM }
 ///     | TERM { '-' TERM }
 std::optional<Expression> Parser::parseAdditiveExpression() {
-    auto leftTerm = parseConstant();
+    auto leftTerm = parseMultiplicativeExpression();
     if (!leftTerm)
         return std::nullopt;
 
     while (auto ctor = getAddExprCtor()) {
         consumeToken();
+        auto rightTerm = parseMultiplicativeExpression();
+        if (!rightTerm)
+            throw SyntaxException(currentToken_.getPosition(),
+                                  "Expected expression after additive operator");
+        leftTerm = (*ctor)(std::move(*leftTerm), std::move(*rightTerm));
+    }
+
+    return leftTerm;
+}
+
+/// TERM = FACTOR { '*' FACTOR }
+///      | FACTOR { '/' FACTOR }
+std::optional<Expression> Parser::parseMultiplicativeExpression() {
+    auto leftTerm = parseConstant();
+    if (!leftTerm)
+        return std::nullopt;
+
+    while (auto ctor = getMultExprCtor()) {
+        consumeToken();
         auto rightTerm = parseConstant();
         if (!rightTerm)
             throw SyntaxException(currentToken_.getPosition(),
-                                  "Expected expression after 'and' keyword");
+                                  "Expected expression after multiplicative operator");
         leftTerm = (*ctor)(std::move(*leftTerm), std::move(*rightTerm));
     }
 
@@ -369,6 +388,17 @@ Parser::BinaryExprCtor Parser::getAddExprCtor() {
             return getExprCtor<AdditionExpression>();
         case Token::Type::MIN_OP:
             return getExprCtor<SubtractionExpression>();
+        default:
+            return std::nullopt;
+    }
+}
+
+Parser::BinaryExprCtor Parser::getMultExprCtor() {
+    switch (currentToken_.getType()) {
+        case Token::Type::MULT_OP:
+            return getExprCtor<MultiplicationExpression>();
+        case Token::Type::DIV_OP:
+            return getExprCtor<DivisionExpression>();
         default:
             return std::nullopt;
     }

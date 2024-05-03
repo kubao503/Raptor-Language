@@ -38,13 +38,17 @@ struct GreaterThanOrEqualExpression;
 struct AdditionExpression;
 struct SubtractionExpression;
 
+struct MultiplicationExpression;
+struct DivisionExpression;
+
 using Expression = std::variant<
     Constant, std::unique_ptr<DisjunctionExpression>,
     std::unique_ptr<ConjunctionExpression>, std::unique_ptr<EqualExpression>,
     std::unique_ptr<NotEqualExpression>, std::unique_ptr<LessThanExpression>,
     std::unique_ptr<LessThanOrEqualExpression>, std::unique_ptr<GreaterThanExpression>,
     std::unique_ptr<GreaterThanOrEqualExpression>, std::unique_ptr<AdditionExpression>,
-    std::unique_ptr<SubtractionExpression>>;
+    std::unique_ptr<SubtractionExpression>, std::unique_ptr<MultiplicationExpression>,
+    std::unique_ptr<DivisionExpression>>;
 
 struct DisjunctionExpression {
     Expression lhs;
@@ -92,6 +96,16 @@ struct AdditionExpression {
 };
 
 struct SubtractionExpression {
+    Expression lhs;
+    Expression rhs;
+};
+
+struct MultiplicationExpression {
+    Expression lhs;
+    Expression rhs;
+};
+
+struct DivisionExpression {
     Expression lhs;
     Expression rhs;
 };
