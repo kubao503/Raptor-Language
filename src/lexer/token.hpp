@@ -3,6 +3,7 @@
 
 #include <ostream>
 #include <variant>
+#include <vector>
 
 #include "position.hpp"
 #include "types.hpp"
@@ -77,10 +78,15 @@ class Token {
     /// @return Position of the first character of the token
     const Position& getPosition() const { return position_; }
 
+    /// @brief Is one of the constants (e.g. int, bool, str)
+    bool isConstant() const;
+
    private:
     Type type_;
     Value value_ = {};
     Position position_;
+
+    static std::vector<Token::Type> constantTypes_;
 };
 
 std::ostream& operator<<(std::ostream& stream, const Token& token);

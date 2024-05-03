@@ -2,6 +2,16 @@
 
 #include "magic_enum/magic_enum.hpp"
 
+bool Token::isConstant() const {
+    return std::find(constantTypes_.begin(), constantTypes_.end(), type_)
+           != constantTypes_.end();
+}
+
+std::vector<Token::Type> Token::constantTypes_{
+    Token::Type::INT_CONST,   Token::Type::FLOAT_CONST, Token::Type::TRUE_CONST,
+    Token::Type::FALSE_CONST, Token::Type::STR_CONST,
+};
+
 /// @brief Visitor converting tokens into strings
 struct ToStringFunctor {
     std::string operator()(std::monostate) const { return ""; }

@@ -897,10 +897,9 @@ TEST_F(ParserTest, parse_type_check_expression) {
         std::get<std::unique_ptr<TypeCheckExpression>>(varDef.expression);
 
     const auto& convertedExpr = expression->expr;
-    ASSERT_TRUE(std::holds_alternative<Constant>(convertedExpr));
-    const auto& constant = std::get<Constant>(convertedExpr);
-    ASSERT_TRUE(std::holds_alternative<std::string>(constant.value));
-    EXPECT_EQ(std::get<std::string>(constant.value), "checked");
+    ASSERT_TRUE(std::holds_alternative<VariableAccess>(convertedExpr));
+    const auto& checkedVar = std::get<VariableAccess>(convertedExpr);
+    EXPECT_EQ(checkedVar.name, "checked");
 
     const auto& type = expression->type;
     ASSERT_TRUE(std::holds_alternative<BuiltInType>(type));
@@ -938,4 +937,25 @@ TEST_F(ParserTest, parse_field_access_expression) {
     const auto& nestedContainer =
         std::get<std::unique_ptr<FieldAccessExpression>>(container->expr);
     EXPECT_EQ(nestedContainer->field, "firstField");
+}
+
+TEST_F(ParserTest, parse_variable_access) {
+    SetUp<Token>({
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::ID, "secondVar"s, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(std::holds_alternative<VariableAccess>(varDef.expression));
+
+    const auto& varAccess = std::get<VariableAccess>(varDef.expression);
+    EXPECT_EQ(varAccess.name, "secondVar");
 }

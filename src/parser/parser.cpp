@@ -378,27 +378,49 @@ std::optional<Expression> Parser::parseTypeExpression() {
 
 /// SRC = CNTNR { '.' ID }
 std::optional<Expression> Parser::parseFieldAccessExpression() {
-    auto expr = parseConstant();
+    auto expr = parseContainerExpression();
     if (!expr)
         return std::nullopt;
 
     while (currentToken_.getType() == Token::Type::DOT) {
         consumeToken();
         auto field = expectAndReturnValue<std::string>(
-            Token::Type::ID,
-            SyntaxException(currentToken_.getPosition(),
-                            "Expected field name after dot"));
-        expr = std::unique_ptr<FieldAccessExpression>(new FieldAccessExpression{.expr = std::move(*expr),
-                                                         .field = std::move(field)});
+            Token::Type::ID, SyntaxException(currentToken_.getPosition(),
+                                             "Expected field name after dot"));
+        expr = std::unique_ptr<FieldAccessExpression>(new FieldAccessExpression{
+            .expr = std::move(*expr), .field = std::move(field)});
     }
 
     return expr;
 }
 
+/// CNTNR = '(' EXPR ')'
+///       | CONST
+///       | ID
+///       | ID '(' ARGS ')'
+std::optional<Expression> Parser::parseContainerExpression() {
+    if (auto expr = parseConstant())
+        return expr;
+    if (auto expr = parseVariableAccess())
+        return expr;
+    return std::nullopt;
+}
+
 std::optional<Expression> Parser::parseConstant() {
+    if (!currentToken_.isConstant())
+        return std::nullopt;
+
     const auto value = currentToken_.getValue();
     consumeToken();
     return Constant{.value = value};
+}
+
+std::optional<Expression> Parser::parseVariableAccess() {
+    if (currentToken_.getType() != Token::Type::ID)
+        return std::nullopt;
+    const auto& name = std::get<std::string>(currentToken_.getValue());
+    consumeToken();
+    return VariableAccess{.name = name};
 }
 
 template <typename T>
