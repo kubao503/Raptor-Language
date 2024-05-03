@@ -959,3 +959,32 @@ TEST_F(ParserTest, parse_variable_access) {
     const auto& varAccess = std::get<VariableAccess>(varDef.expression);
     EXPECT_EQ(varAccess.name, "secondVar");
 }
+
+TEST_F(ParserTest, parse_expression_in_parenthesis) {
+    SetUp<Token>({
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(1), {}},
+        {Token::Type::ADD_OP, {}, {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(1), {}},
+        {Token::Type::ADD_OP, {}, {}},
+        {Token::Type::INT_CONST, static_cast<Integral>(1), {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<AdditionExpression>>(varDef.expression));
+
+    const auto& expr = std::get<std::unique_ptr<AdditionExpression>>(varDef.expression);
+    EXPECT_TRUE(std::holds_alternative<Constant>(expr->lhs));
+    EXPECT_TRUE(std::holds_alternative<std::unique_ptr<AdditionExpression>>(expr->rhs));
+}

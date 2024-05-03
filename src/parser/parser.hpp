@@ -52,6 +52,7 @@ class Parser {
     std::optional<Expression> parseTypeExpression();
     std::optional<Expression> parseFieldAccessExpression();
     std::optional<Expression> parseContainerExpression();
+    std::optional<Expression> parseNestedExpression();
     std::optional<Expression> parseVariableAccess();
     std::optional<Expression> parseConstant();
 

@@ -399,11 +399,26 @@ std::optional<Expression> Parser::parseFieldAccessExpression() {
 ///       | ID
 ///       | ID '(' ARGS ')'
 std::optional<Expression> Parser::parseContainerExpression() {
+    if (auto expr = parseNestedExpression())
+        return expr;
     if (auto expr = parseConstant())
         return expr;
     if (auto expr = parseVariableAccess())
         return expr;
     return std::nullopt;
+}
+
+std::optional<Expression> Parser::parseNestedExpression() {
+    if (currentToken_.getType() != Token::Type::L_PAR)
+        return std::nullopt;
+    consumeToken();
+
+    auto expr = parseExpression();
+
+    expect(Token::Type::R_PAR,
+           SyntaxException(currentToken_.getPosition(),
+                           "Expected right parenthesis after nested expression"));
+    return expr;
 }
 
 std::optional<Expression> Parser::parseConstant() {
