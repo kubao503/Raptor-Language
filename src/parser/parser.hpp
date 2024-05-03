@@ -6,6 +6,7 @@
 
 #include "ILexer.hpp"
 #include "parse_tree.hpp"
+#include "parser_errors.hpp"
 #include "token.hpp"
 
 /// @brief Parser building parse tree from tokens
@@ -40,7 +41,6 @@ class Parser {
     std::optional<Statement> parseDef(const Type& type);
     std::optional<FuncDef> parseFuncDef(const ReturnType& returnType,
                                         const std::string& name);
-    Parameters parseParameters();
     std::optional<Parameter> parseParameter();
     std::optional<Expression> parseExpression();
     std::optional<Expression> parseConjunctionExpression();
@@ -56,8 +56,10 @@ class Parser {
     std::optional<Expression> parseConstant();
     std::optional<Expression> parseVariableAccessOrFuncCall();
     std::optional<Expression> parseFuncCallExpression(const std::string& name);
-    Arguments parseArguments();
     std::optional<Argument> parseArgument();
+
+    template <typename T, typename ElementParser>
+    std::vector<T> parseList(ElementParser elementParser);
 
     using BinaryExprCtor = std::function<Expression(Expression, Expression)>;
     using UnaryExprCtor = std::function<Expression(Expression)>;
@@ -90,6 +92,28 @@ T Parser::expectAndReturnValue(Token::Type expected, const Exception& exception)
     const auto value = currentToken_.getValue();
     expect(expected, exception);
     return std::get<T>(value);
+}
+
+/// LIST = [ ELEM { ',' ELEM } ]
+template <typename T, typename ElementParser>
+std::vector<T> Parser::parseList(ElementParser elementParser) {
+    std::vector<T> elements;
+
+    auto element = (this->*elementParser)();
+    if (!element)
+        return elements;
+
+    elements.push_back(std::move(*element));
+
+    while (currentToken_.getType() == Token::Type::CMA) {
+        consumeToken();
+        element = (this->*elementParser)();
+        if (!element)
+            throw SyntaxException(currentToken_.getPosition(),
+                                  "Expected element after comma");
+        elements.push_back(std::move(*element));
+    }
+    return elements;
 }
 
 #endif

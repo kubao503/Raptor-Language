@@ -1,7 +1,6 @@
 #include "parser.hpp"
 
 #include "magic_enum/magic_enum.hpp"
-#include "parser_errors.hpp"
 
 std::optional<BuiltInType> getBuiltInType(const Token& token) {
     auto name = magic_enum::enum_name(token.getType());
@@ -172,7 +171,7 @@ std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
         return std::nullopt;
     consumeToken();
 
-    const auto parameters = parseParameters();
+    const auto parameters = parseList<Parameter>(&Parser::parseParameter);
 
     expect(Token::Type::R_PAR, SyntaxException({}, "Missing right parenthesis"));
 
@@ -182,26 +181,6 @@ std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
 
     expect(Token::Type::R_C_BR, SyntaxException({}, "Missing right curly brace"));
     return FuncDef(returnType, name, parameters, std::move(statements), {});
-}
-
-/// PARAMS = [ PARAM { ',' PARAM } ]
-Parameters Parser::parseParameters() {
-    Parameters parameters;
-
-    auto parameter = parseParameter();
-    if (!parameter)
-        return parameters;
-
-    parameters.push_back(*parameter);
-
-    while (currentToken_.getType() == Token::Type::CMA) {
-        consumeToken();
-        parameter = parseParameter();
-        if (!parameter)
-            throw SyntaxException({}, "Expected parameter after comma");
-        parameters.push_back(*parameter);
-    }
-    return parameters;
 }
 
 /// PARAM = [ ref ] TYPE ID
@@ -446,32 +425,12 @@ std::optional<Expression> Parser::parseFuncCallExpression(const std::string& nam
         return std::nullopt;
     consumeToken();
 
-    auto arguments = parseArguments();
+    auto arguments = parseList<Argument>(&Parser::parseArgument);
 
     expect(Token::Type::R_PAR,
            SyntaxException(currentToken_.getPosition(),
                            "Missing right parenthesis after function call arguments"));
     return FuncCall{.name = name, .arguments = std::move(arguments)};
-}
-
-/// ARGS = [ ARG { ',' ARG } ]
-Arguments Parser::parseArguments() {
-    Arguments arguments;
-
-    auto argument = parseArgument();
-    if (!argument)
-        return arguments;
-
-    arguments.push_back(std::move(*argument));
-
-    while (currentToken_.getType() == Token::Type::CMA) {
-        consumeToken();
-        argument = parseArgument();
-        if (!argument)
-            throw SyntaxException({}, "Expected argument after comma");
-        arguments.push_back(std::move(*argument));
-    }
-    return arguments;
 }
 
 /// ARG = [ ref ] EXPR
