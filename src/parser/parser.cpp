@@ -14,12 +14,9 @@ std::optional<BuiltInType> getBuiltInType(const Token& token) {
 }
 
 std::optional<Type> getType(const Token& token) {
-    if (auto type = getBuiltInType(token))
-        return type;
     if (token.getType() == Token::Type::ID)
         return std::get<std::string>(token.getValue());
-
-    return std::nullopt;
+    return getBuiltInType(token);
 }
 
 /// PROGRAM = STMTS
@@ -80,7 +77,7 @@ std::optional<VarDef> Parser::parseConstVarDef() {
         throw SyntaxException({}, "Expected variable type");
     consumeToken();
 
-    const auto name = expectAndReturnValue<std::string>(
+    auto name = expectAndReturnValue<std::string>(
         Token::Type::ID, SyntaxException({}, "Expected variable name"));
 
     auto assignment = parseAssignment(name);
@@ -88,7 +85,7 @@ std::optional<VarDef> Parser::parseConstVarDef() {
     return VarDef{
         .isConst = true,
         .type = *type,
-        .name = name,
+        .name = std::move(name),
         .expression = std::move(assignment->rhs),
     };
 }
@@ -402,9 +399,7 @@ std::optional<Expression> Parser::parseContainerExpression() {
         return expr;
     if (auto expr = parseConstant())
         return expr;
-    if (auto expr = parseVariableAccessOrFuncCall())
-        return expr;
-    return std::nullopt;
+    return parseVariableAccessOrFuncCall();
 }
 
 std::optional<Expression> Parser::parseNestedExpression() {

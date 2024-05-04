@@ -6,7 +6,8 @@ add_executable(
     test_source.cpp
     test_lexer.cpp
     test_filter.cpp
-    test_parser.cpp
+    test_stmt_parsing.cpp
+    test_expr_parsing.cpp
 )
 
 target_link_libraries(
