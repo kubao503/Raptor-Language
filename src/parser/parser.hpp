@@ -32,7 +32,7 @@ class Parser {
 
     Statements parseStatements();
     std::optional<Statement> parseStatement();
-    std::optional<IfStatement> parseIfStatement();
+    std::optional<Statement> parseIfOrWhileStatement();
     std::optional<Statement> parseReturnOrPrintStatement();
     std::optional<VarDef> parseConstVarDef();
     std::optional<FuncDef> parseVoidFunc();
@@ -65,11 +65,13 @@ class Parser {
     template <typename T, typename ElementParser>
     std::vector<T> parseList(ElementParser elementParser);
 
+    using IfOrWhileCtor = std::function<Statement(Expression, Statements)>;
     using BinaryExprCtor = std::function<Expression(Expression, Expression)>;
     using UnaryOptExprCtor = std::function<Statement(std::optional<Expression>)>;
     using UnaryExprCtor = std::function<Expression(Expression)>;
     using TypeExprCtor = std::function<Expression(Expression, Type)>;
 
+    std::optional<IfOrWhileCtor> getIfOrWhileCtor();
     std::optional<UnaryOptExprCtor> getRetOrPrintCtor();
     std::optional<BinaryExprCtor> getEqualExprCtor();
     std::optional<BinaryExprCtor> getRelExprCtor();

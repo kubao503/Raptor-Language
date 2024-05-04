@@ -12,7 +12,7 @@ TEST_F(ParserTest, parse_empty_program) {
     EXPECT_EQ(prog.statements.size(), 0);
 }
 
-TEST_F(ParserTest, parse_if_statement) {
+TEST_F(ParserTest, parse_if_statement_empty) {
     SetUp<Token>({
         {Token::Type::IF_KW, {}, {}},
         {Token::Type::TRUE_CONST, true, {}},
@@ -64,6 +64,50 @@ TEST_F(ParserTest, parse_if_statement_missing_condition) {
     });
 
     EXPECT_THROW(parser_->parseProgram(), SyntaxException);
+}
+
+TEST_F(ParserTest, parse_while_statement_empty) {
+    SetUp<Token>({
+        {Token::Type::WHILE_KW, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<WhileStatement>(prog.statements.at(0)));
+    const auto& whileStatement = std::get<WhileStatement>(prog.statements.at(0));
+
+    const auto& condition = whileStatement.condition;
+    ASSERT_TRUE(std::holds_alternative<Constant>(condition));
+
+    ASSERT_TRUE(whileStatement.statements.empty());
+}
+
+TEST_F(ParserTest, parse_while_statement_body) {
+    SetUp<Token>({
+        {Token::Type::WHILE_KW, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::SEMI, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<WhileStatement>(prog.statements.at(0)));
+    const auto& whileStatement = std::get<WhileStatement>(prog.statements.at(0));
+
+    const auto& condition = whileStatement.condition;
+    ASSERT_TRUE(std::holds_alternative<Constant>(condition));
+
+    ASSERT_EQ(whileStatement.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(whileStatement.statements.at(0)));
 }
 
 TEST_F(ParserTest, parse_print_statement_empty) {

@@ -204,13 +204,19 @@ struct Parameter {
 using Parameters = std::vector<Parameter>;
 
 struct IfStatement;
+struct WhileStatement;
 struct FuncDef;
 
-using Statement = std::variant<IfStatement, ReturnStatement, PrintStatement, FuncDef,
-                               Assignment, VarDef>;
+using Statement = std::variant<IfStatement, WhileStatement, ReturnStatement,
+                               PrintStatement, FuncDef, Assignment, VarDef>;
 using Statements = std::vector<Statement>;
 
 struct IfStatement {
+    Expression condition;
+    Statements statements;
+};
+
+struct WhileStatement {
     Expression condition;
     Statements statements;
 };

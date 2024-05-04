@@ -55,8 +55,10 @@ std::optional<Statement> Parser::parseStatement() {
 }
 
 /// IF_STMT = if EXPR '{' STMTS '}'
-std::optional<IfStatement> Parser::parseIfStatement() {
-    if (currentToken_.getType() != Token::Type::IF_KW)
+/// WHILE_STMT = while EXPR '{' STMTS '}'
+std::optional<Statement> Parser::parseIfOrWhileStatement() {
+    const auto& ctor = getIfOrWhileCtor();
+    if (!ctor)
         return std::nullopt;
     consumeToken();
 
@@ -70,8 +72,7 @@ std::optional<IfStatement> Parser::parseIfStatement() {
 
     expect(Token::Type::R_C_BR, SyntaxException({}, "Missing right curly brace"));
 
-    return IfStatement{.condition = std::move(*expression),
-                       .statements = std::move(statements)};
+    return (*ctor)(std::move(*expression), std::move(statements));
 }
 
 /// RET_STMT = return [ EXPR ] ';'
@@ -521,6 +522,23 @@ auto getUnaryExprCtor() {
     };
 }
 
+std::optional<Parser::IfOrWhileCtor> Parser::getIfOrWhileCtor() {
+    switch (currentToken_.getType()) {
+        case Token::Type::IF_KW:
+            return [](Expression expr, Statements statements) {
+                return IfStatement{.condition = std::move(expr),
+                                   .statements = std::move(statements)};
+            };
+        case Token::Type::WHILE_KW:
+            return [](Expression expr, Statements statements) {
+                return WhileStatement{.condition = std::move(expr),
+                                      .statements = std::move(statements)};
+            };
+        default:
+            return std::nullopt;
+    }
+}
+
 std::optional<Parser::UnaryOptExprCtor> Parser::getRetOrPrintCtor() {
     switch (currentToken_.getType()) {
         case Token::Type::RETURN_KW:
@@ -613,7 +631,7 @@ std::optional<std::function<Expression(Expression, Type)>> Parser::getTypeExprCt
 }
 
 Parser::StatementParsers Parser::statementParsers_{
-    [](Parser& p) { return p.parseIfStatement(); },
+    [](Parser& p) { return p.parseIfOrWhileStatement(); },
     [](Parser& p) { return p.parseReturnOrPrintStatement(); },
     [](Parser& p) { return p.parseConstVarDef(); },
     [](Parser& p) { return p.parseVoidFunc(); },
