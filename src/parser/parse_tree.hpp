@@ -175,6 +175,10 @@ struct FieldAccess {
     std::string field;
 };
 
+struct PrintStatement {
+    std::optional<Expression> expression;
+};
+
 struct Assignment {
     Container lhs;
     Expression rhs;
@@ -198,7 +202,7 @@ using Parameters = std::vector<Parameter>;
 struct IfStatement;
 struct FuncDef;
 
-using Statement = std::variant<IfStatement, FuncDef, Assignment, VarDef>;
+using Statement = std::variant<IfStatement, PrintStatement, FuncDef, Assignment, VarDef>;
 using Statements = std::vector<Statement>;
 
 struct IfStatement {

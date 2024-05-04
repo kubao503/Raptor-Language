@@ -66,6 +66,38 @@ TEST_F(ParserTest, parse_if_statement_missing_condition) {
     EXPECT_THROW(parser_->parseProgram(), SyntaxException);
 }
 
+TEST_F(ParserTest, parse_print_statement_empty) {
+    SetUp<Token>({
+        {Token::Type::PRINT_KW, {}, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+    ASSERT_EQ(prog.statements.size(), 1);
+
+    ASSERT_TRUE(std::holds_alternative<PrintStatement>(prog.statements.at(0)));
+    const auto& printStatement = std::get<PrintStatement>(prog.statements.at(0));
+
+    ASSERT_FALSE(printStatement.expression);
+}
+
+TEST_F(ParserTest, parse_print_statement) {
+    SetUp<Token>({
+        {Token::Type::PRINT_KW, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+    ASSERT_EQ(prog.statements.size(), 1);
+
+    ASSERT_TRUE(std::holds_alternative<PrintStatement>(prog.statements.at(0)));
+    const auto& printStatement = std::get<PrintStatement>(prog.statements.at(0));
+
+    ASSERT_TRUE(printStatement.expression);
+    ASSERT_TRUE(std::holds_alternative<Constant>(*printStatement.expression));
+}
+
 TEST_F(ParserTest, parse_func_def) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},

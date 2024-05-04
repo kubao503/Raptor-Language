@@ -74,6 +74,20 @@ std::optional<IfStatement> Parser::parseIfStatement() {
                        .statements = std::move(statements)};
 }
 
+/// PRINT_STMT = print [ EXPR ] ';'
+std::optional<PrintStatement> Parser::parsePrintStatement() {
+    if (currentToken_.getType() != Token::Type::PRINT_KW)
+        return std::nullopt;
+    consumeToken();
+
+    auto expression = parseExpression();
+
+    expect(Token::Type::SEMI, SyntaxException(currentToken_.getPosition(),
+                                              "Missing semicolon after print statement"));
+
+    return PrintStatement{.expression = std::move(expression)};
+}
+
 /// CONST_VAR_DEF = const ( TYPE | ID ) ID ASGN
 std::optional<VarDef> Parser::parseConstVarDef() {
     if (currentToken_.getType() != Token::Type::CONST_KW)
@@ -582,6 +596,7 @@ std::optional<std::function<Expression(Expression, Type)>> Parser::getTypeExprCt
 
 Parser::StatementParsers Parser::statementParsers_{
     [](Parser& p) { return p.parseIfStatement(); },
+    [](Parser& p) { return p.parsePrintStatement(); },
     [](Parser& p) { return p.parseConstVarDef(); },
     [](Parser& p) { return p.parseVoidFunc(); },
     [](Parser& p) { return p.parseDefOrAssignment(); },

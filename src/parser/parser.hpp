@@ -33,6 +33,7 @@ class Parser {
     Statements parseStatements();
     std::optional<Statement> parseStatement();
     std::optional<IfStatement> parseIfStatement();
+    std::optional<PrintStatement> parsePrintStatement();
     std::optional<VarDef> parseConstVarDef();
     std::optional<FuncDef> parseVoidFunc();
     std::optional<Statement> parseDefOrAssignment();
