@@ -1047,9 +1047,45 @@ TEST_F(ParserTest, parse_func_call_expression_with_arguments) {
     const auto& firstArg = std::get<Constant>(arguments.at(0).value);
     ASSERT_TRUE(std::holds_alternative<bool>(firstArg.value));
     EXPECT_TRUE(std::get<bool>(firstArg.value));
+    EXPECT_FALSE(arguments.at(0).ref);
 
     ASSERT_TRUE(std::holds_alternative<Constant>(arguments.at(1).value));
     const auto& secondArg = std::get<Constant>(arguments.at(1).value);
     ASSERT_TRUE(std::holds_alternative<bool>(secondArg.value));
     EXPECT_FALSE(std::get<bool>(secondArg.value));
+    EXPECT_FALSE(arguments.at(1).ref);
+}
+
+TEST_F(ParserTest, parse_func_call_expression_with_ref_argument) {
+    SetUp<Token>({
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::ID, "foo"s, {}},
+        {Token::Type::L_PAR, {}, {}},
+        {Token::Type::REF_KW, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::R_PAR, {}, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(std::holds_alternative<FuncCall>(varDef.expression));
+
+    const auto& funcCall = std::get<FuncCall>(varDef.expression);
+    EXPECT_EQ(funcCall.name, "foo");
+
+    const auto& arguments = funcCall.arguments;
+    ASSERT_EQ(arguments.size(), 1);
+    EXPECT_TRUE(arguments.at(0).ref);
+
+    ASSERT_TRUE(std::holds_alternative<Constant>(arguments.at(0).value));
+    const auto& firstArg = std::get<Constant>(arguments.at(0).value);
+    ASSERT_TRUE(std::holds_alternative<bool>(firstArg.value));
+    EXPECT_TRUE(std::get<bool>(firstArg.value));
 }

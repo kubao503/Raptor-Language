@@ -443,7 +443,7 @@ std::optional<Argument> Parser::parseArgument() {
     if (!expr)
         return std::nullopt;
 
-    return Argument{.value = std::move(*expr)};
+    return Argument{.value = std::move(*expr), .ref = ref};
 }
 
 template <typename T>

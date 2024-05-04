@@ -158,6 +158,7 @@ struct FieldAccessExpression {
 
 struct Argument {
     Expression value;
+    bool ref{false};
 };
 
 struct IfStatement {
