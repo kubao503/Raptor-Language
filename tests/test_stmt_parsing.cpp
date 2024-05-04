@@ -298,11 +298,47 @@ TEST_F(ParserTest, parse_assignment) {
     ASSERT_TRUE(std::holds_alternative<Assignment>(prog.statements.at(0)));
 
     const auto& assignment = std::get<Assignment>(prog.statements.at(0));
-    EXPECT_EQ(assignment.lhs, "var");
+    ASSERT_TRUE(std::holds_alternative<std::string>(assignment.lhs));
+    EXPECT_EQ(std::get<std::string>(assignment.lhs), "var");
     ASSERT_TRUE(std::holds_alternative<Constant>(assignment.rhs));
 
     const auto expression = std::get<Constant>(assignment.rhs);
     EXPECT_EQ(std::get<Integral>(expression.value), 42);
+}
+
+TEST_F(ParserTest, parse_field_assignment) {
+    SetUp<Token>({
+        {Token::Type::ID, "myStruct"s, {}},
+        {Token::Type::DOT, {}, {}},
+        {Token::Type::ID, "firstField"s, {}},
+        {Token::Type::DOT, {}, {}},
+        {Token::Type::ID, "secondField"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<Assignment>(prog.statements.at(0)));
+    const auto& assignment = std::get<Assignment>(prog.statements.at(0));
+
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<FieldAccess>>(assignment.lhs));
+    const auto& fieldAccess = std::get<std::unique_ptr<FieldAccess>>(assignment.lhs);
+    EXPECT_EQ(fieldAccess->field, "secondField");
+
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<FieldAccess>>(fieldAccess->container));
+    const auto& innerFieldAccess =
+        std::get<std::unique_ptr<FieldAccess>>(fieldAccess->container);
+    EXPECT_EQ(innerFieldAccess->field, "firstField");
+    ASSERT_TRUE(std::holds_alternative<std::string>(innerFieldAccess->container));
+    ASSERT_EQ(std::get<std::string>(innerFieldAccess->container), "myStruct");
+
+    ASSERT_TRUE(std::holds_alternative<Constant>(assignment.rhs));
+    const auto expression = std::get<Constant>(assignment.rhs);
+    EXPECT_TRUE(std::get<bool>(expression.value));
 }
 
 TEST_F(ParserTest, parse_assignment_missing_semicolon) {

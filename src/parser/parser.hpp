@@ -36,7 +36,8 @@ class Parser {
     std::optional<VarDef> parseConstVarDef();
     std::optional<FuncDef> parseVoidFunc();
     std::optional<Statement> parseDefOrAssignment();
-    std::optional<Assignment> parseAssignment(const std::string& name);
+    std::optional<Assignment> parseFieldAssignment(const std::string& name);
+    Assignment parseAssignment(Container&& container);
     std::optional<Statement> parseBuiltInDef();
     std::optional<Statement> parseDef(const Type& type);
     std::optional<FuncDef> parseFuncDef(const ReturnType& returnType,

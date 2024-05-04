@@ -86,7 +86,7 @@ std::optional<VarDef> Parser::parseConstVarDef() {
         .isConst = true,
         .type = *type,
         .name = std::move(name),
-        .expression = std::move(assignment->rhs),
+        .expression = std::move(assignment.rhs),
     };
 }
 
@@ -102,36 +102,50 @@ std::optional<FuncDef> Parser::parseVoidFunc() {
     return parseFuncDef(VoidType(), name);
 }
 
-/// DEF_OR_ASGN = ID ( FIELD_ASGN
-///                  | ASGN
-///                  | DEF )
+/// DEF_OR_ASGN = ID ( FIELD_ASGN | DEF )
 std::optional<Statement> Parser::parseDefOrAssignment() {
     if (currentToken_.getType() != Token::Type::ID)
         return std::nullopt;
 
     const auto value = currentToken_.getValue();
-    const auto name = std::get<std::string>(value);
+    auto name = std::get<std::string>(value);
     consumeToken();
 
-    if (auto assignment = parseAssignment(name))
-        return assignment;
     if (auto def = parseDef(name))
         return def;
-    throw SyntaxException({}, "Expected assignment, field assignment or definition");
+    if (auto assignment = parseFieldAssignment(name))
+        return assignment;
+    throw SyntaxException({}, "Expected assignment or definition");
+}
+
+/// FIELD_ASGN = { '.' ID } ASGN
+std::optional<Assignment> Parser::parseFieldAssignment(const std::string& name) {
+    Container container{name};
+
+    while (currentToken_.getType() == Token::Type::DOT) {
+        consumeToken();
+
+        auto field = expectAndReturnValue<std::string>(
+            Token::Type::ID, SyntaxException(currentToken_.getPosition(),
+                                             "Expected field name after dot operator"));
+
+        container = std::unique_ptr<FieldAccess>(new FieldAccess{
+            .container = std::move(container), .field = std::move(field)});
+    }
+
+    return parseAssignment(std::move(container));
 }
 
 /// ASGN = '=' EXPR ';'
-std::optional<Assignment> Parser::parseAssignment(const std::string& name) {
-    if (currentToken_.getType() != Token::Type::ASGN_OP)
-        return std::nullopt;
-
-    consumeToken();
+Assignment Parser::parseAssignment(Container&& container) {
+    expect(Token::Type::ASGN_OP,
+           SyntaxException(currentToken_.getPosition(), "Expected assignment operator"));
 
     auto expression = parseExpression();
 
     expect(Token::Type::SEMI, SyntaxException({}, "Missing semicolon"));
 
-    return Assignment{.lhs = name, .rhs = std::move(*expression)};
+    return Assignment{.lhs = std::move(container), .rhs = std::move(*expression)};
 }
 
 /// BUILT_IN_DEF = TYPE DEF
@@ -147,18 +161,18 @@ std::optional<Statement> Parser::parseBuiltInDef() {
 /// DEF = ID ( FUNC_DEF
 ///          | ASGN )
 std::optional<Statement> Parser::parseDef(const Type& type) {
-    const auto name = expectAndReturnValue<std::string>(
-        Token::Type::ID, SyntaxException({}, "Expected identifier"));
+    if (currentToken_.getType() != Token::Type::ID)
+        return std::nullopt;
+    const auto name = std::get<std::string>(currentToken_.getValue());
+    consumeToken();
 
     const auto returnType = std::visit([](auto s) -> ReturnType { return s; }, type);
     if (auto def = parseFuncDef(returnType, name))
         return def;
-    if (auto assignment = parseAssignment(name)) {
-        return VarDef{.type = type,
-                      .name = assignment->lhs,
-                      .expression = std::move(assignment->rhs)};
-    }
-    throw SyntaxException({}, "Expected function or variable definition");
+    auto assignment = parseAssignment(name);
+    return VarDef{.type = type,
+                  .name = std::get<std::string>(assignment.lhs),
+                  .expression = std::move(assignment.rhs)};
 }
 
 /// FUNC_DEF = '(' PARAMS ')' '{' STMTS '}'

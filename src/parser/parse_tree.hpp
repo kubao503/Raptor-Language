@@ -170,8 +170,17 @@ struct IfStatement {
     Expression condition;
 };
 
+struct FieldAccess;
+
+using Container = std::variant<std::string, std::unique_ptr<FieldAccess>>;
+
+struct FieldAccess {
+    Container container;
+    std::string field;
+};
+
 struct Assignment {
-    std::string lhs;
+    Container lhs;
     Expression rhs;
 };
 
