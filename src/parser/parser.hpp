@@ -33,7 +33,7 @@ class Parser {
     Statements parseStatements();
     std::optional<Statement> parseStatement();
     std::optional<IfStatement> parseIfStatement();
-    std::optional<PrintStatement> parsePrintStatement();
+    std::optional<Statement> parseReturnOrPrintStatement();
     std::optional<VarDef> parseConstVarDef();
     std::optional<FuncDef> parseVoidFunc();
     std::optional<Statement> parseDefOrAssignment();
@@ -66,9 +66,11 @@ class Parser {
     std::vector<T> parseList(ElementParser elementParser);
 
     using BinaryExprCtor = std::function<Expression(Expression, Expression)>;
+    using UnaryOptExprCtor = std::function<Statement(std::optional<Expression>)>;
     using UnaryExprCtor = std::function<Expression(Expression)>;
     using TypeExprCtor = std::function<Expression(Expression, Type)>;
 
+    std::optional<UnaryOptExprCtor> getRetOrPrintCtor();
     std::optional<BinaryExprCtor> getEqualExprCtor();
     std::optional<BinaryExprCtor> getRelExprCtor();
     std::optional<BinaryExprCtor> getAddExprCtor();

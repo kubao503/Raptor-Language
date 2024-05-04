@@ -74,18 +74,21 @@ std::optional<IfStatement> Parser::parseIfStatement() {
                        .statements = std::move(statements)};
 }
 
+/// RET_STMT = return [ EXPR ] ';'
 /// PRINT_STMT = print [ EXPR ] ';'
-std::optional<PrintStatement> Parser::parsePrintStatement() {
-    if (currentToken_.getType() != Token::Type::PRINT_KW)
+std::optional<Statement> Parser::parseReturnOrPrintStatement() {
+    const auto& ctor = getRetOrPrintCtor();
+    if (!ctor)
         return std::nullopt;
     consumeToken();
 
     auto expression = parseExpression();
 
-    expect(Token::Type::SEMI, SyntaxException(currentToken_.getPosition(),
-                                              "Missing semicolon after print statement"));
+    expect(Token::Type::SEMI,
+           SyntaxException(currentToken_.getPosition(),
+                           "Missing semicolon after return/print statement"));
 
-    return PrintStatement{.expression = std::move(expression)};
+    return (*ctor)(std::move(expression));
 }
 
 /// CONST_VAR_DEF = const ( TYPE | ID ) ID ASGN
@@ -518,6 +521,21 @@ auto getUnaryExprCtor() {
     };
 }
 
+std::optional<Parser::UnaryOptExprCtor> Parser::getRetOrPrintCtor() {
+    switch (currentToken_.getType()) {
+        case Token::Type::RETURN_KW:
+            return [](std::optional<Expression> expr) {
+                return ReturnStatement{.expression = std::move(expr)};
+            };
+        case Token::Type::PRINT_KW:
+            return [](std::optional<Expression> expr) {
+                return PrintStatement{.expression = std::move(expr)};
+            };
+        default:
+            return std::nullopt;
+    }
+}
+
 std::optional<Parser::BinaryExprCtor> Parser::getEqualExprCtor() {
     switch (currentToken_.getType()) {
         case Token::Type::EQ_OP:
@@ -596,7 +614,7 @@ std::optional<std::function<Expression(Expression, Type)>> Parser::getTypeExprCt
 
 Parser::StatementParsers Parser::statementParsers_{
     [](Parser& p) { return p.parseIfStatement(); },
-    [](Parser& p) { return p.parsePrintStatement(); },
+    [](Parser& p) { return p.parseReturnOrPrintStatement(); },
     [](Parser& p) { return p.parseConstVarDef(); },
     [](Parser& p) { return p.parseVoidFunc(); },
     [](Parser& p) { return p.parseDefOrAssignment(); },
