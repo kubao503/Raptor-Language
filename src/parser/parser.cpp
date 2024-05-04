@@ -59,14 +59,14 @@ std::optional<IfStatement> Parser::parseIfStatement() {
         return std::nullopt;
     consumeToken();
 
-    const auto expression = parseExpression();
+    auto expression = parseExpression();
     if (!expression)
-        throw SyntaxException({}, "Expected expression (bool)");
+        throw SyntaxException({}, "Expected expression (condition) after if keyword");
 
     expect(Token::Type::L_C_BR, SyntaxException({}, "Missing left curly brace"));
     expect(Token::Type::R_C_BR, SyntaxException({}, "Missing right curly brace"));
 
-    return IfStatement();
+    return IfStatement{.condition = std::move(*expression)};
 }
 
 /// CONST_VAR_DEF = const ( TYPE | ID ) ID ASGN
