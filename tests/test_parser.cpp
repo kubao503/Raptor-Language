@@ -1089,3 +1089,58 @@ TEST_F(ParserTest, parse_func_call_expression_with_ref_argument) {
     ASSERT_TRUE(std::holds_alternative<bool>(firstArg.value));
     EXPECT_TRUE(std::get<bool>(firstArg.value));
 }
+
+TEST_F(ParserTest, parse_struct_init_expr_empty) {
+    SetUp<Token>({
+        {Token::Type::ID, "MyStruct"s, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(std::holds_alternative<StructInitExpression>(varDef.expression));
+    const auto& structExprs = std::get<StructInitExpression>(varDef.expression).exprs;
+    ASSERT_TRUE(structExprs.empty());
+}
+
+TEST_F(ParserTest, parse_struct_init_expr) {
+    SetUp<Token>({
+        {Token::Type::ID, "MyStruct"s, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::CMA, {}, {}},
+        {Token::Type::FALSE_CONST, false, {}},
+        {Token::Type::R_C_BR, {}, {}},
+        {Token::Type::SEMI, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
+
+    const auto& varDef = std::get<VarDef>(prog.statements.at(0));
+    ASSERT_TRUE(std::holds_alternative<StructInitExpression>(varDef.expression));
+    const auto& structExprs = std::get<StructInitExpression>(varDef.expression).exprs;
+    ASSERT_EQ(structExprs.size(), 2);
+
+    ASSERT_TRUE(std::holds_alternative<Constant>(structExprs.at(0)));
+    const auto& firstConstant = std::get<Constant>(structExprs.at(0));
+    ASSERT_TRUE(std::holds_alternative<bool>(firstConstant.value));
+    EXPECT_TRUE(std::get<bool>(firstConstant.value));
+
+    ASSERT_TRUE(std::holds_alternative<Constant>(structExprs.at(1)));
+    const auto& secondConstant = std::get<Constant>(structExprs.at(1));
+    ASSERT_TRUE(std::holds_alternative<bool>(secondConstant.value));
+    EXPECT_FALSE(std::get<bool>(secondConstant.value));
+}

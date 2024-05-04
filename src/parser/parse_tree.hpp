@@ -21,6 +21,7 @@ struct VoidType {};
 using Type = std::variant<std::string, BuiltInType>;
 using ReturnType = std::variant<std::string, BuiltInType, VoidType>;
 
+struct StructInitExpression;
 struct DisjunctionExpression;
 struct ConjunctionExpression;
 struct EqualExpression;
@@ -62,7 +63,7 @@ struct FuncCall {
 };
 
 using Expression = std::variant<
-    Constant, std::unique_ptr<DisjunctionExpression>,
+    StructInitExpression, std::unique_ptr<DisjunctionExpression>,
     std::unique_ptr<ConjunctionExpression>, std::unique_ptr<EqualExpression>,
     std::unique_ptr<NotEqualExpression>, std::unique_ptr<LessThanExpression>,
     std::unique_ptr<LessThanOrEqualExpression>, std::unique_ptr<GreaterThanExpression>,
@@ -71,7 +72,11 @@ using Expression = std::variant<
     std::unique_ptr<DivisionExpression>, std::unique_ptr<SignChangeExpression>,
     std::unique_ptr<NegationExpression>, std::unique_ptr<ConversionExpression>,
     std::unique_ptr<TypeCheckExpression>, std::unique_ptr<FieldAccessExpression>,
-    VariableAccess, FuncCall>;
+    Constant, VariableAccess, FuncCall>;
+
+struct StructInitExpression {
+    std::vector<Expression> exprs;
+};
 
 struct DisjunctionExpression {
     Expression lhs;

@@ -203,9 +203,30 @@ std::optional<Parameter> Parser::parseParameter() {
     return Parameter{.type = *type, .name = name, .ref = ref};
 }
 
-/// EXPR = CONJ { or CONJ }
-///      | '{' { EXPRS } '}'
+/// EXPR = DISJ | STRUCT_INIT
 std::optional<Expression> Parser::parseExpression() {
+    if (auto expr = parseStructInitExpression())
+        return expr;
+    return parseDisjunctionExpression();
+}
+
+/// STRUCT_INIT = '{' { EXPRS } '}'
+std::optional<Expression> Parser::parseStructInitExpression() {
+    if (currentToken_.getType() != Token::Type::L_C_BR)
+        return std::nullopt;
+    consumeToken();
+
+    auto exprs = parseList<Expression>(&Parser::parseExpression);
+
+    expect(
+        Token::Type::R_C_BR,
+        SyntaxException(currentToken_.getPosition(),
+                        "Missing right curly brace at the end of struct initialization"));
+    return StructInitExpression{.exprs = std::move(exprs)};
+}
+
+/// DISJ = CONJ { or CONJ }
+std::optional<Expression> Parser::parseDisjunctionExpression() {
     auto leftLogicFactor = parseConjunctionExpression();
     if (!leftLogicFactor)
         return std::nullopt;
@@ -375,8 +396,7 @@ std::optional<Expression> Parser::parseFieldAccessExpression() {
 
 /// CNTNR = '(' EXPR ')'
 ///       | CONST
-///       | ID
-///       | ID '(' ARGS ')'
+///       | CALL_OR_VAR
 std::optional<Expression> Parser::parseContainerExpression() {
     if (auto expr = parseNestedExpression())
         return expr;
@@ -409,6 +429,7 @@ std::optional<Expression> Parser::parseConstant() {
     return Constant{.value = value};
 }
 
+/// CALL_OR_VAR = ID [ '(' ARGS ')' ]
 std::optional<Expression> Parser::parseVariableAccessOrFuncCall() {
     if (currentToken_.getType() != Token::Type::ID)
         return std::nullopt;
