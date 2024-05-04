@@ -36,7 +36,7 @@ class Parser {
     std::optional<VarDef> parseConstVarDef();
     std::optional<FuncDef> parseVoidFunc();
     std::optional<Statement> parseDefOrAssignment();
-    std::optional<Assignment> parseFieldAssignment(const std::string& name);
+    Assignment parseFieldAssignment(const std::string& name);
     Assignment parseAssignment(Container&& container);
     std::optional<Statement> parseBuiltInDef();
     std::optional<Statement> parseDef(const Type& type);
@@ -66,13 +66,14 @@ class Parser {
 
     using BinaryExprCtor = std::function<Expression(Expression, Expression)>;
     using UnaryExprCtor = std::function<Expression(Expression)>;
+    using TypeExprCtor = std::function<Expression(Expression, Type)>;
 
     std::optional<BinaryExprCtor> getEqualExprCtor();
     std::optional<BinaryExprCtor> getRelExprCtor();
     std::optional<BinaryExprCtor> getAddExprCtor();
     std::optional<BinaryExprCtor> getMultExprCtor();
     std::optional<UnaryExprCtor> getNegationExprCtor();
-    std::optional<std::function<Expression(Expression, Type)>> getTypeExprCtor();
+    std::optional<TypeExprCtor> getTypeExprCtor();
 
     using StatementParsers =
         std::initializer_list<std::function<std::optional<Statement>(Parser&)>>;

@@ -19,6 +19,10 @@ std::optional<Type> getType(const Token& token) {
     return getBuiltInType(token);
 }
 
+ReturnType typeToReturnType(const Type& type) {
+    return std::visit([](auto s) -> ReturnType { return s; }, type);
+}
+
 /// PROGRAM = STMTS
 Program Parser::parseProgram() {
     return {.statements = parseStatements()};
@@ -107,19 +111,16 @@ std::optional<Statement> Parser::parseDefOrAssignment() {
     if (currentToken_.getType() != Token::Type::ID)
         return std::nullopt;
 
-    const auto value = currentToken_.getValue();
-    auto name = std::get<std::string>(value);
+    auto name = std::get<std::string>(currentToken_.getValue());
     consumeToken();
 
     if (auto def = parseDef(name))
         return def;
-    if (auto assignment = parseFieldAssignment(name))
-        return assignment;
-    throw SyntaxException({}, "Expected assignment or definition");
+    return parseFieldAssignment(name);
 }
 
 /// FIELD_ASGN = { '.' ID } ASGN
-std::optional<Assignment> Parser::parseFieldAssignment(const std::string& name) {
+Assignment Parser::parseFieldAssignment(const std::string& name) {
     Container container{name};
 
     while (currentToken_.getType() == Token::Type::DOT) {
@@ -142,6 +143,9 @@ Assignment Parser::parseAssignment(Container&& container) {
            SyntaxException(currentToken_.getPosition(), "Expected assignment operator"));
 
     auto expression = parseExpression();
+    if (!expression)
+        throw SyntaxException(currentToken_.getPosition(),
+                              "Expected expression after assignment");
 
     expect(Token::Type::SEMI, SyntaxException({}, "Missing semicolon"));
 
@@ -158,15 +162,14 @@ std::optional<Statement> Parser::parseBuiltInDef() {
     return parseDef(*type);
 }
 
-/// DEF = ID ( FUNC_DEF
-///          | ASGN )
+/// DEF = ID ( FUNC_DEF | ASGN )
 std::optional<Statement> Parser::parseDef(const Type& type) {
     if (currentToken_.getType() != Token::Type::ID)
         return std::nullopt;
     const auto name = std::get<std::string>(currentToken_.getValue());
     consumeToken();
 
-    const auto returnType = std::visit([](auto s) -> ReturnType { return s; }, type);
+    const auto returnType = typeToReturnType(type);
     if (auto def = parseFuncDef(returnType, name))
         return def;
     auto assignment = parseAssignment(name);
@@ -184,13 +187,16 @@ std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
 
     const auto parameters = parseList<Parameter>(&Parser::parseParameter);
 
-    expect(Token::Type::R_PAR, SyntaxException({}, "Missing right parenthesis"));
-
-    expect(Token::Type::L_C_BR, SyntaxException({}, "Missing left curly brace"));
+    expect(
+        Token::Type::R_PAR,
+        SyntaxException({}, "Missing right parenthesis after function parameter list"));
+    expect(Token::Type::L_C_BR,
+           SyntaxException({}, "Missing left curly brace before function body"));
 
     auto statements = parseStatements();
 
-    expect(Token::Type::R_C_BR, SyntaxException({}, "Missing right curly brace"));
+    expect(Token::Type::R_C_BR,
+           SyntaxException({}, "Missing right curly brace after function body"));
     return FuncDef(returnType, name, parameters, std::move(statements), {});
 }
 
@@ -288,7 +294,7 @@ std::optional<Expression> Parser::parseEqualExpression() {
         auto rightEqFactor = parseRelExpression();
         if (!rightEqFactor)
             throw SyntaxException(currentToken_.getPosition(),
-                                  "Expected expression after '==' operator");
+                                  "Expected expression after (not)equal operator");
         leftEqFactor = (*ctor)(std::move(*leftEqFactor), std::move(*rightEqFactor));
     }
 
@@ -397,7 +403,7 @@ std::optional<Expression> Parser::parseFieldAccessExpression() {
         consumeToken();
         auto field = expectAndReturnValue<std::string>(
             Token::Type::ID, SyntaxException(currentToken_.getPosition(),
-                                             "Expected field name after dot"));
+                                             "Expected field name after dot operator"));
         expr = std::unique_ptr<FieldAccessExpression>(new FieldAccessExpression{
             .expr = std::move(*expr), .field = std::move(field)});
     }
@@ -470,8 +476,12 @@ std::optional<Argument> Parser::parseArgument() {
         consumeToken();
 
     auto expr = parseExpression();
-    if (!expr)
+    if (!expr) {
+        if (ref)
+            throw SyntaxException(currentToken_.getPosition(),
+                                  "Expected function call argument expression");
         return std::nullopt;
+    }
 
     return Argument{.value = std::move(*expr), .ref = ref};
 }
