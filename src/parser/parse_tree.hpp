@@ -166,10 +166,6 @@ struct Argument {
     bool ref{false};
 };
 
-struct IfStatement {
-    Expression condition;
-};
-
 struct FieldAccess;
 
 using Container = std::variant<std::string, std::unique_ptr<FieldAccess>>;
@@ -199,10 +195,16 @@ struct Parameter {
 
 using Parameters = std::vector<Parameter>;
 
+struct IfStatement;
 struct FuncDef;
 
 using Statement = std::variant<IfStatement, FuncDef, Assignment, VarDef>;
 using Statements = std::vector<Statement>;
+
+struct IfStatement {
+    Expression condition;
+    Statements statements;
+};
 
 class FuncDef {
    public:

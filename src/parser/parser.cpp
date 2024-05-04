@@ -65,9 +65,13 @@ std::optional<IfStatement> Parser::parseIfStatement() {
         throw SyntaxException({}, "Expected expression (condition) after if keyword");
 
     expect(Token::Type::L_C_BR, SyntaxException({}, "Missing left curly brace"));
+
+    auto statements = parseStatements();
+
     expect(Token::Type::R_C_BR, SyntaxException({}, "Missing right curly brace"));
 
-    return IfStatement{.condition = std::move(*expression)};
+    return IfStatement{.condition = std::move(*expression),
+                       .statements = std::move(statements)};
 }
 
 /// CONST_VAR_DEF = const ( TYPE | ID ) ID ASGN

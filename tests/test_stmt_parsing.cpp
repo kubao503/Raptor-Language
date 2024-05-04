@@ -24,11 +24,39 @@ TEST_F(ParserTest, parse_if_statement) {
     ASSERT_EQ(prog.statements.size(), 1);
     ASSERT_TRUE(std::holds_alternative<IfStatement>(prog.statements.at(0)));
     const auto& ifStatement = std::get<IfStatement>(prog.statements.at(0));
+
     const auto& condition = ifStatement.condition;
     ASSERT_TRUE(std::holds_alternative<Constant>(condition));
+
+    ASSERT_TRUE(ifStatement.statements.empty());
 }
 
-TEST_F(ParserTest, parse_if_statement_missing_expression) {
+TEST_F(ParserTest, parse_if_statement_body) {
+    SetUp<Token>({
+        {Token::Type::IF_KW, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, "var"s, {}},
+        {Token::Type::ASGN_OP, {}, {}},
+        {Token::Type::TRUE_CONST, true, {}},
+        {Token::Type::SEMI, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<IfStatement>(prog.statements.at(0)));
+    const auto& ifStatement = std::get<IfStatement>(prog.statements.at(0));
+
+    const auto& condition = ifStatement.condition;
+    ASSERT_TRUE(std::holds_alternative<Constant>(condition));
+
+    ASSERT_EQ(ifStatement.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VarDef>(ifStatement.statements.at(0)));
+}
+
+TEST_F(ParserTest, parse_if_statement_missing_condition) {
     SetUp<Token>({
         {Token::Type::IF_KW, {}, {}},
         {Token::Type::L_C_BR, {}, {}},
