@@ -2,8 +2,8 @@
 
 #include "magic_enum/magic_enum.hpp"
 
-std::optional<BuiltInType> getBuiltInType(const Token& token) {
-    auto name = magic_enum::enum_name(token.getType());
+std::optional<BuiltInType> Parser::getCurrentTokenBuiltInType() const {
+    auto name = magic_enum::enum_name(currentToken_.getType());
 
     static constexpr std::size_t suffixSize{3};
     if (name.size() < suffixSize)
@@ -13,10 +13,10 @@ std::optional<BuiltInType> getBuiltInType(const Token& token) {
     return magic_enum::enum_cast<BuiltInType>(name);
 }
 
-std::optional<Type> Parser::getCurrentTokenType() {
+std::optional<Type> Parser::getCurrentTokenType() const {
     if (currentToken_.getType() == Token::Type::ID)
         return std::get<std::string>(currentToken_.getValue());
-    return getBuiltInType(currentToken_);
+    return getCurrentTokenBuiltInType();
 }
 
 ReturnType typeToReturnType(const Type& type) {
@@ -184,7 +184,7 @@ Assignment Parser::parseAssignment(Container container) {
 
 /// BUILT_IN_DEF = TYPE DEF
 std::optional<Statement> Parser::parseBuiltInDef() {
-    const auto type = getBuiltInType(currentToken_);
+    const auto type = getCurrentTokenBuiltInType();
     if (!type)
         return std::nullopt;
 

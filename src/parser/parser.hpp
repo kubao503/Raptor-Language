@@ -32,7 +32,8 @@ class Parser {
     template <typename T, typename Exception>
     T expectAndReturnValue(Token::Type expected, const Exception& exception);
 
-    std::optional<Type> getCurrentTokenType();
+    std::optional<BuiltInType> getCurrentTokenBuiltInType() const;
+    std::optional<Type> getCurrentTokenType() const;
 
     Statements parseStatements();
     std::optional<Statement> parseStatement();
