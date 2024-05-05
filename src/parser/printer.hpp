@@ -16,9 +16,19 @@ class BasePrinter {
     std::string getPrefix() const { return std::string(indent_, ' '); }
 
     unsigned indent_{0};
+    static constexpr unsigned indentWidth_{4};
 };
 
-class ExpressionPrinter : public BasePrinter {};
+class ExpressionPrinter : public BasePrinter {
+   public:
+    using BasePrinter::BasePrinter;
+
+    std::string operator()(
+        const std::unique_ptr<DisjunctionExpression>& disjunction) const;
+    std::string operator()(
+        const std::unique_ptr<ConjunctionExpression>& conjunction) const;
+    std::string operator()(const auto& expr) const;
+};
 
 class StatementPrinter : public BasePrinter {
    public:
