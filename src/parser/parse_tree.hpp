@@ -208,7 +208,7 @@ struct WhileStatement;
 struct FuncDef;
 
 using Statement = std::variant<IfStatement, WhileStatement, ReturnStatement,
-                               PrintStatement, FuncDef, Assignment, VarDef>;
+                               PrintStatement, FuncDef, Assignment, VarDef, FuncCall>;
 using Statements = std::vector<Statement>;
 
 struct IfStatement {

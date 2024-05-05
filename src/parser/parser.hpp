@@ -21,6 +21,8 @@ class Parser {
     /// @return Parse tree
     Program parseProgram();
 
+    const Token& getCurrentToken() { return currentToken_; }
+
    private:
     void consumeToken() { currentToken_ = lexer_.getToken(); };
 
@@ -38,7 +40,7 @@ class Parser {
     std::optional<FuncDef> parseVoidFunc();
     std::optional<Statement> parseDefOrAssignment();
     Assignment parseFieldAssignment(const std::string& name);
-    Assignment parseAssignment(Container&& container);
+    Assignment parseAssignment(Container container);
     std::optional<Statement> parseBuiltInDef();
     std::optional<Statement> parseDef(const Type& type);
     std::optional<FuncDef> parseFuncDef(const ReturnType& returnType,
@@ -59,7 +61,7 @@ class Parser {
     std::optional<Expression> parseNestedExpression();
     std::optional<Expression> parseConstant();
     std::optional<Expression> parseVariableAccessOrFuncCall();
-    std::optional<Expression> parseFuncCallExpression(const std::string& name);
+    std::optional<FuncCall> parseFuncCall(const std::string& name);
     std::optional<Argument> parseArgument();
 
     template <typename T, typename ElementParser>

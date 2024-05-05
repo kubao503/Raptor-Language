@@ -128,7 +128,9 @@ std::optional<FuncDef> Parser::parseVoidFunc() {
     return parseFuncDef(VoidType(), name);
 }
 
-/// DEF_OR_ASGN = ID ( FIELD_ASGN | DEF )
+/// DEF_OR_ASGN = ID ( FIELD_ASGN
+///                  | DEF
+///                  | FUNC_CALL ';' )
 std::optional<Statement> Parser::parseDefOrAssignment() {
     if (currentToken_.getType() != Token::Type::ID)
         return std::nullopt;
@@ -138,6 +140,12 @@ std::optional<Statement> Parser::parseDefOrAssignment() {
 
     if (auto def = parseDef(name))
         return def;
+    if (auto funcCall = parseFuncCall(name)) {
+        expect(Token::Type::SEMI,
+               SyntaxException(currentToken_.getPosition(),
+                               "Missing semicolon after function call"));
+        return funcCall;
+    }
     return parseFieldAssignment(name);
 }
 
@@ -160,7 +168,7 @@ Assignment Parser::parseFieldAssignment(const std::string& name) {
 }
 
 /// ASGN = '=' EXPR ';'
-Assignment Parser::parseAssignment(Container&& container) {
+Assignment Parser::parseAssignment(Container container) {
     expect(Token::Type::ASGN_OP,
            SyntaxException(currentToken_.getPosition(), "Expected assignment operator"));
 
@@ -240,6 +248,20 @@ std::optional<Parameter> Parser::parseParameter() {
         Token::Type::ID, SyntaxException({}, "Expected parameter name"));
 
     return Parameter{.type = *type, .name = name, .ref = ref};
+}
+
+/// FUNC_CALL = '(' ARGS ')' ';'
+std::optional<FuncCall> Parser::parseFuncCall(const std::string& name) {
+    if (currentToken_.getType() != Token::Type::L_PAR)
+        return std::nullopt;
+    consumeToken();
+
+    auto arguments = parseList<Argument>(&Parser::parseArgument);
+
+    expect(Token::Type::R_PAR,
+           SyntaxException(currentToken_.getPosition(),
+                           "Missing right parenthesis after function call arguments"));
+    return FuncCall{.name = name, .arguments = std::move(arguments)};
 }
 
 /// EXPR = DISJ | STRUCT_INIT
@@ -473,22 +495,9 @@ std::optional<Expression> Parser::parseVariableAccessOrFuncCall() {
     const auto name = std::get<std::string>(currentToken_.getValue());
     consumeToken();
 
-    if (auto expr = parseFuncCallExpression(name))
+    if (auto expr = parseFuncCall(name))
         return expr;
     return VariableAccess{.name = name};
-}
-
-std::optional<Expression> Parser::parseFuncCallExpression(const std::string& name) {
-    if (currentToken_.getType() != Token::Type::L_PAR)
-        return std::nullopt;
-    consumeToken();
-
-    auto arguments = parseList<Argument>(&Parser::parseArgument);
-
-    expect(Token::Type::R_PAR,
-           SyntaxException(currentToken_.getPosition(),
-                           "Missing right parenthesis after function call arguments"));
-    return FuncCall{.name = name, .arguments = std::move(arguments)};
 }
 
 /// ARG = [ ref ] EXPR

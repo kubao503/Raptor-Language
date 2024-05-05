@@ -16,4 +16,11 @@ class ParserTest : public testing::Test {
     std::unique_ptr<Parser> parser_;
 };
 
+class FullyParsedTest : public ParserTest {
+   protected:
+    ~FullyParsedTest() {
+        EXPECT_EQ(parser_->getCurrentToken().getType(), Token::Type::ETX);
+    }
+};
+
 #endif

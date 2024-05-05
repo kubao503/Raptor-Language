@@ -5,7 +5,7 @@
 
 using namespace std::string_literals;
 
-TEST_F(ParserTest, parse_disjuction_expression) {
+TEST_F(FullyParsedTest, parse_disjuction_expression) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -39,7 +39,7 @@ TEST_F(ParserTest, parse_disjuction_expression) {
     EXPECT_FALSE(std::get<bool>(rhsConstant.value));
 }
 
-TEST_F(ParserTest, parse_nested_disjuction_expressions) {
+TEST_F(FullyParsedTest, parse_nested_disjuction_expressions) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -81,7 +81,7 @@ TEST_F(ParserTest, parse_nested_disjuction_expressions) {
     EXPECT_FALSE(std::get<bool>(rhsConstant.value));
 }
 
-TEST_F(ParserTest, parse_conjunction_expression) {
+TEST_F(FullyParsedTest, parse_conjunction_expression) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -115,7 +115,7 @@ TEST_F(ParserTest, parse_conjunction_expression) {
     EXPECT_FALSE(std::get<bool>(rhsConstant.value));
 }
 
-TEST_F(ParserTest, parse_nested_conjunction_expressions) {
+TEST_F(FullyParsedTest, parse_nested_conjunction_expressions) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -157,7 +157,7 @@ TEST_F(ParserTest, parse_nested_conjunction_expressions) {
     EXPECT_FALSE(std::get<bool>(rhsConstant.value));
 }
 
-TEST_F(ParserTest, parse_equal_expression) {
+TEST_F(FullyParsedTest, parse_equal_expression) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -207,7 +207,7 @@ TEST_F(ParserTest, parse_invalid_adjacent_equal_expressions) {
     ASSERT_THROW(parser_->parseProgram(), SyntaxException);
 }
 
-TEST_F(ParserTest, parse_not_equal_expression) {
+TEST_F(FullyParsedTest, parse_not_equal_expression) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -241,7 +241,7 @@ TEST_F(ParserTest, parse_not_equal_expression) {
     EXPECT_FALSE(std::get<bool>(rhsConstant.value));
 }
 
-TEST_F(ParserTest, parse_rel_expression) {
+TEST_F(FullyParsedTest, parse_rel_expression) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -275,7 +275,7 @@ TEST_F(ParserTest, parse_rel_expression) {
     EXPECT_FALSE(std::get<bool>(rhsConstant.value));
 }
 
-TEST_F(ParserTest, parse_additive_expression) {
+TEST_F(FullyParsedTest, parse_additive_expression) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -310,7 +310,7 @@ TEST_F(ParserTest, parse_additive_expression) {
     EXPECT_EQ(std::get<Integral>(rhsConstant.value), 2);
 }
 
-TEST_F(ParserTest, parse_multiplicative_expression) {
+TEST_F(FullyParsedTest, parse_multiplicative_expression) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -345,7 +345,7 @@ TEST_F(ParserTest, parse_multiplicative_expression) {
     EXPECT_EQ(std::get<Integral>(rhsConstant.value), 2);
 }
 
-TEST_F(ParserTest, parse_sign_change_expression) {
+TEST_F(FullyParsedTest, parse_sign_change_expression) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -374,7 +374,7 @@ TEST_F(ParserTest, parse_sign_change_expression) {
     EXPECT_EQ(std::get<Integral>(nestedExpConstant.value), 4);
 }
 
-TEST_F(ParserTest, parse_negation_expression) {
+TEST_F(FullyParsedTest, parse_negation_expression) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -403,7 +403,7 @@ TEST_F(ParserTest, parse_negation_expression) {
     EXPECT_TRUE(std::get<bool>(nestedExpConstant.value));
 }
 
-TEST_F(ParserTest, parse_type_conversion_expression) {
+TEST_F(FullyParsedTest, parse_type_conversion_expression) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -436,7 +436,7 @@ TEST_F(ParserTest, parse_type_conversion_expression) {
     EXPECT_EQ(std::get<BuiltInType>(type), BuiltInType::BOOL);
 }
 
-TEST_F(ParserTest, parse_type_conversion_to_id_type) {
+TEST_F(FullyParsedTest, parse_type_conversion_to_id_type) {
     SetUp<Token>({
         {Token::Type::ID, "MyStruct"s, {}},
         {Token::Type::ID, "var"s, {}},
@@ -469,7 +469,7 @@ TEST_F(ParserTest, parse_type_conversion_to_id_type) {
     EXPECT_EQ(std::get<std::string>(type), "MyStruct");
 }
 
-TEST_F(ParserTest, parse_type_check_expression) {
+TEST_F(FullyParsedTest, parse_type_check_expression) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -501,7 +501,7 @@ TEST_F(ParserTest, parse_type_check_expression) {
     EXPECT_EQ(std::get<BuiltInType>(type), BuiltInType::BOOL);
 }
 
-TEST_F(ParserTest, parse_field_access_expression) {
+TEST_F(FullyParsedTest, parse_field_access_expression) {
     SetUp<Token>({
         {Token::Type::INT_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -534,7 +534,7 @@ TEST_F(ParserTest, parse_field_access_expression) {
     EXPECT_EQ(nestedContainer->field, "firstField");
 }
 
-TEST_F(ParserTest, parse_variable_access) {
+TEST_F(FullyParsedTest, parse_variable_access) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -555,7 +555,7 @@ TEST_F(ParserTest, parse_variable_access) {
     EXPECT_EQ(varAccess.name, "secondVar");
 }
 
-TEST_F(ParserTest, parse_expression_in_parenthesis) {
+TEST_F(FullyParsedTest, parse_expression_in_parenthesis) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -584,7 +584,7 @@ TEST_F(ParserTest, parse_expression_in_parenthesis) {
     EXPECT_TRUE(std::holds_alternative<std::unique_ptr<AdditionExpression>>(expr->rhs));
 }
 
-TEST_F(ParserTest, parse_func_call_expression_no_arguments) {
+TEST_F(FullyParsedTest, parse_func_call_expression_no_arguments) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -610,7 +610,7 @@ TEST_F(ParserTest, parse_func_call_expression_no_arguments) {
     EXPECT_EQ(arguments.size(), 0);
 }
 
-TEST_F(ParserTest, parse_func_call_expression_with_arguments) {
+TEST_F(FullyParsedTest, parse_func_call_expression_with_arguments) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -651,7 +651,7 @@ TEST_F(ParserTest, parse_func_call_expression_with_arguments) {
     EXPECT_FALSE(arguments.at(1).ref);
 }
 
-TEST_F(ParserTest, parse_func_call_expression_with_ref_argument) {
+TEST_F(FullyParsedTest, parse_func_call_expression_with_ref_argument) {
     SetUp<Token>({
         {Token::Type::BOOL_KW, {}, {}},
         {Token::Type::ID, "var"s, {}},
@@ -685,7 +685,7 @@ TEST_F(ParserTest, parse_func_call_expression_with_ref_argument) {
     EXPECT_TRUE(std::get<bool>(firstArg.value));
 }
 
-TEST_F(ParserTest, parse_struct_init_expr_empty) {
+TEST_F(FullyParsedTest, parse_struct_init_expr_empty) {
     SetUp<Token>({
         {Token::Type::ID, "MyStruct"s, {}},
         {Token::Type::ID, "var"s, {}},
@@ -706,7 +706,7 @@ TEST_F(ParserTest, parse_struct_init_expr_empty) {
     ASSERT_TRUE(structExprs.empty());
 }
 
-TEST_F(ParserTest, parse_struct_init_expr) {
+TEST_F(FullyParsedTest, parse_struct_init_expr) {
     SetUp<Token>({
         {Token::Type::ID, "MyStruct"s, {}},
         {Token::Type::ID, "var"s, {}},
