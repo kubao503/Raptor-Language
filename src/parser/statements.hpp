@@ -98,7 +98,7 @@ class FuncDef {
           position_{position} {}
 
     const ReturnType& getReturnType() const { return returnType_; }
-    std::string_view getName() const { return name_; }
+    const std::string& getName() const { return name_; }
     const Parameters& getParameters() const { return parameters_; }
     const Statements& getStatements() const { return statements_; }
 

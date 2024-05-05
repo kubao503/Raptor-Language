@@ -5,6 +5,7 @@
 #include "filter.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "printer.hpp"
 
 int main(int argc, char* argv[]) {
     if (argc < 2)
@@ -16,9 +17,9 @@ int main(int argc, char* argv[]) {
     auto filter = Filter(lexer, Token::Type::CMT);
     auto parser = Parser(filter);
 
-    Token token;
     try {
-        auto program = parser.parseProgram();
+        const auto program = parser.parseProgram();
+        std::cout << program << '\n';
     } catch (const BaseException& e) {
         std::cerr << '\n' << e.describe() << '\n';
     }
