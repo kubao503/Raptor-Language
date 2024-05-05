@@ -151,7 +151,7 @@ std::optional<Statement> Parser::parseDefOrAssignment() {
 
 /// FIELD_ASGN = { '.' ID } ASGN
 Assignment Parser::parseFieldAssignment(const std::string& name) {
-    Container container{name};
+    LValue lvalue{name};
 
     while (currentToken_.getType() == Token::Type::DOT) {
         consumeToken();
@@ -160,15 +160,15 @@ Assignment Parser::parseFieldAssignment(const std::string& name) {
             Token::Type::ID, SyntaxException(currentToken_.getPosition(),
                                              "Expected field name after dot operator"));
 
-        container = std::unique_ptr<FieldAccess>(new FieldAccess{
-            .container = std::move(container), .field = std::move(field)});
+        lvalue = std::unique_ptr<FieldAccess>(
+            new FieldAccess{.container = std::move(lvalue), .field = std::move(field)});
     }
 
-    return parseAssignment(std::move(container));
+    return parseAssignment(std::move(lvalue));
 }
 
 /// ASGN = '=' EXPR ';'
-Assignment Parser::parseAssignment(Container container) {
+Assignment Parser::parseAssignment(LValue lvalue) {
     expect(Token::Type::ASGN_OP,
            SyntaxException(currentToken_.getPosition(), "Expected assignment operator"));
 
@@ -179,7 +179,7 @@ Assignment Parser::parseAssignment(Container container) {
 
     expect(Token::Type::SEMI, SyntaxException({}, "Missing semicolon"));
 
-    return Assignment{.lhs = std::move(container), .rhs = std::move(*expression)};
+    return Assignment{.lhs = std::move(lvalue), .rhs = std::move(*expression)};
 }
 
 /// BUILT_IN_DEF = TYPE DEF

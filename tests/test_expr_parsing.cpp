@@ -523,15 +523,15 @@ TEST_F(FullyParsedTest, parse_field_access_expression) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<FieldAccessExpression>>(
         varDef.expression));
 
-    const auto& container =
+    const auto& lvalue =
         std::get<std::unique_ptr<FieldAccessExpression>>(varDef.expression);
-    EXPECT_EQ(container->field, "secondField");
+    EXPECT_EQ(lvalue->field, "secondField");
     ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<FieldAccessExpression>>(container->expr));
+        std::holds_alternative<std::unique_ptr<FieldAccessExpression>>(lvalue->expr));
 
-    const auto& nestedContainer =
-        std::get<std::unique_ptr<FieldAccessExpression>>(container->expr);
-    EXPECT_EQ(nestedContainer->field, "firstField");
+    const auto& nestedlValue =
+        std::get<std::unique_ptr<FieldAccessExpression>>(lvalue->expr);
+    EXPECT_EQ(nestedlValue->field, "firstField");
 }
 
 TEST_F(FullyParsedTest, parse_variable_access) {

@@ -43,7 +43,7 @@ class Parser {
     std::optional<FuncDef> parseVoidFunc();
     std::optional<Statement> parseDefOrAssignment();
     Assignment parseFieldAssignment(const std::string& name);
-    Assignment parseAssignment(Container container);
+    Assignment parseAssignment(LValue lvalue);
     std::optional<Statement> parseBuiltInDef();
     std::optional<Statement> parseDef(const Type& type);
     std::optional<FuncDef> parseFuncDef(const ReturnType& returnType,
