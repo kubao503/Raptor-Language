@@ -13,10 +13,10 @@ std::optional<BuiltInType> getBuiltInType(const Token& token) {
     return magic_enum::enum_cast<BuiltInType>(name);
 }
 
-std::optional<Type> getType(const Token& token) {
-    if (token.getType() == Token::Type::ID)
-        return std::get<std::string>(token.getValue());
-    return getBuiltInType(token);
+std::optional<Type> Parser::getCurrentTokenType() {
+    if (currentToken_.getType() == Token::Type::ID)
+        return std::get<std::string>(currentToken_.getValue());
+    return getBuiltInType(currentToken_);
 }
 
 ReturnType typeToReturnType(const Type& type) {
@@ -98,7 +98,7 @@ std::optional<VarDef> Parser::parseConstVarDef() {
         return std::nullopt;
     consumeToken();
 
-    const auto type = getType(currentToken_);
+    const auto type = getCurrentTokenType();
     if (!type)
         throw SyntaxException({}, "Expected variable type");
     consumeToken();
@@ -236,7 +236,7 @@ std::optional<Parameter> Parser::parseParameter() {
     if (ref)
         consumeToken();
 
-    const auto type = getType(currentToken_);
+    const auto type = getCurrentTokenType();
     if (!type) {
         if (ref)
             throw SyntaxException({}, "Expected parameter type after ref keyword");
@@ -286,9 +286,40 @@ std::optional<StructDef> Parser::parseStructDef() {
     return StructDef{.name = name, .fields = std::move(fields)};
 }
 
+/// VNT_DEF = variant ID '{' TYPES '}'
+std::optional<VariantDef> Parser::parseVariantDef() {
+    if (currentToken_.getType() != Token::Type::VARIANT_KW)
+        return std::nullopt;
+    consumeToken();
+
+    auto name = expectAndReturnValue<std::string>(
+        Token::Type::ID,
+        SyntaxException(currentToken_.getPosition(), "Expected variant name"));
+
+    expect(Token::Type::L_C_BR,
+           SyntaxException(currentToken_.getPosition(),
+                           "Missing left curly brace in variant difinition"));
+
+    auto types = parseList<Type>(&Parser::parseType);
+
+    expect(Token::Type::R_C_BR,
+           SyntaxException(currentToken_.getPosition(),
+                           "Missing right curly brace in variant difinition"));
+
+    return VariantDef{std::move(name), std::move(types)};
+}
+
+std::optional<Type> Parser::parseType() {
+    const auto type = getCurrentTokenType();
+    if (!type)
+        return std::nullopt;
+    consumeToken();
+    return type;
+}
+
 /// FIELD = TYPE ID
 std::optional<Field> Parser::parseField() {
-    auto type = getType(currentToken_);
+    auto type = getCurrentTokenType();
     if (!type)
         return std::nullopt;
     consumeToken();
@@ -462,7 +493,7 @@ std::optional<Expression> Parser::parseTypeExpression() {
     if (const auto& ctor = getTypeExprCtor()) {
         consumeToken();
 
-        auto type = getType(currentToken_);
+        auto type = getCurrentTokenType();
         consumeToken();
         if (!type)
             throw SyntaxException(currentToken_.getPosition(),
@@ -683,4 +714,5 @@ Parser::StatementParsers Parser::statementParsers_{
     [](Parser& p) { return p.parseDefOrAssignment(); },
     [](Parser& p) { return p.parseBuiltInDef(); },
     [](Parser& p) { return p.parseStructDef(); },
+    [](Parser& p) { return p.parseVariantDef(); },
 };

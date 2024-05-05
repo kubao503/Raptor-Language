@@ -607,7 +607,7 @@ TEST_F(FullyParsedTest, parse_func_call_statement_args) {
     EXPECT_EQ(funcCall.arguments.size(), 2);
 }
 
-TEST_F(ParserTest, parse_empty_struct_def) {
+TEST_F(FullyParsedTest, parse_empty_struct_def) {
     SetUp<Token>({
         {Token::Type::STRUCT_KW, {}, {}},
         {Token::Type::ID, "MyStruct"s, {}},
@@ -625,7 +625,7 @@ TEST_F(ParserTest, parse_empty_struct_def) {
     EXPECT_TRUE(structDef.fields.empty());
 }
 
-TEST_F(ParserTest, parse_struct_def) {
+TEST_F(FullyParsedTest, parse_struct_def) {
     SetUp<Token>({
         {Token::Type::STRUCT_KW, {}, {}},
         {Token::Type::ID, "Point"s, {}},
@@ -656,4 +656,44 @@ TEST_F(ParserTest, parse_struct_def) {
     ASSERT_TRUE(std::holds_alternative<BuiltInType>(secondField.type));
     EXPECT_EQ(std::get<BuiltInType>(secondField.type), BuiltInType::BOOL);
     EXPECT_EQ(secondField.name, "y");
+}
+
+TEST_F(FullyParsedTest, parse_variant_def) {
+    SetUp<Token>({
+        {Token::Type::VARIANT_KW, {}, {}},
+        {Token::Type::ID, "IntOrBool"s, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::CMA, {}, {}},
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<VariantDef>(prog.statements.at(0)));
+    const auto& variantDef = std::get<VariantDef>(prog.statements.at(0));
+
+    EXPECT_EQ(variantDef.name, "IntOrBool");
+    ASSERT_EQ(variantDef.types.size(), 2);
+
+    const auto& firstType = variantDef.types.at(0);
+    ASSERT_TRUE(std::holds_alternative<BuiltInType>(firstType));
+    EXPECT_EQ(std::get<BuiltInType>(firstType), BuiltInType::INT);
+
+    const auto& secondType = variantDef.types.at(1);
+    ASSERT_TRUE(std::holds_alternative<BuiltInType>(secondType));
+    EXPECT_EQ(std::get<BuiltInType>(secondType), BuiltInType::BOOL);
+}
+
+TEST_F(FullyParsedTest, parse_invalid_variant_with_no_types) {
+    SetUp<Token>({
+        {Token::Type::VARIANT_KW, {}, {}},
+        {Token::Type::ID, "IntOrBool"s, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    EXPECT_THROW(parser_->parseProgram(), VariantDef::NoTypesException);
 }

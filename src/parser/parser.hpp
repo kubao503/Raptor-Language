@@ -32,6 +32,8 @@ class Parser {
     template <typename T, typename Exception>
     T expectAndReturnValue(Token::Type expected, const Exception& exception);
 
+    std::optional<Type> getCurrentTokenType();
+
     Statements parseStatements();
     std::optional<Statement> parseStatement();
     std::optional<Statement> parseIfOrWhileStatement();
@@ -49,6 +51,8 @@ class Parser {
     std::optional<FuncCall> parseFuncCall(const std::string& name);
     std::optional<StructDef> parseStructDef();
     std::optional<Field> parseField();
+    std::optional<VariantDef> parseVariantDef();
+    std::optional<Type> parseType();
     std::optional<Expression> parseExpression();
     std::optional<Expression> parseStructInitExpression();
     std::optional<Expression> parseDisjunctionExpression();

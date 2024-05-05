@@ -211,6 +211,21 @@ struct StructDef {
     std::vector<Field> fields;
 };
 
+struct VariantDef {
+    class NoTypesException : public std::runtime_error {
+        using std::runtime_error::runtime_error;
+    };
+
+    std::string name;
+    std::vector<Type> types;
+
+    VariantDef(std::string name, std::vector<Type> types)
+        : name{std::move(name)}, types{std::move(types)} {
+        if (this->types.empty())
+            throw NoTypesException("Expected at least one type in variant definition");
+    }
+};
+
 using Parameters = std::vector<Parameter>;
 
 struct IfStatement;
@@ -219,7 +234,7 @@ struct FuncDef;
 
 using Statement =
     std::variant<IfStatement, WhileStatement, ReturnStatement, PrintStatement, FuncDef,
-                 Assignment, VarDef, FuncCall, StructDef>;
+                 Assignment, VarDef, FuncCall, StructDef, VariantDef>;
 using Statements = std::vector<Statement>;
 
 struct IfStatement {
