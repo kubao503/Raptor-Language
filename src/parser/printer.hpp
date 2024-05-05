@@ -7,24 +7,28 @@
 
 using namespace std::string_literals;
 
-struct ExpressionPrinter {};
-
-class StatementPrinter {
+class BasePrinter {
    public:
-    StatementPrinter(unsigned indent = 0)
+    BasePrinter(unsigned indent = 0)
         : indent_{indent} {}
+
+   protected:
+    std::string getPrefix() const { return std::string(indent_, ' '); }
+
+    unsigned indent_{0};
+};
+
+class ExpressionPrinter : public BasePrinter {};
+
+class StatementPrinter : public BasePrinter {
+   public:
+    using BasePrinter::BasePrinter;
 
     std::string operator()(const IfStatement& ifStatement) const;
     std::string operator()(const WhileStatement& whileStatement) const;
     std::string operator()(const FuncDef& funcDef) const;
     std::string operator()(const Assignment&) const;
     std::string operator()(const auto& stmt) const;
-
-   private:
-    std::string getPrefix() const { return std::string(indent_, ' '); }
-    StatementPrinter createSubPrinter() const { return StatementPrinter(indent_ + 2); }
-
-    unsigned indent_{0};
 };
 
 std::ostream& operator<<(std::ostream& stream, const Program& program);
