@@ -606,3 +606,54 @@ TEST_F(FullyParsedTest, parse_func_call_statement_args) {
     EXPECT_EQ(funcCall.name, "foo");
     EXPECT_EQ(funcCall.arguments.size(), 2);
 }
+
+TEST_F(ParserTest, parse_empty_struct_def) {
+    SetUp<Token>({
+        {Token::Type::STRUCT_KW, {}, {}},
+        {Token::Type::ID, "MyStruct"s, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<StructDef>(prog.statements.at(0)));
+    const auto& structDef = std::get<StructDef>(prog.statements.at(0));
+
+    EXPECT_EQ(structDef.name, "MyStruct");
+    EXPECT_TRUE(structDef.fields.empty());
+}
+
+TEST_F(ParserTest, parse_struct_def) {
+    SetUp<Token>({
+        {Token::Type::STRUCT_KW, {}, {}},
+        {Token::Type::ID, "Point"s, {}},
+        {Token::Type::L_C_BR, {}, {}},
+        {Token::Type::INT_KW, {}, {}},
+        {Token::Type::ID, "x"s, {}},
+        {Token::Type::CMA, {}, {}},
+        {Token::Type::BOOL_KW, {}, {}},
+        {Token::Type::ID, "y"s, {}},
+        {Token::Type::R_C_BR, {}, {}},
+    });
+
+    const auto prog = parser_->parseProgram();
+
+    ASSERT_EQ(prog.statements.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<StructDef>(prog.statements.at(0)));
+    const auto& structDef = std::get<StructDef>(prog.statements.at(0));
+
+    EXPECT_EQ(structDef.name, "Point");
+    ASSERT_EQ(structDef.fields.size(), 2);
+
+    const auto& firstField = structDef.fields.at(0);
+    ASSERT_TRUE(std::holds_alternative<BuiltInType>(firstField.type));
+    EXPECT_EQ(std::get<BuiltInType>(firstField.type), BuiltInType::INT);
+    EXPECT_EQ(firstField.name, "x");
+
+    const auto& secondField = structDef.fields.at(1);
+    ASSERT_TRUE(std::holds_alternative<BuiltInType>(secondField.type));
+    EXPECT_EQ(std::get<BuiltInType>(secondField.type), BuiltInType::BOOL);
+    EXPECT_EQ(secondField.name, "y");
+}

@@ -46,6 +46,9 @@ class Parser {
     std::optional<FuncDef> parseFuncDef(const ReturnType& returnType,
                                         const std::string& name);
     std::optional<Parameter> parseParameter();
+    std::optional<FuncCall> parseFuncCall(const std::string& name);
+    std::optional<StructDef> parseStructDef();
+    std::optional<Field> parseField();
     std::optional<Expression> parseExpression();
     std::optional<Expression> parseStructInitExpression();
     std::optional<Expression> parseDisjunctionExpression();
@@ -61,7 +64,6 @@ class Parser {
     std::optional<Expression> parseNestedExpression();
     std::optional<Expression> parseConstant();
     std::optional<Expression> parseVariableAccessOrFuncCall();
-    std::optional<FuncCall> parseFuncCall(const std::string& name);
     std::optional<Argument> parseArgument();
 
     template <typename T, typename ElementParser>

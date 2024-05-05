@@ -250,7 +250,7 @@ std::optional<Parameter> Parser::parseParameter() {
     return Parameter{.type = *type, .name = name, .ref = ref};
 }
 
-/// FUNC_CALL = '(' ARGS ')' ';'
+/// FUNC_CALL = '(' ARGS ')'
 std::optional<FuncCall> Parser::parseFuncCall(const std::string& name) {
     if (currentToken_.getType() != Token::Type::L_PAR)
         return std::nullopt;
@@ -262,6 +262,42 @@ std::optional<FuncCall> Parser::parseFuncCall(const std::string& name) {
            SyntaxException(currentToken_.getPosition(),
                            "Missing right parenthesis after function call arguments"));
     return FuncCall{.name = name, .arguments = std::move(arguments)};
+}
+
+/// STRUCT_DEF = struct ID '{' FIELDS '}'
+std::optional<StructDef> Parser::parseStructDef() {
+    if (currentToken_.getType() != Token::Type::STRUCT_KW)
+        return std::nullopt;
+    consumeToken();
+
+    const auto name = expectAndReturnValue<std::string>(
+        Token::Type::ID,
+        SyntaxException(currentToken_.getPosition(), "Expected struct name"));
+
+    expect(Token::Type::L_C_BR,
+           SyntaxException(currentToken_.getPosition(),
+                           "Missing left curly brace in struct difinition"));
+
+    auto fields = parseList<Field>(&Parser::parseField);
+
+    expect(Token::Type::R_C_BR,
+           SyntaxException(currentToken_.getPosition(),
+                           "Missing right curly brace in struct difinition"));
+    return StructDef{.name = name, .fields = std::move(fields)};
+}
+
+/// FIELD = TYPE ID
+std::optional<Field> Parser::parseField() {
+    auto type = getType(currentToken_);
+    if (!type)
+        return std::nullopt;
+    consumeToken();
+
+    auto name = expectAndReturnValue<std::string>(
+        Token::Type::ID,
+        SyntaxException(currentToken_.getPosition(), "Expected field name"));
+
+    return Field{.type = *type, .name = std::move(name)};
 }
 
 /// EXPR = DISJ | STRUCT_INIT
@@ -646,4 +682,5 @@ Parser::StatementParsers Parser::statementParsers_{
     [](Parser& p) { return p.parseVoidFunc(); },
     [](Parser& p) { return p.parseDefOrAssignment(); },
     [](Parser& p) { return p.parseBuiltInDef(); },
+    [](Parser& p) { return p.parseStructDef(); },
 };

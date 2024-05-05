@@ -201,14 +201,25 @@ struct Parameter {
     bool ref{false};
 };
 
+struct Field {
+    Type type{""};
+    std::string name;
+};
+
+struct StructDef {
+    std::string name;
+    std::vector<Field> fields;
+};
+
 using Parameters = std::vector<Parameter>;
 
 struct IfStatement;
 struct WhileStatement;
 struct FuncDef;
 
-using Statement = std::variant<IfStatement, WhileStatement, ReturnStatement,
-                               PrintStatement, FuncDef, Assignment, VarDef, FuncCall>;
+using Statement =
+    std::variant<IfStatement, WhileStatement, ReturnStatement, PrintStatement, FuncDef,
+                 Assignment, VarDef, FuncCall, StructDef>;
 using Statements = std::vector<Statement>;
 
 struct IfStatement {
