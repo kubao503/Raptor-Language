@@ -14,3 +14,19 @@ std::optional<IfOrWhileStatement::Ctor> IfOrWhileStatement::getCtor(Token::Type 
             return std::nullopt;
     }
 }
+
+std::optional<ReturnOrPrintStatement::Ctor> ReturnOrPrintStatement::getCtor(
+    Token::Type type) {
+    switch (type) {
+        case Token::Type::RETURN_KW:
+            return [](std::optional<Expression> expr) {
+                return ReturnStatement{std::move(expr)};
+            };
+        case Token::Type::PRINT_KW:
+            return [](std::optional<Expression> expr) {
+                return PrintStatement{std::move(expr)};
+            };
+        default:
+            return std::nullopt;
+    }
+}

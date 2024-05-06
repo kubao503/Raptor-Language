@@ -10,13 +10,8 @@
 struct IfStatement;
 struct WhileStatement;
 
-struct ReturnStatement {
-    std::optional<Expression> expression;
-};
-
-struct PrintStatement {
-    std::optional<Expression> expression;
-};
+struct ReturnStatement;
+struct PrintStatement;
 
 struct FieldAccess;
 
@@ -91,6 +86,19 @@ struct IfOrWhileStatement {
 struct IfStatement : public IfOrWhileStatement {};
 
 struct WhileStatement : public IfOrWhileStatement {};
+
+struct ReturnOrPrintStatement {
+    std::optional<Expression> expression;
+
+    using Ctor = std::function<Statement(std::optional<Expression>)>;
+
+    static std::optional<Ctor> getCtor(Token::Type type);
+};
+
+struct ReturnStatement : public ReturnOrPrintStatement {};
+
+struct PrintStatement : public ReturnOrPrintStatement {};
+
 
 class FuncDef {
    public:

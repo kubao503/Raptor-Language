@@ -78,7 +78,7 @@ std::optional<Statement> Parser::parseIfOrWhileStatement() {
 /// RET_STMT = return [ EXPR ] ';'
 /// PRINT_STMT = print [ EXPR ] ';'
 std::optional<Statement> Parser::parseReturnOrPrintStatement() {
-    const auto& ctor = getRetOrPrintCtor();
+    const auto& ctor = ReturnOrPrintStatement::getCtor(currentToken_.getType());
     if (!ctor)
         return std::nullopt;
     consumeToken();
@@ -596,21 +596,6 @@ auto getUnaryExprCtor() {
     return [](Expression expr) {
         return std::unique_ptr<T>(new T{.expr = std::move(expr)});
     };
-}
-
-std::optional<Parser::UnaryOptExprCtor> Parser::getRetOrPrintCtor() {
-    switch (currentToken_.getType()) {
-        case Token::Type::RETURN_KW:
-            return [](std::optional<Expression> expr) {
-                return ReturnStatement{.expression = std::move(expr)};
-            };
-        case Token::Type::PRINT_KW:
-            return [](std::optional<Expression> expr) {
-                return PrintStatement{.expression = std::move(expr)};
-            };
-        default:
-            return std::nullopt;
-    }
 }
 
 std::optional<Parser::BinaryExprCtor> Parser::getEqualExprCtor() {
