@@ -74,13 +74,11 @@ class Parser {
     template <typename T, typename ElementParser>
     std::vector<T> parseList(ElementParser elementParser);
 
-    using IfOrWhileCtor = std::function<Statement(Expression, Statements)>;
     using BinaryExprCtor = std::function<Expression(Expression, Expression)>;
     using UnaryOptExprCtor = std::function<Statement(std::optional<Expression>)>;
     using UnaryExprCtor = std::function<Expression(Expression)>;
     using TypeExprCtor = std::function<Expression(Expression, Type)>;
 
-    std::optional<IfOrWhileCtor> getIfOrWhileCtor();
     std::optional<UnaryOptExprCtor> getRetOrPrintCtor();
     std::optional<BinaryExprCtor> getEqualExprCtor();
     std::optional<BinaryExprCtor> getRelExprCtor();

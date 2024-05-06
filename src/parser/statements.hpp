@@ -1,9 +1,11 @@
 #ifndef STATEMENTS_H
 #define STATEMENTS_H
 
+#include <functional>
 #include <optional>
 
 #include "expressions.hpp"
+#include "token.hpp"
 
 struct IfStatement;
 struct WhileStatement;
@@ -77,15 +79,18 @@ using Statement =
                  Assignment, VarDef, FuncCall, StructDef, VariantDef>;
 using Statements = std::vector<Statement>;
 
-struct IfStatement {
+struct IfOrWhileStatement {
     Expression condition;
     Statements statements;
+
+    using Ctor = std::function<Statement(Expression, Statements)>;
+
+    static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct WhileStatement {
-    Expression condition;
-    Statements statements;
-};
+struct IfStatement : public IfOrWhileStatement {};
+
+struct WhileStatement : public IfOrWhileStatement {};
 
 class FuncDef {
    public:

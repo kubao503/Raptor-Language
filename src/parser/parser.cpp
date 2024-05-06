@@ -57,7 +57,7 @@ std::optional<Statement> Parser::parseStatement() {
 /// IF_STMT = if EXPR '{' STMTS '}'
 /// WHILE_STMT = while EXPR '{' STMTS '}'
 std::optional<Statement> Parser::parseIfOrWhileStatement() {
-    const auto& ctor = getIfOrWhileCtor();
+    const auto& ctor = IfOrWhileStatement::getCtor(currentToken_.getType());
     if (!ctor)
         return std::nullopt;
     consumeToken();
@@ -596,23 +596,6 @@ auto getUnaryExprCtor() {
     return [](Expression expr) {
         return std::unique_ptr<T>(new T{.expr = std::move(expr)});
     };
-}
-
-std::optional<Parser::IfOrWhileCtor> Parser::getIfOrWhileCtor() {
-    switch (currentToken_.getType()) {
-        case Token::Type::IF_KW:
-            return [](Expression expr, Statements statements) {
-                return IfStatement{.condition = std::move(expr),
-                                   .statements = std::move(statements)};
-            };
-        case Token::Type::WHILE_KW:
-            return [](Expression expr, Statements statements) {
-                return WhileStatement{.condition = std::move(expr),
-                                      .statements = std::move(statements)};
-            };
-        default:
-            return std::nullopt;
-    }
 }
 
 std::optional<Parser::UnaryOptExprCtor> Parser::getRetOrPrintCtor() {
