@@ -64,13 +64,16 @@ std::optional<Statement> Parser::parseIfOrWhileStatement() {
 
     auto expression = parseExpression();
     if (!expression)
-        throw SyntaxException({}, "Expected expression (condition) after if keyword");
+        throw SyntaxException(currentToken_.getPosition(),
+                              "Expected if-statement condition");
 
-    expect(Token::Type::L_C_BR, SyntaxException({}, "Missing left curly brace"));
+    expect(Token::Type::L_C_BR,
+           SyntaxException(currentToken_.getPosition(), "Missing left curly brace"));
 
     auto statements = parseStatements();
 
-    expect(Token::Type::R_C_BR, SyntaxException({}, "Missing right curly brace"));
+    expect(Token::Type::R_C_BR,
+           SyntaxException(currentToken_.getPosition(), "Missing right curly brace"));
 
     return (*ctor)(std::move(*expression), std::move(statements));
 }
@@ -100,11 +103,12 @@ std::optional<VarDef> Parser::parseConstVarDef() {
 
     const auto type = getCurrentTokenType();
     if (!type)
-        throw SyntaxException({}, "Expected variable type");
+        throw SyntaxException(currentToken_.getPosition(), "Expected variable type");
     consumeToken();
 
     auto name = expectAndReturnValue<std::string>(
-        Token::Type::ID, SyntaxException({}, "Expected variable name"));
+        Token::Type::ID,
+        SyntaxException(currentToken_.getPosition(), "Expected variable name"));
 
     auto assignment = parseAssignment(name);
 
@@ -123,7 +127,8 @@ std::optional<FuncDef> Parser::parseVoidFunc() {
     consumeToken();
 
     const auto name = expectAndReturnValue<std::string>(
-        Token::Type::ID, SyntaxException({}, "Expected function name"));
+        Token::Type::ID,
+        SyntaxException(currentToken_.getPosition(), "Expected function name"));
 
     return parseFuncDef(VoidType(), name);
 }
@@ -177,7 +182,8 @@ Assignment Parser::parseAssignment(LValue lvalue) {
         throw SyntaxException(currentToken_.getPosition(),
                               "Expected expression after assignment");
 
-    expect(Token::Type::SEMI, SyntaxException({}, "Missing semicolon"));
+    expect(Token::Type::SEMI,
+           SyntaxException(currentToken_.getPosition(), "Missing semicolon"));
 
     return Assignment{.lhs = std::move(lvalue), .rhs = std::move(*expression)};
 }
@@ -213,21 +219,25 @@ std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
                                             const std::string& name) {
     if (currentToken_.getType() != Token::Type::L_PAR)
         return std::nullopt;
+    const auto position = currentToken_.getPosition();
     consumeToken();
 
-    const auto parameters = parseList<Parameter>(&Parser::parseParameter);
+    auto parameters = parseList<Parameter>(&Parser::parseParameter);
 
-    expect(
-        Token::Type::R_PAR,
-        SyntaxException({}, "Missing right parenthesis after function parameter list"));
+    expect(Token::Type::R_PAR,
+           SyntaxException(currentToken_.getPosition(),
+                           "Missing right parenthesis after function parameter list"));
     expect(Token::Type::L_C_BR,
-           SyntaxException({}, "Missing left curly brace before function body"));
+           SyntaxException(currentToken_.getPosition(),
+                           "Missing left curly brace before function body"));
 
     auto statements = parseStatements();
 
     expect(Token::Type::R_C_BR,
-           SyntaxException({}, "Missing right curly brace after function body"));
-    return FuncDef(returnType, name, parameters, std::move(statements), {});
+           SyntaxException(currentToken_.getPosition(),
+                           "Missing right curly brace after function body"));
+    return FuncDef(returnType, name, std::move(parameters), std::move(statements),
+                   position);
 }
 
 /// PARAM = [ ref ] TYPE ID
@@ -239,13 +249,15 @@ std::optional<Parameter> Parser::parseParameter() {
     const auto type = getCurrentTokenType();
     if (!type) {
         if (ref)
-            throw SyntaxException({}, "Expected parameter type after ref keyword");
+            throw SyntaxException(currentToken_.getPosition(),
+                                  "Expected parameter type after ref keyword");
         return std::nullopt;
     }
     consumeToken();
 
     const auto name = expectAndReturnValue<std::string>(
-        Token::Type::ID, SyntaxException({}, "Expected parameter name"));
+        Token::Type::ID,
+        SyntaxException(currentToken_.getPosition(), "Expected parameter name"));
 
     return Parameter{.type = *type, .name = name, .ref = ref};
 }
