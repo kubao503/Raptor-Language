@@ -42,7 +42,7 @@ struct MultiplicationExpression;
 struct DivisionExpression;
 
 struct SignChangeExpression;
-struct NegationExpression;
+struct LogicalNegationExpression;
 
 struct ConversionExpression;
 struct TypeCheckExpression;
@@ -73,7 +73,7 @@ using Expression = std::variant<
     std::unique_ptr<GreaterThanOrEqualExpression>, std::unique_ptr<AdditionExpression>,
     std::unique_ptr<SubtractionExpression>, std::unique_ptr<MultiplicationExpression>,
     std::unique_ptr<DivisionExpression>, std::unique_ptr<SignChangeExpression>,
-    std::unique_ptr<NegationExpression>, std::unique_ptr<ConversionExpression>,
+    std::unique_ptr<LogicalNegationExpression>, std::unique_ptr<ConversionExpression>,
     std::unique_ptr<TypeCheckExpression>, std::unique_ptr<FieldAccessExpression>,
     Constant, VariableAccess, FuncCall>;
 
@@ -104,63 +104,73 @@ struct EqualExpression : public ComparisonExpression {};
 
 struct NotEqualExpression : public ComparisonExpression {};
 
-struct LessThanExpression {
+struct RelationExpression {
     Expression lhs;
     Expression rhs;
+
+    using Ctor = std::function<Expression(Expression, Expression)>;
+
+    static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct LessThanOrEqualExpression {
+struct LessThanExpression : public RelationExpression {};
+
+struct LessThanOrEqualExpression : public RelationExpression {};
+
+struct GreaterThanExpression : public RelationExpression {};
+
+struct GreaterThanOrEqualExpression : public RelationExpression {};
+
+struct AdditiveExpression {
     Expression lhs;
     Expression rhs;
+
+    using Ctor = std::function<Expression(Expression, Expression)>;
+
+    static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct GreaterThanExpression {
+struct AdditionExpression : public AdditiveExpression {};
+
+struct SubtractionExpression : public AdditiveExpression {};
+
+struct MultiplicativeExpression {
     Expression lhs;
     Expression rhs;
+
+    using Ctor = std::function<Expression(Expression, Expression)>;
+
+    static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct GreaterThanOrEqualExpression {
-    Expression lhs;
-    Expression rhs;
-};
+struct MultiplicationExpression : public MultiplicativeExpression {};
 
-struct AdditionExpression {
-    Expression lhs;
-    Expression rhs;
-};
-
-struct SubtractionExpression {
-    Expression lhs;
-    Expression rhs;
-};
-
-struct MultiplicationExpression {
-    Expression lhs;
-    Expression rhs;
-};
-
-struct DivisionExpression {
-    Expression lhs;
-    Expression rhs;
-};
-
-struct SignChangeExpression {
-    Expression expr;
-};
+struct DivisionExpression : public MultiplicativeExpression {};
 
 struct NegationExpression {
     Expression expr;
+
+    using Ctor = std::function<Expression(Expression)>;
+
+    static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct ConversionExpression {
+struct SignChangeExpression : public NegationExpression {};
+
+struct LogicalNegationExpression : public NegationExpression {};
+
+struct TypeExpression {
     Expression expr;
     Type type;
+
+    using Ctor = std::function<Expression(Expression, Type)>;
+
+    static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct TypeCheckExpression {
-    Expression expr;
-    Type type;
-};
+struct ConversionExpression : public TypeExpression {};
+
+struct TypeCheckExpression : public TypeExpression {};
 
 struct FieldAccessExpression {
     Expression expr;

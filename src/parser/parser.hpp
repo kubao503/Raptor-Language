@@ -74,17 +74,6 @@ class Parser {
     template <typename T, typename ElementParser>
     std::vector<T> parseList(ElementParser elementParser);
 
-    using BinaryExprCtor = std::function<Expression(Expression, Expression)>;
-    using UnaryOptExprCtor = std::function<Statement(std::optional<Expression>)>;
-    using UnaryExprCtor = std::function<Expression(Expression)>;
-    using TypeExprCtor = std::function<Expression(Expression, Type)>;
-
-    std::optional<BinaryExprCtor> getRelExprCtor();
-    std::optional<BinaryExprCtor> getAddExprCtor();
-    std::optional<BinaryExprCtor> getMultExprCtor();
-    std::optional<UnaryExprCtor> getNegationExprCtor();
-    std::optional<TypeExprCtor> getTypeExprCtor();
-
     using StatementParsers =
         std::initializer_list<std::function<std::optional<Statement>(Parser&)>>;
     static StatementParsers statementParsers_;

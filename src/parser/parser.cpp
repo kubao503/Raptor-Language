@@ -421,7 +421,7 @@ std::optional<Expression> Parser::parseRelExpression() {
     if (!leftRelFactor)
         return std::nullopt;
 
-    if (const auto& ctor = getRelExprCtor()) {
+    if (const auto& ctor = RelationExpression::getCtor(currentToken_.getType())) {
         consumeToken();
         auto rightRelFactor = parseAdditiveExpression();
         if (!rightRelFactor)
@@ -440,7 +440,7 @@ std::optional<Expression> Parser::parseAdditiveExpression() {
     if (!leftTerm)
         return std::nullopt;
 
-    while (const auto& ctor = getAddExprCtor()) {
+    while (const auto& ctor = AdditionExpression::getCtor(currentToken_.getType())) {
         consumeToken();
         auto rightTerm = parseMultiplicativeExpression();
         if (!rightTerm)
@@ -459,7 +459,8 @@ std::optional<Expression> Parser::parseMultiplicativeExpression() {
     if (!leftFactor)
         return std::nullopt;
 
-    while (const auto& ctor = getMultExprCtor()) {
+    while (const auto& ctor =
+               MultiplicativeExpression::getCtor(currentToken_.getType())) {
         consumeToken();
         auto rightFactor = parseNegationExpression();
         if (!rightFactor)
@@ -473,7 +474,7 @@ std::optional<Expression> Parser::parseMultiplicativeExpression() {
 
 /// FACTOR = [ '-' | not ] UNARY
 std::optional<Expression> Parser::parseNegationExpression() {
-    const auto& ctor = getNegationExprCtor();
+    const auto& ctor = NegationExpression::getCtor(currentToken_.getType());
     if (ctor)
         consumeToken();
 
@@ -490,7 +491,7 @@ std::optional<Expression> Parser::parseTypeExpression() {
     if (!expr)
         return std::nullopt;
 
-    if (const auto& ctor = getTypeExprCtor()) {
+    if (const auto& ctor = TypeExpression::getCtor(currentToken_.getType())) {
         consumeToken();
 
         auto type = getCurrentTokenType();
@@ -582,85 +583,6 @@ std::optional<Argument> Parser::parseArgument() {
     }
 
     return Argument{.value = std::move(*expr), .ref = ref};
-}
-
-template <typename T>
-auto getBinaryExprCtor() {
-    return [](Expression lhs, Expression rhs) {
-        return std::unique_ptr<T>(new T{.lhs = std::move(lhs), .rhs = std::move(rhs)});
-    };
-}
-
-template <typename T>
-auto getUnaryExprCtor() {
-    return [](Expression expr) {
-        return std::unique_ptr<T>(new T{.expr = std::move(expr)});
-    };
-}
-
-std::optional<Parser::BinaryExprCtor> Parser::getRelExprCtor() {
-    switch (currentToken_.getType()) {
-        case Token::Type::LT_OP:
-            return getBinaryExprCtor<LessThanExpression>();
-        case Token::Type::LTE_OP:
-            return getBinaryExprCtor<LessThanOrEqualExpression>();
-        case Token::Type::GT_OP:
-            return getBinaryExprCtor<GreaterThanExpression>();
-        case Token::Type::GTE_OP:
-            return getBinaryExprCtor<GreaterThanOrEqualExpression>();
-        default:
-            return std::nullopt;
-    }
-}
-
-std::optional<Parser::BinaryExprCtor> Parser::getAddExprCtor() {
-    switch (currentToken_.getType()) {
-        case Token::Type::ADD_OP:
-            return getBinaryExprCtor<AdditionExpression>();
-        case Token::Type::MIN_OP:
-            return getBinaryExprCtor<SubtractionExpression>();
-        default:
-            return std::nullopt;
-    }
-}
-
-std::optional<Parser::BinaryExprCtor> Parser::getMultExprCtor() {
-    switch (currentToken_.getType()) {
-        case Token::Type::MULT_OP:
-            return getBinaryExprCtor<MultiplicationExpression>();
-        case Token::Type::DIV_OP:
-            return getBinaryExprCtor<DivisionExpression>();
-        default:
-            return std::nullopt;
-    }
-}
-
-std::optional<Parser::UnaryExprCtor> Parser::getNegationExprCtor() {
-    switch (currentToken_.getType()) {
-        case Token::Type::MIN_OP:
-            return getUnaryExprCtor<SignChangeExpression>();
-        case Token::Type::NOT_KW:
-            return getUnaryExprCtor<NegationExpression>();
-        default:
-            return std::nullopt;
-    }
-}
-
-std::optional<std::function<Expression(Expression, Type)>> Parser::getTypeExprCtor() {
-    switch (currentToken_.getType()) {
-        case Token::Type::AS_KW:
-            return [](Expression expr, Type type) {
-                return std::unique_ptr<ConversionExpression>(
-                    new ConversionExpression{.expr = std::move(expr), .type = type});
-            };
-        case Token::Type::IS_KW:
-            return [](Expression expr, Type type) {
-                return std::unique_ptr<TypeCheckExpression>(
-                    new TypeCheckExpression{.expr = std::move(expr), .type = type});
-            };
-        default:
-            return std::nullopt;
-    }
 }
 
 Parser::StatementParsers Parser::statementParsers_{

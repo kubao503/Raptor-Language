@@ -391,9 +391,9 @@ TEST_F(FullyParsedTest, parse_negation_expression) {
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
     ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<NegationExpression>>(varDef.expression));
+        std::holds_alternative<std::unique_ptr<LogicalNegationExpression>>(varDef.expression));
     const auto& expression =
-        std::get<std::unique_ptr<NegationExpression>>(varDef.expression);
+        std::get<std::unique_ptr<LogicalNegationExpression>>(varDef.expression);
 
     const auto& nestedExp = expression->expr;
     ASSERT_TRUE(std::holds_alternative<Constant>(nestedExp));
