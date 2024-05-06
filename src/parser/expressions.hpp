@@ -1,11 +1,14 @@
 #ifndef EXPRESSIONS_H
 #define EXPRESSIONS_H
 
+#include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
 
+#include "token.hpp"
 #include "types.hpp"
 
 enum class BuiltInType {
@@ -88,15 +91,18 @@ struct ConjunctionExpression {
     Expression rhs;
 };
 
-struct EqualExpression {
+struct ComparisonExpression {
     Expression lhs;
     Expression rhs;
+
+    using Ctor = std::function<Expression(Expression, Expression)>;
+
+    static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct NotEqualExpression {
-    Expression lhs;
-    Expression rhs;
-};
+struct EqualExpression : public ComparisonExpression {};
+
+struct NotEqualExpression : public ComparisonExpression {};
 
 struct LessThanExpression {
     Expression lhs;

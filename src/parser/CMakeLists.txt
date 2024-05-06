@@ -2,6 +2,7 @@ add_library(
     parser
     parser.cpp
     statements.cpp
+    expressions.cpp
     printer.cpp
 )
 

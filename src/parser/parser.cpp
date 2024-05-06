@@ -400,7 +400,7 @@ std::optional<Expression> Parser::parseEqualExpression() {
     if (!leftEqFactor)
         return std::nullopt;
 
-    if (const auto& ctor = getEqualExprCtor()) {
+    if (const auto& ctor = ComparisonExpression::getCtor(currentToken_.getType())) {
         consumeToken();
         auto rightEqFactor = parseRelExpression();
         if (!rightEqFactor)
@@ -596,17 +596,6 @@ auto getUnaryExprCtor() {
     return [](Expression expr) {
         return std::unique_ptr<T>(new T{.expr = std::move(expr)});
     };
-}
-
-std::optional<Parser::BinaryExprCtor> Parser::getEqualExprCtor() {
-    switch (currentToken_.getType()) {
-        case Token::Type::EQ_OP:
-            return getBinaryExprCtor<EqualExpression>();
-        case Token::Type::NEQ_OP:
-            return getBinaryExprCtor<NotEqualExpression>();
-        default:
-            return std::nullopt;
-    }
 }
 
 std::optional<Parser::BinaryExprCtor> Parser::getRelExprCtor() {

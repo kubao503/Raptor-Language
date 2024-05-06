@@ -1,11 +1,7 @@
 #ifndef STATEMENTS_H
 #define STATEMENTS_H
 
-#include <functional>
-#include <optional>
-
 #include "expressions.hpp"
-#include "token.hpp"
 
 struct IfStatement;
 struct WhileStatement;
@@ -98,7 +94,6 @@ struct ReturnOrPrintStatement {
 struct ReturnStatement : public ReturnOrPrintStatement {};
 
 struct PrintStatement : public ReturnOrPrintStatement {};
-
 
 class FuncDef {
    public:
