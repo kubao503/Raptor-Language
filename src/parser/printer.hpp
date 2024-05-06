@@ -60,7 +60,7 @@ class StatementPrinter : public BasePrinter {
     std::string operator()(const PrintStatement& stmt) const;
     std::string operator()(const FuncDef& funcDef) const;
     std::string operator()(const Assignment& stmt) const;
-    // std::string operator()(const VarDef& stmt) const;
+    std::string operator()(const VarDef& stmt) const;
     // std::string operator()(const FuncCall& stmt) const;
     // std::string operator()(const StructDef& stmt) const;
     // std::string operator()(const VariantDef& stmt) const;
@@ -71,12 +71,20 @@ class StatementPrinter : public BasePrinter {
     std::string printReturnOrPrintStatement(const ReturnOrPrintStatement& stmt) const;
 };
 
-class LValuePrinter : BasePrinter {
+class LValuePrinter : public BasePrinter {
    public:
     using BasePrinter::BasePrinter;
 
     std::string operator()(const std::unique_ptr<FieldAccess>& lvalue) const;
     std::string operator()(const std::string& lvalue) const;
+};
+
+class TypePrinter : public BasePrinter {
+   public:
+    using BasePrinter::BasePrinter;
+
+    std::string operator()(const std::string& type) const;
+    std::string operator()(BuiltInType type) const;
 };
 
 std::ostream& operator<<(std::ostream& stream, const Program& program);

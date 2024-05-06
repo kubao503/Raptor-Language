@@ -1,5 +1,7 @@
 #include "printer.hpp"
 
+#include "magic_enum/magic_enum.hpp"
+
 std::ostream& operator<<(std::ostream& stream, const Program& program) {
     for (const auto& stmt : program.statements) {
         stream << std::visit(StatementPrinter(), stmt) << '\n';
@@ -130,6 +132,14 @@ std::string StatementPrinter::operator()(const Assignment& stmt) const {
            + std::visit(getSubExprPrinter(), stmt.rhs);
 }
 
+std::string StatementPrinter::operator()(const VarDef& stmt) const {
+    return getPrefix() + "VarDef\n" + getPrefix()
+           + "  is const: " + std::to_string(stmt.isConst) + '\n' + getPrefix()
+           + "  type: " + std::visit(TypePrinter(indent_ + indentWidth_), stmt.type)
+           + '\n' + getPrefix() + "  name: " + stmt.name + '\n' + getPrefix()
+           + "  value:\n" + std::visit(getSubExprPrinter(), stmt.expression);
+}
+
 std::string StatementPrinter::operator()(const auto& stmt) const {
     return getPrefix() + typeid(stmt).name();
 }
@@ -142,4 +152,12 @@ std::string LValuePrinter::operator()(const std::unique_ptr<FieldAccess>& lvalue
 
 std::string LValuePrinter::operator()(const std::string& lvalue) const {
     return getPrefix() + "variable: " + lvalue;
+}
+
+std::string TypePrinter::operator()(const std::string& type) const {
+    return type;
+}
+
+std::string TypePrinter::operator()(BuiltInType type) const {
+    return std::string(magic_enum::enum_name(type));
 }
