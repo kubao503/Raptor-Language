@@ -124,10 +124,22 @@ std::string StatementPrinter::operator()(const FuncDef& funcDef) const {
     return output + '\n' + getPrefix() + '}';
 }
 
-std::string StatementPrinter::operator()(const Assignment&) const {
-    return getPrefix() + "Assignment";
+std::string StatementPrinter::operator()(const Assignment& stmt) const {
+    return getPrefix() + "Assignment\n"
+           + std::visit(LValuePrinter(indent_ + indentWidth_), stmt.lhs) + '\n'
+           + std::visit(getSubExprPrinter(), stmt.rhs);
 }
 
 std::string StatementPrinter::operator()(const auto& stmt) const {
     return getPrefix() + typeid(stmt).name();
+}
+
+std::string LValuePrinter::operator()(const std::unique_ptr<FieldAccess>& lvalue) const {
+    return getPrefix() + "FieldAcces\n"
+           + std::visit(LValuePrinter(indent_ + indentWidth_), lvalue->container) + '\n'
+           + getPrefix() + "field: " + lvalue->field;
+}
+
+std::string LValuePrinter::operator()(const std::string& lvalue) const {
+    return getPrefix() + "variable: " + lvalue;
 }
