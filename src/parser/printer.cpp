@@ -102,6 +102,19 @@ std::string StatementPrinter::operator()(const WhileStatement& whileStatement) c
     return getPrefix() + "WhileStatement\n" + printIfOrWhileStatement(whileStatement);
 }
 
+std::string StatementPrinter::printReturnOrPrintStatement(
+    const ReturnOrPrintStatement& stmt) const {
+    return stmt.expression ? std::visit(getSubExprPrinter(), *stmt.expression) : "";
+}
+
+std::string StatementPrinter::operator()(const ReturnStatement& stmt) const {
+    return getPrefix() + "ReturnStatement\n" + printReturnOrPrintStatement(stmt);
+}
+
+std::string StatementPrinter::operator()(const PrintStatement& stmt) const {
+    return getPrefix() + "PrintStatement\n" + printReturnOrPrintStatement(stmt);
+}
+
 std::string StatementPrinter::operator()(const FuncDef& funcDef) const {
     std::string output = getPrefix() + "FuncDef " + funcDef.getName();
     for (const auto& param : funcDef.getParameters()) output += ' ' + param.name + ',';

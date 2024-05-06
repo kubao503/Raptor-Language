@@ -56,12 +56,19 @@ class StatementPrinter : public BasePrinter {
 
     std::string operator()(const IfStatement& ifStatement) const;
     std::string operator()(const WhileStatement& whileStatement) const;
+    std::string operator()(const ReturnStatement& stmt) const;
+    std::string operator()(const PrintStatement& stmt) const;
     std::string operator()(const FuncDef& funcDef) const;
     std::string operator()(const Assignment&) const;
+    // std::string operator()(const VarDef& stmt) const;
+    // std::string operator()(const FuncCall& stmt) const;
+    // std::string operator()(const StructDef& stmt) const;
+    // std::string operator()(const VariantDef& stmt) const;
     std::string operator()(const auto& stmt) const;
 
    private:
     std::string printIfOrWhileStatement(const IfOrWhileStatement& ifOrWhile) const;
+    std::string printReturnOrPrintStatement(const ReturnOrPrintStatement& stmt) const;
 };
 
 std::ostream& operator<<(std::ostream& stream, const Program& program);
