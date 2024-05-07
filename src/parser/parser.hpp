@@ -25,6 +25,7 @@ class Parser {
 
    private:
     void consumeToken() { currentToken_ = lexer_.getToken(); };
+    void expectEndOfFile() const;
 
     template <typename Exception>
     void expect(Token::Type expected, const Exception& exception);

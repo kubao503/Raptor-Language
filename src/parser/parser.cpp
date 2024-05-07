@@ -25,7 +25,14 @@ ReturnType typeToReturnType(const Type& type) {
 
 /// PROGRAM = STMTS
 Program Parser::parseProgram() {
-    return {.statements = parseStatements()};
+    auto statements = parseStatements();
+    expectEndOfFile();
+    return {.statements = std::move(statements)};
+}
+
+void Parser::expectEndOfFile() const {
+    if (currentToken_.getType() != Token::Type::ETX)
+        throw SyntaxException(currentToken_.getPosition(), "Unknown statement");
 }
 
 /// STMTS = { STMT }
@@ -50,7 +57,6 @@ std::optional<Statement> Parser::parseStatement() {
         if (auto statement = parser(*this))
             return statement;
     }
-
     return std::nullopt;
 }
 
