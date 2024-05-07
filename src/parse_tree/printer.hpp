@@ -61,7 +61,7 @@ class StatementPrinter : public BasePrinter {
     std::string operator()(const FuncDef& funcDef) const;
     std::string operator()(const Assignment& stmt) const;
     std::string operator()(const VarDef& stmt) const;
-    // std::string operator()(const FuncCall& stmt) const;
+    std::string operator()(const FuncCall& stmt) const;
     // std::string operator()(const StructDef& stmt) const;
     // std::string operator()(const VariantDef& stmt) const;
     std::string operator()(const auto& stmt) const;

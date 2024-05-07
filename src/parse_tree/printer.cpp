@@ -140,6 +140,10 @@ std::string StatementPrinter::operator()(const VarDef& stmt) const {
            + "  value:\n" + std::visit(getSubExprPrinter(), stmt.expression);
 }
 
+std::string StatementPrinter::operator()(const FuncCall& stmt) const {
+    return getPrefix() + "FuncCall\n" + stmt.name;
+}
+
 std::string StatementPrinter::operator()(const auto& stmt) const {
     return getPrefix() + typeid(stmt).name();
 }

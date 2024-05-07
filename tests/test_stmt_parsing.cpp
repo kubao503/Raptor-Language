@@ -12,7 +12,7 @@ TEST_F(FullyParsedTest, parse_empty_program) {
     EXPECT_EQ(prog.statements.size(), 0);
 }
 
-TEST_F(ParserTest, failed_parsing) {
+TEST_F(ParserTest, unknown_statement) {
     SetUp({Token::Type::IS_KW});
 
     EXPECT_THROW(parser_->parseProgram(), SyntaxException);

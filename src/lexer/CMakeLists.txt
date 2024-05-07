@@ -11,4 +11,5 @@ target_link_libraries(
     PUBLIC magic_enum::magic_enum
     PUBLIC errors
     PUBLIC utils
+    PUBLIC parse_tree
 )

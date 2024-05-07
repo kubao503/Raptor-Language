@@ -1,7 +1,8 @@
-add_subdirectory(lexer)
-add_subdirectory(parser)
-add_subdirectory(errors)
 add_subdirectory(utils)
+add_subdirectory(errors)
+add_subdirectory(lexer)
+add_subdirectory(parse_tree)
+add_subdirectory(parser)
 
 add_executable(${PROJECT_NAME} main.cpp)
 
