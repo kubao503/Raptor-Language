@@ -101,7 +101,7 @@ std::optional<Statement> Parser::parseReturnOrPrintStatement() {
     return (*ctor)(std::move(expression));
 }
 
-/// CONST_VAR_DEF = const ( TYPE | ID ) ID ASGN
+/// CONST_VAR_DEF = const TYPE ID ASGN
 std::optional<VarDef> Parser::parseConstVarDef() {
     if (currentToken_.getType() != Token::Type::CONST_KW)
         return std::nullopt;
@@ -194,7 +194,7 @@ Assignment Parser::parseAssignment(LValue lvalue) {
     return Assignment{.lhs = std::move(lvalue), .rhs = std::move(*expression)};
 }
 
-/// BUILT_IN_DEF = TYPE DEF
+/// BUILT_IN_DEF = BUILT_IN_TYPE DEF
 std::optional<Statement> Parser::parseBuiltInDef() {
     const auto type = getCurrentTokenBuiltInType();
     if (!type)
