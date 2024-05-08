@@ -29,6 +29,7 @@ class ExpressionPrinter : public BasePrinter {
    public:
     using BasePrinter::BasePrinter;
 
+    std::string operator()(const StructInitExpression& expr) const;
     std::string operator()(
         const std::unique_ptr<DisjunctionExpression>& disjunction) const;
     std::string operator()(
@@ -44,6 +45,9 @@ class ExpressionPrinter : public BasePrinter {
     std::string operator()(const std::unique_ptr<SubtractionExpression>& expr) const;
     std::string operator()(const std::unique_ptr<MultiplicationExpression>& expr) const;
     std::string operator()(const std::unique_ptr<DivisionExpression>& expr) const;
+    std::string operator()(const std::unique_ptr<FieldAccessExpression>& expr) const;
+    std::string operator()(const Constant& expr) const;
+    std::string operator()(const VariableAccess& expr) const;
     std::string operator()(const auto& expr) const;
 
    private:
@@ -62,8 +66,8 @@ class StatementPrinter : public BasePrinter {
     std::string operator()(const Assignment& stmt) const;
     std::string operator()(const VarDef& stmt) const;
     std::string operator()(const FuncCall& stmt) const;
-    // std::string operator()(const StructDef& stmt) const;
-    // std::string operator()(const VariantDef& stmt) const;
+    std::string operator()(const StructDef& stmt) const;
+    std::string operator()(const VariantDef& stmt) const;
     std::string operator()(const auto& stmt) const;
 
    private:
@@ -85,6 +89,12 @@ class TypePrinter : public BasePrinter {
 
     std::string operator()(const std::string& type) const;
     std::string operator()(BuiltInType type) const;
+};
+
+struct ValuePrinter {
+    std::string operator()(const std::monostate&) const;
+    std::string operator()(const std::string& type) const;
+    std::string operator()(const auto& type) const;
 };
 
 std::ostream& operator<<(std::ostream& stream, const Program& program);

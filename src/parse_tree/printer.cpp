@@ -22,6 +22,13 @@ std::string ExpressionPrinter::printBinaryExpression(const auto& expression) con
            + std::visit(getSubExprPrinter(), expression->rhs);
 }
 
+std::string ExpressionPrinter::operator()(const StructInitExpression& expr) const {
+    std::string output = getPrefix() + "StructInitExpression";
+    for (const auto& expr : expr.exprs)
+        output += '\n' + std::visit(getSubExprPrinter(), expr);
+    return output;
+}
+
 std::string ExpressionPrinter::operator()(
     const std::unique_ptr<DisjunctionExpression>& disjunction) const {
     return getPrefix() + "DisjunctionExpression\n" + printBinaryExpression(disjunction);
@@ -80,6 +87,21 @@ std::string ExpressionPrinter::operator()(
 std::string ExpressionPrinter::operator()(
     const std::unique_ptr<DivisionExpression>& expr) const {
     return getPrefix() + "DivisionExpression\n" + printBinaryExpression(expr);
+}
+
+std::string ExpressionPrinter::operator()(
+    const std::unique_ptr<FieldAccessExpression>& expr) const {
+    return getPrefix() + "FieldAccessExpression\n"
+           + std::visit(getSubExprPrinter(), expr->expr) + '\n' + getPrefix()
+           + "  field: " + expr->field;
+}
+
+std::string ExpressionPrinter::operator()(const VariableAccess& expr) const {
+    return getPrefix() + "VariableAccess " + expr.name;
+}
+
+std::string ExpressionPrinter::operator()(const Constant& expr) const {
+    return getPrefix() + "Constant: " + std::visit(ValuePrinter(), expr.value);
 }
 
 std::string ExpressionPrinter::operator()(const auto& expr) const {
@@ -141,7 +163,30 @@ std::string StatementPrinter::operator()(const VarDef& stmt) const {
 }
 
 std::string StatementPrinter::operator()(const FuncCall& stmt) const {
-    return getPrefix() + "FuncCall\n" + stmt.name;
+    std::string output = getPrefix() + "FuncCall\n" + getPrefix() + "  name: " + stmt.name
+                         + '\n' + getPrefix() + "  args: ";
+    for (const auto& arg : stmt.arguments)
+        output += '\n' + std::visit(getSubExprPrinter(), arg.value);
+    return output;
+}
+
+std::string StatementPrinter::operator()(const StructDef& stmt) const {
+    std::string output =
+        getPrefix() + "StructDef " + stmt.name + '\n' + getPrefix() + "fields: ";
+    for (const auto& field : stmt.fields)
+        output += '\n' + getPrefix() + "  "
+                  + std::visit(TypePrinter(indent_ + indentWidth_), field.type) + ' '
+                  + field.name;
+    return output;
+}
+
+std::string StatementPrinter::operator()(const VariantDef& stmt) const {
+    std::string output =
+        getPrefix() + "VariantDef " + stmt.name + '\n' + getPrefix() + "types: ";
+    for (const auto& type : stmt.types)
+        output += '\n' + getPrefix() + "  "
+                  + std::visit(TypePrinter(indent_ + indentWidth_), type);
+    return output;
 }
 
 std::string StatementPrinter::operator()(const auto& stmt) const {
@@ -151,7 +196,7 @@ std::string StatementPrinter::operator()(const auto& stmt) const {
 std::string LValuePrinter::operator()(const std::unique_ptr<FieldAccess>& lvalue) const {
     return getPrefix() + "FieldAcces\n"
            + std::visit(LValuePrinter(indent_ + indentWidth_), lvalue->container) + '\n'
-           + getPrefix() + "field: " + lvalue->field;
+           + getPrefix() + "  field: " + lvalue->field;
 }
 
 std::string LValuePrinter::operator()(const std::string& lvalue) const {
@@ -164,4 +209,16 @@ std::string TypePrinter::operator()(const std::string& type) const {
 
 std::string TypePrinter::operator()(BuiltInType type) const {
     return std::string(magic_enum::enum_name(type));
+}
+
+std::string ValuePrinter::operator()(const std::monostate&) const {
+    return "";
+}
+
+std::string ValuePrinter::operator()(const std::string& type) const {
+    return type;
+}
+
+std::string ValuePrinter::operator()(const auto& type) const {
+    return std::to_string(type);
 }
