@@ -23,7 +23,7 @@ template <typename T, typename ElementParser>
 std::vector<T> Parser::parseList(ElementParser elementParser) {
     std::vector<T> elements;
 
-    auto element = (this->*elementParser)();
+    auto element = std::invoke(elementParser, this);
     if (!element)
         return elements;
 
@@ -31,7 +31,7 @@ std::vector<T> Parser::parseList(ElementParser elementParser) {
 
     while (currentToken_.getType() == Token::Type::CMA) {
         consumeToken();
-        element = (this->*elementParser)();
+        element = std::invoke(elementParser, this);
         if (!element)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected element after comma");
