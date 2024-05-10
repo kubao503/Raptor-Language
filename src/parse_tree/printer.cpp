@@ -108,35 +108,32 @@ std::string ExpressionPrinter::operator()(const auto& expr) const {
     return getPrefix() + typeid(expr).name();
 }
 
-std::string StatementPrinter::printIfOrWhileStatement(
-    const IfOrWhileStatement& ifOrWhile) const {
-    std::string output = getPrefix() + "└condition:\n"
-                         + std::visit(getSubExprPrinter(), ifOrWhile.condition) + '\n'
+std::string StatementPrinter::operator()(const IfStatement& ifStatement) const {
+    std::string output = getPrefix() + "IfStatement\n" + getPrefix() + "└condition:\n"
+                         + std::visit(getSubExprPrinter(), ifStatement.condition) + '\n'
                          + getPrefix() + "└statements {";
-    for (const auto& stmt : ifOrWhile.statements)
+    for (const auto& stmt : ifStatement.statements)
         output += '\n' + std::visit(getSubStmtPrinter(), stmt);
     return output + '\n' + getPrefix() + '}';
 }
 
-std::string StatementPrinter::operator()(const IfStatement& ifStatement) const {
-    return getPrefix() + "IfStatement\n" + printIfOrWhileStatement(ifStatement);
-}
-
 std::string StatementPrinter::operator()(const WhileStatement& whileStatement) const {
-    return getPrefix() + "WhileStatement\n" + printIfOrWhileStatement(whileStatement);
-}
-
-std::string StatementPrinter::printReturnOrPrintStatement(
-    const ReturnOrPrintStatement& stmt) const {
-    return stmt.expression ? std::visit(getSubExprPrinter(), *stmt.expression) : "";
+    std::string output = getPrefix() + "WhileStatement\n" + getPrefix() + "└condition:\n"
+                         + std::visit(getSubExprPrinter(), whileStatement.condition)
+                         + '\n' + getPrefix() + "└statements {";
+    for (const auto& stmt : whileStatement.statements)
+        output += '\n' + std::visit(getSubStmtPrinter(), stmt);
+    return output + '\n' + getPrefix() + '}';
 }
 
 std::string StatementPrinter::operator()(const ReturnStatement& stmt) const {
-    return getPrefix() + "ReturnStatement\n" + printReturnOrPrintStatement(stmt);
+    return getPrefix() + "ReturnStatement\n"
+           + (stmt.expression ? std::visit(getSubExprPrinter(), *stmt.expression) : "");
 }
 
 std::string StatementPrinter::operator()(const PrintStatement& stmt) const {
-    return getPrefix() + "PrintStatement\n" + printReturnOrPrintStatement(stmt);
+    return getPrefix() + "PrintStatement\n"
+           + (stmt.expression ? std::visit(getSubExprPrinter(), *stmt.expression) : "");
 }
 
 std::string StatementPrinter::operator()(const FuncDef& funcDef) const {

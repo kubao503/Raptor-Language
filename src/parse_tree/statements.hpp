@@ -70,30 +70,23 @@ using Statement =
                  Assignment, VarDef, FuncCall, StructDef, VariantDef>;
 using Statements = std::vector<Statement>;
 
-struct IfOrWhileStatement {
+struct IfStatement {
     Expression condition;
     Statements statements;
-
-    using Ctor = std::function<Statement(Expression, Statements)>;
-
-    static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct IfStatement : public IfOrWhileStatement {};
+struct WhileStatement {
+    Expression condition;
+    Statements statements;
+};
 
-struct WhileStatement : public IfOrWhileStatement {};
-
-struct ReturnOrPrintStatement {
+struct ReturnStatement {
     std::optional<Expression> expression;
-
-    using Ctor = std::function<Statement(std::optional<Expression>)>;
-
-    static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct ReturnStatement : public ReturnOrPrintStatement {};
-
-struct PrintStatement : public ReturnOrPrintStatement {};
+struct PrintStatement {
+    std::optional<Expression> expression;
+};
 
 class FuncDef {
    public:

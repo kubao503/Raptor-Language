@@ -69,10 +69,6 @@ class StatementPrinter : public BasePrinter {
     std::string operator()(const StructDef& stmt) const;
     std::string operator()(const VariantDef& stmt) const;
     std::string operator()(const auto& stmt) const;
-
-   private:
-    std::string printIfOrWhileStatement(const IfOrWhileStatement& ifOrWhile) const;
-    std::string printReturnOrPrintStatement(const ReturnOrPrintStatement& stmt) const;
 };
 
 class LValuePrinter : public BasePrinter {

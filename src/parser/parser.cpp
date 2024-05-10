@@ -61,10 +61,8 @@ std::optional<Statement> Parser::parseStatement() {
 }
 
 /// IF_STMT = if EXPR '{' STMTS '}'
-/// WHILE_STMT = while EXPR '{' STMTS '}'
-std::optional<Statement> Parser::parseIfOrWhileStatement() {
-    const auto& ctor = IfOrWhileStatement::getCtor(currentToken_.getType());
-    if (!ctor)
+std::optional<Statement> Parser::parseIfStatement() {
+    if (currentToken_.getType() != Token::Type::IF_KW)
         return std::nullopt;
     consumeToken();
 
@@ -81,14 +79,34 @@ std::optional<Statement> Parser::parseIfOrWhileStatement() {
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(), "Missing right curly brace"));
 
-    return (*ctor)(std::move(*expression), std::move(statements));
+    return IfStatement{std::move(*expression), std::move(statements)};
+}
+
+/// WHILE_STMT = while EXPR '{' STMTS '}'
+std::optional<Statement> Parser::parseWhileStatement() {
+    if (currentToken_.getType() != Token::Type::WHILE_KW)
+        return std::nullopt;
+    consumeToken();
+
+    auto expression = parseExpression();
+    if (!expression)
+        throw SyntaxException(currentToken_.getPosition(),
+                              "Expected while-statement condition");
+
+    expect(Token::Type::L_C_BR,
+           SyntaxException(currentToken_.getPosition(), "Missing left curly brace"));
+
+    auto statements = parseStatements();
+
+    expect(Token::Type::R_C_BR,
+           SyntaxException(currentToken_.getPosition(), "Missing right curly brace"));
+
+    return WhileStatement{std::move(*expression), std::move(statements)};
 }
 
 /// RET_STMT = return [ EXPR ] ';'
-/// PRINT_STMT = print [ EXPR ] ';'
-std::optional<Statement> Parser::parseReturnOrPrintStatement() {
-    const auto& ctor = ReturnOrPrintStatement::getCtor(currentToken_.getType());
-    if (!ctor)
+std::optional<Statement> Parser::parseReturnStatement() {
+    if (currentToken_.getType() != Token::Type::RETURN_KW)
         return std::nullopt;
     consumeToken();
 
@@ -96,9 +114,23 @@ std::optional<Statement> Parser::parseReturnOrPrintStatement() {
 
     expect(Token::Type::SEMI,
            SyntaxException(currentToken_.getPosition(),
-                           "Missing semicolon after return/print statement"));
+                           "Missing semicolon after return statement"));
 
-    return (*ctor)(std::move(expression));
+    return ReturnStatement{std::move(expression)};
+}
+
+/// PRINT_STMT = print [ EXPR ] ';'
+std::optional<Statement> Parser::parsePrintStatement() {
+    if (currentToken_.getType() != Token::Type::PRINT_KW)
+        return std::nullopt;
+    consumeToken();
+
+    auto expression = parseExpression();
+
+    expect(Token::Type::SEMI, SyntaxException(currentToken_.getPosition(),
+                                              "Missing semicolon after print statement"));
+
+    return PrintStatement{std::move(expression)};
 }
 
 /// CONST_VAR_DEF = const TYPE ID ASGN
@@ -604,8 +636,10 @@ std::optional<Argument> Parser::parseArgument() {
 }
 
 Parser::StatementParsers Parser::statementParsers_{
-    [](Parser& p) { return p.parseIfOrWhileStatement(); },
-    [](Parser& p) { return p.parseReturnOrPrintStatement(); },
+    [](Parser& p) { return p.parseIfStatement(); },
+    [](Parser& p) { return p.parseWhileStatement(); },
+    [](Parser& p) { return p.parseReturnStatement(); },
+    [](Parser& p) { return p.parsePrintStatement(); },
     [](Parser& p) { return p.parseConstVarDef(); },
     [](Parser& p) { return p.parseVoidFunc(); },
     [](Parser& p) { return p.parseDefOrAssignment(); },
