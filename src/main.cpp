@@ -3,9 +3,9 @@
 
 #include "base_errors.hpp"
 #include "filter.hpp"
+#include "interpreter.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
-#include "printer.hpp"
 
 int main(int argc, char* argv[]) {
     if (argc < 2)
@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
 
     try {
         const auto program = parser.parseProgram();
-        std::cout << program << '\n';
+        interpret(program);
     } catch (const BaseException& e) {
         std::cerr << '\n' << e.describe() << '\n';
     }

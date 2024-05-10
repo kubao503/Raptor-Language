@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(interpreter)
+project(raptor_lang_interpreter)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -pedantic -fconcepts")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -fprofile-arcs -ftest-coverage -fsanitize=undefined")
