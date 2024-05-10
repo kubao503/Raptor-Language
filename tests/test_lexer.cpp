@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "errors.hpp"
 #include "lexer.hpp"
+#include "lexer_errors.hpp"
 #include "types.hpp"
 
 using TypeSequence = std::vector<Token::Type>;
@@ -24,8 +24,8 @@ TEST_F(LexerTest, getToken_true) {
 
     auto token = lexer_->getToken();
     ASSERT_EQ(token.getType(), Token::Type::TRUE_CONST) << "Invalid type";
-    EXPECT_TRUE(std::holds_alternative<std::monostate>(token.getValue()))
-        << "Invalid value";
+    ASSERT_TRUE(std::holds_alternative<bool>(token.getValue())) << "Invalid value";
+    ASSERT_TRUE(std::get<bool>(token.getValue()));
 
     EXPECT_EQ(lexer_->getToken().getType(), Token::Type::ETX) << "Invalid type";
 }
@@ -35,8 +35,8 @@ TEST_F(LexerTest, getToken_false) {
 
     auto token = lexer_->getToken();
     ASSERT_EQ(token.getType(), Token::Type::FALSE_CONST) << "Invalid type";
-    EXPECT_TRUE(std::holds_alternative<std::monostate>(token.getValue()))
-        << "Invalid value";
+    ASSERT_TRUE(std::holds_alternative<bool>(token.getValue())) << "Invalid value";
+    ASSERT_FALSE(std::get<bool>(token.getValue()));
 
     EXPECT_EQ(lexer_->getToken().getType(), Token::Type::ETX) << "Invalid type";
 }

@@ -4,7 +4,7 @@
 #include <limits>
 #include <string_view>
 
-#include "errors.hpp"
+#include "lexer_errors.hpp"
 #include "magic_enum/magic_enum.hpp"
 
 bool isAlnumOrUnderscore(char c);
@@ -18,7 +18,7 @@ Token Lexer::getToken() {
 
     tokenPosition_ = source_.getPosition();
 
-    for (const auto& builder : TokenBuilders_) {
+    for (const auto& builder : tokenBuilders_) {
         if (auto token = builder(*this))
             return token.value();
     }
@@ -84,9 +84,9 @@ std::string lexemeToKeyword(std::string_view lexeme) {
 
 std::optional<Token> Lexer::buildBoolConst(std::string_view lexeme) const {
     if (lexeme == "true")
-        return Token(Token::Type::TRUE_CONST, {}, tokenPosition_);
+        return Token(Token::Type::TRUE_CONST, true, tokenPosition_);
     if (lexeme == "false")
-        return Token(Token::Type::FALSE_CONST, {}, tokenPosition_);
+        return Token(Token::Type::FALSE_CONST, false, tokenPosition_);
     return std::nullopt;
 }
 
@@ -246,7 +246,7 @@ std::optional<Token> Lexer::buildTwoLetterOp(CharPair chars, TokenTypes types) c
     return Token(types.second, {}, tokenPosition_);
 }
 
-Lexer::TokenBuilders Lexer::TokenBuilders_{
+Lexer::TokenBuilders Lexer::tokenBuilders_{
     [](Lexer& l) { return l.buildIdOrKeyword(); },
     [](Lexer& l) { return l.buildIntConst(); },
     [](Lexer& l) { return l.buildStrConst(); },

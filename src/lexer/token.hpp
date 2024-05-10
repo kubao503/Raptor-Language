@@ -3,12 +3,14 @@
 
 #include <ostream>
 #include <variant>
+#include <vector>
 
 #include "position.hpp"
 #include "types.hpp"
 
 struct Position;
 
+/// @brief Token returned by lexer and used by parser
 class Token {
    public:
     enum class Type {
@@ -59,21 +61,32 @@ class Token {
         CMT,
     };
 
-    using Value = std::variant<std::monostate, Integral, Floating, bool, std::string>;
-
+    /// @param type
+    /// @param value
+    /// @param position - position of the first character of the token
     Token(Type type, Value value, Position position)
         : type_(type), value_(value), position_(position) {}
+
+    /// @brief Constructs a token of type unknown
     Token()
         : type_(Type::UNKNOWN) {}
 
     Type getType() const { return type_; }
     const Value& getValue() const { return value_; }
+
+    /// @brief Returns position of the first character of the token
+    /// @return Position of the first character of the token
     const Position& getPosition() const { return position_; }
+
+    /// @brief Is one of the constants (e.g. int, bool, str)
+    bool isConstant() const;
 
    private:
     Type type_;
     Value value_ = {};
     Position position_;
+
+    static std::vector<Token::Type> constantTypes_;
 };
 
 std::ostream& operator<<(std::ostream& stream, const Token& token);
