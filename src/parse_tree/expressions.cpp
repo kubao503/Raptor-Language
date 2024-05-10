@@ -3,13 +3,13 @@
 template <typename T>
 auto getBinaryExprCtor() {
     return [](auto lhs, auto rhs) {
-        return std::unique_ptr<T>(new T{std::move(lhs), std::move(rhs)});
+        return std::make_unique<T>(std::move(lhs), std::move(rhs));
     };
 }
 
 template <typename T>
 auto getUnaryExprCtor() {
-    return [](auto expr) { return std::unique_ptr<T>(new T{std::move(expr)}); };
+    return [](auto expr) { return std::make_unique<T>(std::move(expr)); };
 }
 
 std::optional<ComparisonExpression::Ctor> ComparisonExpression::getCtor(

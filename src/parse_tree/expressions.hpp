@@ -81,96 +81,126 @@ struct StructInitExpression {
     std::vector<Expression> exprs;
 };
 
-struct DisjunctionExpression {
+struct BinaryExpression {
     Expression lhs;
     Expression rhs;
+
+    BinaryExpression(Expression lhs, Expression rhs)
+        : lhs{std::move(lhs)}, rhs{std::move(rhs)} {}
 };
 
-struct ConjunctionExpression {
-    Expression lhs;
-    Expression rhs;
+struct DisjunctionExpression : public BinaryExpression {
+    using BinaryExpression::BinaryExpression;
 };
 
-struct ComparisonExpression {
-    Expression lhs;
-    Expression rhs;
+struct ConjunctionExpression : public BinaryExpression {
+    using BinaryExpression::BinaryExpression;
+};
 
+struct ComparisonExpression : public BinaryExpression {
+    using BinaryExpression::BinaryExpression;
     using Ctor = std::function<Expression(Expression, Expression)>;
 
     static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct EqualExpression : public ComparisonExpression {};
+struct EqualExpression : public ComparisonExpression {
+    using ComparisonExpression::ComparisonExpression;
+};
 
-struct NotEqualExpression : public ComparisonExpression {};
+struct NotEqualExpression : public ComparisonExpression {
+    using ComparisonExpression::ComparisonExpression;
+};
 
-struct RelationExpression {
-    Expression lhs;
-    Expression rhs;
-
+struct RelationExpression : public BinaryExpression {
+    using BinaryExpression::BinaryExpression;
     using Ctor = std::function<Expression(Expression, Expression)>;
 
     static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct LessThanExpression : public RelationExpression {};
+struct LessThanExpression : public RelationExpression {
+    using RelationExpression::RelationExpression;
+};
 
-struct LessThanOrEqualExpression : public RelationExpression {};
+struct LessThanOrEqualExpression : public RelationExpression {
+    using RelationExpression::RelationExpression;
+};
 
-struct GreaterThanExpression : public RelationExpression {};
+struct GreaterThanExpression : public RelationExpression {
+    using RelationExpression::RelationExpression;
+};
 
-struct GreaterThanOrEqualExpression : public RelationExpression {};
+struct GreaterThanOrEqualExpression : public RelationExpression {
+    using RelationExpression::RelationExpression;
+};
 
-struct AdditiveExpression {
-    Expression lhs;
-    Expression rhs;
-
+struct AdditiveExpression : public BinaryExpression {
+    using BinaryExpression::BinaryExpression;
     using Ctor = std::function<Expression(Expression, Expression)>;
 
     static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct AdditionExpression : public AdditiveExpression {};
+struct AdditionExpression : public AdditiveExpression {
+    using AdditiveExpression::AdditiveExpression;
+};
 
-struct SubtractionExpression : public AdditiveExpression {};
+struct SubtractionExpression : public AdditiveExpression {
+    using AdditiveExpression::AdditiveExpression;
+};
 
-struct MultiplicativeExpression {
-    Expression lhs;
-    Expression rhs;
-
+struct MultiplicativeExpression : public BinaryExpression {
+    using BinaryExpression::BinaryExpression;
     using Ctor = std::function<Expression(Expression, Expression)>;
 
     static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct MultiplicationExpression : public MultiplicativeExpression {};
+struct MultiplicationExpression : public MultiplicativeExpression {
+    using MultiplicativeExpression::MultiplicativeExpression;
+};
 
-struct DivisionExpression : public MultiplicativeExpression {};
+struct DivisionExpression : public MultiplicativeExpression {
+    using MultiplicativeExpression::MultiplicativeExpression;
+};
 
 struct NegationExpression {
     Expression expr;
+    NegationExpression(Expression expr)
+        : expr{std::move(expr)} {}
 
     using Ctor = std::function<Expression(Expression)>;
 
     static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct SignChangeExpression : public NegationExpression {};
+struct SignChangeExpression : public NegationExpression {
+    using NegationExpression::NegationExpression;
+};
 
-struct LogicalNegationExpression : public NegationExpression {};
+struct LogicalNegationExpression : public NegationExpression {
+    using NegationExpression::NegationExpression;
+};
 
 struct TypeExpression {
     Expression expr;
     Type type;
+    TypeExpression(Expression expr, Type type)
+        : expr{std::move(expr)}, type{std::move(type)} {}
 
     using Ctor = std::function<Expression(Expression, Type)>;
 
     static std::optional<Ctor> getCtor(Token::Type type);
 };
 
-struct ConversionExpression : public TypeExpression {};
+struct ConversionExpression : public TypeExpression {
+    using TypeExpression::TypeExpression;
+};
 
-struct TypeCheckExpression : public TypeExpression {};
+struct TypeCheckExpression : public TypeExpression {
+    using TypeExpression::TypeExpression;
+};
 
 struct FieldAccessExpression {
     Expression expr;

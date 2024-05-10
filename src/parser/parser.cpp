@@ -417,7 +417,7 @@ std::optional<Expression> Parser::parseDisjunctionExpression() {
                                   "Expected expression after 'or' keyword");
         leftLogicFactor =
             std::unique_ptr<DisjunctionExpression>(new DisjunctionExpression{
-                .lhs = std::move(*leftLogicFactor), .rhs = std::move(*rightLogicFactor)});
+                std::move(*leftLogicFactor), std::move(*rightLogicFactor)});
     }
 
     return leftLogicFactor;
@@ -437,7 +437,7 @@ std::optional<Expression> Parser::parseConjunctionExpression() {
                                   "Expected expression after 'and' keyword");
         leftLogicFactor =
             std::unique_ptr<ConjunctionExpression>(new ConjunctionExpression{
-                .lhs = std::move(*leftLogicFactor), .rhs = std::move(*rightLogicFactor)});
+                std::move(*leftLogicFactor), std::move(*rightLogicFactor)});
     }
 
     return leftLogicFactor;
