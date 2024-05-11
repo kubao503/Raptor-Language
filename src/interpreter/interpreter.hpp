@@ -3,9 +3,17 @@
 
 #include "parse_tree.hpp"
 
-struct ExpressionInterpreter {
+class Interpreter;
+
+class ExpressionInterpreter {
+   public:
+    ExpressionInterpreter(const Interpreter& interpreter);
+
     Value operator()(const Constant& expr) const;
     Value operator()(const auto&) const { return {}; }
+
+   private:
+    const Interpreter& interpreter_;
 };
 
 class Interpreter {
@@ -17,6 +25,7 @@ class Interpreter {
 
     void operator()(const PrintStatement& stmt) const;
     void operator()(const FuncDef& stmt);
+    void operator()(const FuncCall& stmt) const;
     void operator()(const auto&) const { throw std::runtime_error("unknown statement"); }
 
    private:

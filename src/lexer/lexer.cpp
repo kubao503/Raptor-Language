@@ -1,5 +1,6 @@
 #include "lexer.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <string_view>
@@ -189,8 +190,7 @@ void Lexer::expectNoEndOfFile() const {
 }
 
 char Lexer::findInEscapedChars(char searched) const {
-    auto pred = [searched](const CharPair& p) { return p.first == searched; };
-    auto res = std::find_if(escapedChars_.begin(), escapedChars_.end(), pred);
+    auto res = std::ranges::find(escapedChars_, searched, &CharPair::first);
 
     if (res == escapedChars_.end())
         throw NonEscapableChar(tokenPosition_, source_.getChar());
