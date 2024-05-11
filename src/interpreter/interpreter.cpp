@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-void interpret(const Program& program) {
-    for (const auto& stmt : program.statements)
-        std::visit(Interpreter(), stmt);
+void Interpreter::interpret() {
+    for (const auto& stmt : program_.statements)
+        std::visit(*this, stmt);
 }
 
 Value ExpressionInterpreter::operator()(const Constant& expr) const {
@@ -12,15 +12,15 @@ Value ExpressionInterpreter::operator()(const Constant& expr) const {
 }
 
 void Interpreter::operator()(const PrintStatement& stmt) const {
-    const Value& value{std::visit(ExpressionInterpreter(), *stmt.expression)};
+    const auto value = std::visit(ExpressionInterpreter(), *stmt.expression);
     std::visit(ValuePrinter(), value);
     std::cout << '\n';
 }
 
-void ValuePrinter::operator()(const std::string& type) const {
-    std::cout << type;
+void Interpreter::operator()(const FuncDef& stmt) {
+    functions_.push_back({stmt.getName(), &stmt});
 }
 
 void ValuePrinter::operator()(const auto& type) const {
-    std::cout << std::to_string(type);
+    std::cout << std::boolalpha << type;
 }
