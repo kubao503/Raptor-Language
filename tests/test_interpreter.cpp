@@ -102,3 +102,15 @@ TEST_F(InterpreterTest, function_pass_by_value) {
         "print x;");
     EXPECT_EQ(interpret(), "27\n5\n");
 }
+
+TEST_F(InterpreterTest, function_pass_by_ref) {
+    SetUp(
+        "void foo(ref int a) {"
+        "    a = 27;"
+        "    print a;"
+        "}"
+        "int x = 5;"
+        "foo(ref x);"
+        "print x;");
+    EXPECT_EQ(interpret(), "27\n27\n");
+}

@@ -51,7 +51,6 @@ void Interpreter::operator()(const VarDef& stmt) {
     auto value = std::visit(ExpressionInterpreter(*this), stmt.expression);
     auto valueRef = std::make_shared<ValueObj>(std::move(value));
     addVariable(stmt.name, valueRef);
-    values_.push_back(std::move(valueRef));
 }
 
 void Interpreter::operator()(const Assignment& stmt) const {
@@ -84,11 +83,27 @@ void Interpreter::operator()(const FuncCall& stmt) {
 }
 
 void Interpreter::passArguments(const Arguments& args, const Parameters& params) {
-    for (size_t i{0}; i < args.size(); ++i) {
-        auto value = std::visit(ExpressionInterpreter(*this), args.at(i).value);
-        auto valueRef = std::make_shared<ValueObj>(std::move(value));
-        callStack_.top().addVariable(params.at(i).name, std::move(valueRef));
+    for (size_t i{0}; i < args.size(); ++i)
+        passArgument(args.at(i), params.at(i));
+}
+
+void checkArgRef(const Argument& arg, const Parameter& param) {
+    if (!arg.ref && param.ref)
+        throw std::runtime_error("Expected ref argument");
+    if (arg.ref && !param.ref)
+        throw std::runtime_error("Expected value argument");
+}
+
+void Interpreter::passArgument(const Argument& arg, const Parameter& param) {
+    checkArgRef(arg, param);
+
+    auto value = std::visit(ExpressionInterpreter(*this), arg.value);
+    auto valueRef = std::make_shared<ValueObj>(std::move(value));
+    if (arg.ref) {
+        auto name = std::get<VariableAccess>(arg.value).name;
+        valueRef = readVariable(name);
     }
+    callStack_.top().addVariable(param.name, std::move(valueRef));
 }
 
 void ValuePrinter::operator()(const auto& type) const {

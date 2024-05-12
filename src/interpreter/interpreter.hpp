@@ -43,10 +43,10 @@ class Interpreter {
     void addVariable(const std::string& name, ValueRef ref);
     void addFunction(const std::string& name, const FuncDef* func);
     void passArguments(const Arguments& args, const Parameters& params);
+    void passArgument(const Argument& arg, const Parameter& param);
 
     const Program& program_;
     std::stack<CallContext> callStack_;
-    std::vector<std::shared_ptr<ValueObj>> values_;
     std::ostream& out_;
 };
 
