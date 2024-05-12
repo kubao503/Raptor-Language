@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
 
     try {
         const auto program = parser.parseProgram();
-        Interpreter interpreter(program);
+        Interpreter interpreter(program, std::cout);
     } catch (const BaseException& e) {
         std::cerr << '\n' << e.describe() << '\n';
     }

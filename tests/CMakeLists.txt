@@ -8,6 +8,7 @@ add_executable(
     test_filter.cpp
     test_stmt_parsing.cpp
     test_expr_parsing.cpp
+    test_interpreter.cpp
 )
 
 target_link_libraries(
@@ -15,6 +16,7 @@ target_link_libraries(
     PRIVATE gtest::gtest
     PRIVATE lexer
     PRIVATE parser
+    PRIVATE interpreter
 )
 
 include(GoogleTest)

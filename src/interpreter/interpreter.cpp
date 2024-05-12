@@ -3,6 +3,12 @@
 #include <algorithm>
 #include <iostream>
 
+Interpreter::Interpreter(const Program& program, std::ostream& out)
+    : program_{program}, out_{out} {
+    callStack_.emplace(nullptr);
+    interpret();
+}
+
 void Interpreter::interpret() {
     for (const auto& stmt : program_.statements)
         std::visit(*this, stmt);
@@ -36,8 +42,8 @@ Value ExpressionInterpreter::operator()(const VariableAccess& expr) const {
 
 void Interpreter::operator()(const PrintStatement& stmt) const {
     const auto value = std::visit(ExpressionInterpreter(*this), *stmt.expression);
-    std::visit(ValuePrinter(), value);
-    std::cout << '\n';
+    std::visit(ValuePrinter(out_), value);
+    out_ << '\n';
 }
 
 void Interpreter::operator()(const VarDef& stmt) {
@@ -61,5 +67,5 @@ void Interpreter::operator()(const FuncCall& stmt) {
 }
 
 void ValuePrinter::operator()(const auto& type) const {
-    std::cout << std::boolalpha << type;
+    out_ << std::boolalpha << type;
 }

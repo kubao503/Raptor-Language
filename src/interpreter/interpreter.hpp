@@ -1,6 +1,7 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
+#include <ostream>
 #include <stack>
 
 #include "call_context.hpp"
@@ -24,11 +25,7 @@ class ExpressionInterpreter {
 
 class Interpreter {
    public:
-    Interpreter(const Program& program)
-        : program_{program} {
-        callStack_.emplace(nullptr);
-        interpret();
-    }
+    Interpreter(const Program& program, std::ostream& out);
 
     Value readVariable(std::string_view name) const;
 
@@ -48,11 +45,18 @@ class Interpreter {
     const Program& program_;
     std::stack<CallContext> callStack_;
     std::vector<std::shared_ptr<ValueObj>> values_;
+    std::ostream& out_;
 };
 
 struct ValuePrinter {
+    ValuePrinter(std::ostream& out)
+        : out_{out} {}
+
     void operator()(const std::monostate&) const {}
     void operator()(const auto& type) const;
+
+   private:
+    std::ostream& out_;
 };
 
 #endif
