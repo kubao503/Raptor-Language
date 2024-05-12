@@ -7,23 +7,24 @@
 
 class CallContext {
    public:
-    CallContext()
-        : scopes_{Scope()} {}
+    CallContext(const CallContext* parent)
+        : parentContext_{parent}, scopes_{Scope()} {}
 
     void addVariable(const std::string& name, ValueRef ref) {
         scopes_.back().addVariable(name, std::move(ref));
     }
 
-    Value readVariable(std::string_view name) const {
-        using namespace std::literals::string_literals;
-
-        for (auto iter = scopes_.rbegin(); iter != scopes_.rend(); ++iter)
-            if (auto var = scopes_.back().readVariable(name))
-                return *var;
-        throw std::runtime_error("Variable "s + std::string(name) + " not found");
+    void addFunction(const std::string name, const FuncDef* func) {
+        scopes_.back().addFunction(name, func);
     }
 
+    std::optional<Value> readVariable(std::string_view name) const;
+
+    using FuncWithCtx = std::pair<const FuncDef*, const CallContext*>;
+    std::optional<FuncWithCtx> getFunctionWithCtx(std::string_view name) const;
+
    private:
+    const CallContext* parentContext_{nullptr};
     std::vector<Scope> scopes_;
 };
 

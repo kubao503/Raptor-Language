@@ -11,9 +11,16 @@ void Interpreter::interpret() {
 void Interpreter::addVariable(const std::string& name, ValueRef ref) {
     callStack_.top().addVariable(name, ref);
 }
+void Interpreter::addFunction(const std::string& name, const FuncDef* func) {
+    callStack_.top().addFunction(name, func);
+}
 
 Value Interpreter::readVariable(std::string_view name) const {
-    return callStack_.top().readVariable(name);
+    return *callStack_.top().readVariable(name);
+}
+
+CallContext::FuncWithCtx Interpreter::getFunctionWithCtx(std::string_view name) const {
+    return *callStack_.top().getFunctionWithCtx(name);
 }
 
 ExpressionInterpreter::ExpressionInterpreter(const Interpreter& interpreter)
@@ -41,14 +48,16 @@ void Interpreter::operator()(const VarDef& stmt) {
 }
 
 void Interpreter::operator()(const FuncDef& stmt) {
-    functions_.push_back({stmt.getName(), &stmt});
+    addFunction(stmt.getName(), &stmt);
 }
 
 void Interpreter::operator()(const FuncCall& stmt) {
-    auto res = std::ranges::find(functions_, stmt.name, &Pair::first);
-    auto func = res->second;
+    auto [func, ctx] = getFunctionWithCtx(stmt.name);
+
+    callStack_.emplace(ctx);
     for (const auto& stmt : func->getStatements())
         std::visit(*this, stmt);
+    callStack_.pop();
 }
 
 void ValuePrinter::operator()(const auto& type) const {

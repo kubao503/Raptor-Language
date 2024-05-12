@@ -26,11 +26,13 @@ class Interpreter {
    public:
     Interpreter(const Program& program)
         : program_{program} {
-        callStack_.emplace();
+        callStack_.emplace(nullptr);
         interpret();
     }
 
     Value readVariable(std::string_view name) const;
+
+    CallContext::FuncWithCtx getFunctionWithCtx(std::string_view name) const;
 
     void operator()(const PrintStatement& stmt) const;
     void operator()(const VarDef& stmt);
@@ -41,9 +43,8 @@ class Interpreter {
    private:
     void interpret();
     void addVariable(const std::string& name, ValueRef ref);
+    void addFunction(const std::string& name, const FuncDef* func);
 
-    using Pair = std::pair<std::string, const FuncDef*>;
-    std::vector<Pair> functions_;
     const Program& program_;
     std::stack<CallContext> callStack_;
     std::vector<std::shared_ptr<ValueObj>> values_;
