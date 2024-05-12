@@ -30,10 +30,10 @@ class Scope {
         functions_.emplace_back(name, func);
     }
 
-    std::optional<Value> readVariable(std::string_view name) const {
+    std::optional<ValueRef> readVariable(std::string_view name) const {
         auto res = std::ranges::find(variables_, name, &Symbol::first);
         if (res != variables_.end())
-            return res->second->value;
+            return res->second;
         return std::nullopt;
     }
 

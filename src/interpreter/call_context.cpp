@@ -1,6 +1,6 @@
 #include "call_context.hpp"
 
-std::optional<Value> CallContext::readVariable(std::string_view name) const {
+std::optional<ValueRef> CallContext::readVariable(std::string_view name) const {
     using namespace std::literals::string_literals;
 
     for (auto iter = scopes_.rbegin(); iter != scopes_.rend(); ++iter)

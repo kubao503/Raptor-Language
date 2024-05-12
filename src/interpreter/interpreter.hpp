@@ -27,12 +27,13 @@ class Interpreter {
    public:
     Interpreter(const Program& program, std::ostream& out);
 
-    Value readVariable(std::string_view name) const;
+    ValueRef readVariable(std::string_view name) const;
 
     CallContext::FuncWithCtx getFunctionWithCtx(std::string_view name) const;
 
     void operator()(const PrintStatement& stmt) const;
     void operator()(const VarDef& stmt);
+    void operator()(const Assignment& stmt) const;
     void operator()(const FuncDef& stmt);
     void operator()(const FuncCall& stmt);
     void operator()(const auto&) const { throw std::runtime_error("unknown statement"); }

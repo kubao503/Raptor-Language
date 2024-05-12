@@ -22,7 +22,7 @@ void Interpreter::addFunction(const std::string& name, const FuncDef* func) {
     callStack_.top().addFunction(name, func);
 }
 
-Value Interpreter::readVariable(std::string_view name) const {
+ValueRef Interpreter::readVariable(std::string_view name) const {
     return *callStack_.top().readVariable(name);
 }
 
@@ -38,7 +38,7 @@ Value ExpressionInterpreter::operator()(const Constant& expr) const {
 }
 
 Value ExpressionInterpreter::operator()(const VariableAccess& expr) const {
-    return interpreter_.readVariable(expr.name);
+    return interpreter_.readVariable(expr.name)->value;
 }
 
 void Interpreter::operator()(const PrintStatement& stmt) const {
@@ -52,6 +52,12 @@ void Interpreter::operator()(const VarDef& stmt) {
     auto valueRef = std::make_shared<ValueObj>(std::move(value));
     addVariable(stmt.name, valueRef);
     values_.push_back(std::move(valueRef));
+}
+
+void Interpreter::operator()(const Assignment& stmt) const {
+    auto name = std::get<std::string>(stmt.lhs);
+    auto valueRef = readVariable(name);
+    valueRef->value = std::visit(ExpressionInterpreter(*this), stmt.rhs);
 }
 
 void Interpreter::operator()(const FuncDef& stmt) {

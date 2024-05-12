@@ -73,7 +73,15 @@ TEST_F(InterpreterTest, function_in_parent) {
     EXPECT_EQ(interpret(), "42\n");
 }
 
-TEST_F(InterpreterTest, function_args) {
+TEST_F(InterpreterTest, assignment) {
+    SetUp(
+        "int x = 5;"
+        "x = 20;"
+        "print x;");
+    EXPECT_EQ(interpret(), "20\n");
+}
+
+TEST_F(InterpreterTest, function_multiple_args) {
     SetUp(
         "void foo(int a, int b) {"
         "    print a;"
@@ -81,4 +89,16 @@ TEST_F(InterpreterTest, function_args) {
         "}"
         "foo(5, 7);");
     EXPECT_EQ(interpret(), "5\n7\n");
+}
+
+TEST_F(InterpreterTest, function_pass_by_value) {
+    SetUp(
+        "void foo(int a) {"
+        "    a = 27;"
+        "    print a;"
+        "}"
+        "int x = 5;"
+        "foo(x);"
+        "print x;");
+    EXPECT_EQ(interpret(), "27\n5\n");
 }
