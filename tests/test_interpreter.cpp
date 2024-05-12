@@ -13,7 +13,10 @@ class InterpreterTest : public testing::Test {
         parser_ = std::make_unique<Parser>(*lexer_);
     }
 
-    void parse() { Interpreter(parser_->parseProgram(), output_); }
+    std::string interpret() {
+        Interpreter(parser_->parseProgram(), output_);
+        return output_.str();
+    }
 
     std::istringstream stream_;
     std::unique_ptr<Source> source_;
@@ -24,14 +27,12 @@ class InterpreterTest : public testing::Test {
 
 TEST_F(InterpreterTest, empty_program) {
     SetUp("");
-    parse();
-    EXPECT_EQ(output_.str(), "");
+    EXPECT_EQ(interpret(), "");
 }
 
 TEST_F(InterpreterTest, basic_print) {
     SetUp("print 5;");
-    parse();
-    EXPECT_EQ(output_.str(), "5\n");
+    EXPECT_EQ(interpret(), "5\n");
 }
 
 TEST_F(InterpreterTest, global_variable) {
@@ -41,8 +42,7 @@ TEST_F(InterpreterTest, global_variable) {
         "}"
         "int x = 5;"
         "foo();");
-    parse();
-    EXPECT_EQ(output_.str(), "5\n");
+    EXPECT_EQ(interpret(), "5\n");
 }
 
 TEST_F(InterpreterTest, variable_in_parent) {
@@ -55,6 +55,30 @@ TEST_F(InterpreterTest, variable_in_parent) {
         "    nested();"
         "}"
         "parent();");
-    parse();
-    EXPECT_EQ(output_.str(), "24\n");
+    EXPECT_EQ(interpret(), "24\n");
+}
+
+TEST_F(InterpreterTest, function_in_parent) {
+    SetUp(
+        "void parent() {"
+        "    void nested() {"
+        "        second_nested();"
+        "    }"
+        "    void second_nested() {"
+        "        print 42;"
+        "    }"
+        "    nested();"
+        "}"
+        "parent();");
+    EXPECT_EQ(interpret(), "42\n");
+}
+
+TEST_F(InterpreterTest, function_args) {
+    SetUp(
+        "void foo(int a, int b) {"
+        "    print a;"
+        "    print b;"
+        "}"
+        "foo(5, 7);");
+    EXPECT_EQ(interpret(), "5\n7\n");
 }

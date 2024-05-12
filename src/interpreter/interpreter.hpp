@@ -41,6 +41,7 @@ class Interpreter {
     void interpret();
     void addVariable(const std::string& name, ValueRef ref);
     void addFunction(const std::string& name, const FuncDef* func);
+    void passArguments(const Arguments& args, const Parameters& params);
 
     const Program& program_;
     std::stack<CallContext> callStack_;
