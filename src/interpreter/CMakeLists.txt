@@ -1,6 +1,7 @@
 add_library(
     interpreter
     interpreter.cpp
+    expr_interpreter.cpp
     call_context.cpp
 )
 

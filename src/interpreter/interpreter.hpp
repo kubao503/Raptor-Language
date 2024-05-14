@@ -7,22 +7,6 @@
 #include "call_context.hpp"
 #include "parse_tree.hpp"
 
-class Interpreter;
-
-class ExpressionInterpreter {
-   public:
-    ExpressionInterpreter(const Interpreter& interpreter);
-
-    Value operator()(const Constant& expr) const;
-    Value operator()(const VariableAccess& expr) const;
-    Value operator()(const auto&) const {
-        throw std::runtime_error("unknown expression");
-    }
-
-   private:
-    const Interpreter& interpreter_;
-};
-
 class Interpreter {
    public:
     Interpreter(const Program& program, std::ostream& out);
@@ -44,6 +28,8 @@ class Interpreter {
     void addFunction(const std::string& name, const FuncDef* func);
     void passArguments(const Arguments& args, const Parameters& params);
     void passArgument(const Argument& arg, const Parameter& param);
+
+    Value getValueFromExpr(const Expression* expr) const;
 
     const Program& program_;
     std::stack<CallContext> callStack_;

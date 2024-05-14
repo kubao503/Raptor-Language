@@ -22,21 +22,23 @@ TEST_F(FullyParsedTest, parse_disjuction_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<DisjunctionExpression>>(
-        varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<DisjunctionExpression>>(varDef.expression);
+    const auto expression = dynamic_cast<DisjunctionExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& lhs = expression->lhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(lhs));
-    const auto& lhsConstant = std::get<Constant>(lhs);
-    ASSERT_TRUE(std::holds_alternative<bool>(lhsConstant.value));
-    EXPECT_TRUE(std::get<bool>(lhsConstant.value));
+
+    const auto lhsConstant = dynamic_cast<Constant*>(lhs.get());
+    ASSERT_TRUE(lhsConstant);
+
+    ASSERT_TRUE(std::holds_alternative<bool>(lhsConstant->value));
+    EXPECT_TRUE(std::get<bool>(lhsConstant->value));
 
     const auto& rhs = expression->rhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
-    const auto& rhsConstant = std::get<Constant>(rhs);
-    EXPECT_FALSE(std::get<bool>(rhsConstant.value));
+
+    const auto rhsConstant = dynamic_cast<Constant*>(rhs.get());
+    ASSERT_TRUE(rhsConstant);
+
+    EXPECT_FALSE(std::get<bool>(rhsConstant->value));
 }
 
 TEST_F(FullyParsedTest, parse_nested_disjuction_expressions) {
@@ -58,27 +60,25 @@ TEST_F(FullyParsedTest, parse_nested_disjuction_expressions) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<DisjunctionExpression>>(
-        varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<DisjunctionExpression>>(varDef.expression);
+    const auto expression = dynamic_cast<DisjunctionExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& lhs = expression->lhs;
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<DisjunctionExpression>>(lhs));
-    const auto& lhsExpression = std::get<std::unique_ptr<DisjunctionExpression>>(lhs);
+    const auto lhsExpression = dynamic_cast<DisjunctionExpression*>(lhs.get());
+    ASSERT_TRUE(lhsExpression);
 
-    ASSERT_TRUE(std::holds_alternative<Constant>(lhsExpression->lhs));
-    const auto& lhslhsConstant = std::get<Constant>(lhsExpression->lhs);
-    EXPECT_TRUE(std::get<bool>(lhslhsConstant.value));
+    const auto lhslhsConstant = dynamic_cast<Constant*>(lhsExpression->lhs.get());
+    ASSERT_TRUE(lhslhsConstant);
+    EXPECT_TRUE(std::get<bool>(lhslhsConstant->value));
 
-    ASSERT_TRUE(std::holds_alternative<Constant>(lhsExpression->rhs));
-    const auto& lhsrhsConstant = std::get<Constant>(lhsExpression->rhs);
-    EXPECT_FALSE(std::get<bool>(lhsrhsConstant.value));
+    const auto lhsrhsConstant = dynamic_cast<Constant*>(lhsExpression->rhs.get());
+    ASSERT_TRUE(lhsrhsConstant);
+    EXPECT_FALSE(std::get<bool>(lhsrhsConstant->value));
 
     const auto& rhs = expression->rhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
-    const auto& rhsConstant = std::get<Constant>(rhs);
-    EXPECT_FALSE(std::get<bool>(rhsConstant.value));
+    const auto rhsConstant = dynamic_cast<Constant*>(rhs.get());
+    ASSERT_TRUE(rhsConstant);
+    EXPECT_FALSE(std::get<bool>(rhsConstant->value));
 }
 
 TEST_F(FullyParsedTest, parse_conjunction_expression) {
@@ -98,21 +98,19 @@ TEST_F(FullyParsedTest, parse_conjunction_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<ConjunctionExpression>>(
-        varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<ConjunctionExpression>>(varDef.expression);
+    const auto expression = dynamic_cast<ConjunctionExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& lhs = expression->lhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(lhs));
-    const auto& lhsConstant = std::get<Constant>(lhs);
-    ASSERT_TRUE(std::holds_alternative<bool>(lhsConstant.value));
-    EXPECT_TRUE(std::get<bool>(lhsConstant.value));
+    const auto lhsConstant = dynamic_cast<Constant*>(lhs.get());
+    ASSERT_TRUE(lhsConstant);
+    ASSERT_TRUE(std::holds_alternative<bool>(lhsConstant->value));
+    EXPECT_TRUE(std::get<bool>(lhsConstant->value));
 
     const auto& rhs = expression->rhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
-    const auto& rhsConstant = std::get<Constant>(rhs);
-    EXPECT_FALSE(std::get<bool>(rhsConstant.value));
+    const auto rhsConstant = dynamic_cast<Constant*>(rhs.get());
+    ASSERT_TRUE(rhsConstant);
+    EXPECT_FALSE(std::get<bool>(rhsConstant->value));
 }
 
 TEST_F(FullyParsedTest, parse_nested_conjunction_expressions) {
@@ -134,27 +132,25 @@ TEST_F(FullyParsedTest, parse_nested_conjunction_expressions) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<ConjunctionExpression>>(
-        varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<ConjunctionExpression>>(varDef.expression);
+    const auto expression = dynamic_cast<ConjunctionExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& lhs = expression->lhs;
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<ConjunctionExpression>>(lhs));
-    const auto& lhsExpression = std::get<std::unique_ptr<ConjunctionExpression>>(lhs);
+    const auto lhsExpression = dynamic_cast<ConjunctionExpression*>(lhs.get());
+    ASSERT_TRUE(lhsExpression);
 
-    ASSERT_TRUE(std::holds_alternative<Constant>(lhsExpression->lhs));
-    const auto& lhslhsConstant = std::get<Constant>(lhsExpression->lhs);
-    EXPECT_TRUE(std::get<bool>(lhslhsConstant.value));
+    const auto lhslhsConstant = dynamic_cast<Constant*>(lhsExpression->lhs.get());
+    ASSERT_TRUE(lhslhsConstant);
+    EXPECT_TRUE(std::get<bool>(lhslhsConstant->value));
 
-    ASSERT_TRUE(std::holds_alternative<Constant>(lhsExpression->rhs));
-    const auto& lhsrhsConstant = std::get<Constant>(lhsExpression->rhs);
-    EXPECT_FALSE(std::get<bool>(lhsrhsConstant.value));
+    const auto lhsrhsConstant = dynamic_cast<Constant*>(lhsExpression->rhs.get());
+    ASSERT_TRUE(lhsrhsConstant);
+    EXPECT_FALSE(std::get<bool>(lhsrhsConstant->value));
 
     const auto& rhs = expression->rhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
-    const auto& rhsConstant = std::get<Constant>(rhs);
-    EXPECT_FALSE(std::get<bool>(rhsConstant.value));
+    const auto rhsConstant = dynamic_cast<Constant*>(rhs.get());
+    ASSERT_TRUE(rhsConstant);
+    EXPECT_FALSE(std::get<bool>(rhsConstant->value));
 }
 
 TEST_F(FullyParsedTest, parse_equal_expression) {
@@ -174,21 +170,19 @@ TEST_F(FullyParsedTest, parse_equal_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<EqualExpression>>(varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<EqualExpression>>(varDef.expression);
+    const auto expression = dynamic_cast<EqualExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& lhs = expression->lhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(lhs));
-    const auto& lhsConstant = std::get<Constant>(lhs);
-    ASSERT_TRUE(std::holds_alternative<bool>(lhsConstant.value));
-    EXPECT_TRUE(std::get<bool>(lhsConstant.value));
+    const auto lhsConstant = dynamic_cast<Constant*>(lhs.get());
+    ASSERT_TRUE(lhsConstant);
+    ASSERT_TRUE(std::holds_alternative<bool>(lhsConstant->value));
+    EXPECT_TRUE(std::get<bool>(lhsConstant->value));
 
     const auto& rhs = expression->rhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
-    const auto& rhsConstant = std::get<Constant>(rhs);
-    EXPECT_FALSE(std::get<bool>(rhsConstant.value));
+    const auto rhsConstant = dynamic_cast<Constant*>(rhs.get());
+    ASSERT_TRUE(rhsConstant);
+    EXPECT_FALSE(std::get<bool>(rhsConstant->value));
 }
 
 TEST_F(ParserTest, parse_invalid_adjacent_equal_expressions) {
@@ -224,21 +218,19 @@ TEST_F(FullyParsedTest, parse_not_equal_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<NotEqualExpression>>(varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<NotEqualExpression>>(varDef.expression);
+    const auto expression = dynamic_cast<NotEqualExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& lhs = expression->lhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(lhs));
-    const auto& lhsConstant = std::get<Constant>(lhs);
-    ASSERT_TRUE(std::holds_alternative<bool>(lhsConstant.value));
-    EXPECT_TRUE(std::get<bool>(lhsConstant.value));
+    const auto lhsConstant = dynamic_cast<Constant*>(lhs.get());
+    ASSERT_TRUE(lhsConstant);
+    ASSERT_TRUE(std::holds_alternative<bool>(lhsConstant->value));
+    EXPECT_TRUE(std::get<bool>(lhsConstant->value));
 
     const auto& rhs = expression->rhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
-    const auto& rhsConstant = std::get<Constant>(rhs);
-    EXPECT_FALSE(std::get<bool>(rhsConstant.value));
+    const auto rhsConstant = dynamic_cast<Constant*>(rhs.get());
+    ASSERT_TRUE(rhsConstant);
+    EXPECT_FALSE(std::get<bool>(rhsConstant->value));
 }
 
 TEST_F(FullyParsedTest, parse_rel_expression) {
@@ -258,21 +250,19 @@ TEST_F(FullyParsedTest, parse_rel_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<LessThanExpression>>(varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<LessThanExpression>>(varDef.expression);
+    const auto expression = dynamic_cast<LessThanExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& lhs = expression->lhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(lhs));
-    const auto& lhsConstant = std::get<Constant>(lhs);
-    ASSERT_TRUE(std::holds_alternative<bool>(lhsConstant.value));
-    EXPECT_TRUE(std::get<bool>(lhsConstant.value));
+    const auto lhsConstant = dynamic_cast<Constant*>(lhs.get());
+    ASSERT_TRUE(lhsConstant);
+    ASSERT_TRUE(std::holds_alternative<bool>(lhsConstant->value));
+    EXPECT_TRUE(std::get<bool>(lhsConstant->value));
 
     const auto& rhs = expression->rhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
-    const auto& rhsConstant = std::get<Constant>(rhs);
-    EXPECT_FALSE(std::get<bool>(rhsConstant.value));
+    const auto rhsConstant = dynamic_cast<Constant*>(rhs.get());
+    ASSERT_TRUE(rhsConstant);
+    EXPECT_FALSE(std::get<bool>(rhsConstant->value));
 }
 
 TEST_F(FullyParsedTest, parse_additive_expression) {
@@ -292,22 +282,20 @@ TEST_F(FullyParsedTest, parse_additive_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<AdditionExpression>>(varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<AdditionExpression>>(varDef.expression);
+    const auto expression = dynamic_cast<AdditionExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& lhs = expression->lhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(lhs));
-    const auto& lhsConstant = std::get<Constant>(lhs);
-    ASSERT_TRUE(std::holds_alternative<Integral>(lhsConstant.value));
-    EXPECT_EQ(std::get<Integral>(lhsConstant.value), 4);
+    const auto lhsConstant = dynamic_cast<Constant*>(lhs.get());
+    ASSERT_TRUE(lhsConstant);
+    ASSERT_TRUE(std::holds_alternative<Integral>(lhsConstant->value));
+    EXPECT_EQ(std::get<Integral>(lhsConstant->value), 4);
 
     const auto& rhs = expression->rhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
-    const auto& rhsConstant = std::get<Constant>(rhs);
-    ASSERT_TRUE(std::holds_alternative<Integral>(rhsConstant.value));
-    EXPECT_EQ(std::get<Integral>(rhsConstant.value), 2);
+    const auto rhsConstant = dynamic_cast<Constant*>(rhs.get());
+    ASSERT_TRUE(rhsConstant);
+    ASSERT_TRUE(std::holds_alternative<Integral>(rhsConstant->value));
+    EXPECT_EQ(std::get<Integral>(rhsConstant->value), 2);
 }
 
 TEST_F(FullyParsedTest, parse_multiplicative_expression) {
@@ -327,22 +315,21 @@ TEST_F(FullyParsedTest, parse_multiplicative_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MultiplicationExpression>>(
-        varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<MultiplicationExpression>>(varDef.expression);
+    const auto expression =
+        dynamic_cast<MultiplicationExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& lhs = expression->lhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(lhs));
-    const auto& lhsConstant = std::get<Constant>(lhs);
-    ASSERT_TRUE(std::holds_alternative<Integral>(lhsConstant.value));
-    EXPECT_EQ(std::get<Integral>(lhsConstant.value), 4);
+    const auto lhsConstant = dynamic_cast<Constant*>(lhs.get());
+    ASSERT_TRUE(lhsConstant);
+    ASSERT_TRUE(std::holds_alternative<Integral>(lhsConstant->value));
+    EXPECT_EQ(std::get<Integral>(lhsConstant->value), 4);
 
     const auto& rhs = expression->rhs;
-    ASSERT_TRUE(std::holds_alternative<Constant>(rhs));
-    const auto& rhsConstant = std::get<Constant>(rhs);
-    ASSERT_TRUE(std::holds_alternative<Integral>(rhsConstant.value));
-    EXPECT_EQ(std::get<Integral>(rhsConstant.value), 2);
+    const auto rhsConstant = dynamic_cast<Constant*>(rhs.get());
+    ASSERT_TRUE(rhsConstant);
+    ASSERT_TRUE(std::holds_alternative<Integral>(rhsConstant->value));
+    EXPECT_EQ(std::get<Integral>(rhsConstant->value), 2);
 }
 
 TEST_F(FullyParsedTest, parse_sign_change_expression) {
@@ -361,17 +348,16 @@ TEST_F(FullyParsedTest, parse_sign_change_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<SignChangeExpression>>(varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<SignChangeExpression>>(varDef.expression);
+    const auto expression = dynamic_cast<SignChangeExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& nestedExp = expression->expr;
-    ASSERT_TRUE(std::holds_alternative<Constant>(nestedExp));
 
-    const auto& nestedExpConstant = std::get<Constant>(nestedExp);
-    ASSERT_TRUE(std::holds_alternative<Integral>(nestedExpConstant.value));
-    EXPECT_EQ(std::get<Integral>(nestedExpConstant.value), 4);
+    const auto nestedExpConstant = dynamic_cast<Constant*>(nestedExp.get());
+    ASSERT_TRUE(nestedExpConstant);
+
+    ASSERT_TRUE(std::holds_alternative<Integral>(nestedExpConstant->value));
+    EXPECT_EQ(std::get<Integral>(nestedExpConstant->value), 4);
 }
 
 TEST_F(FullyParsedTest, parse_negation_expression) {
@@ -390,17 +376,17 @@ TEST_F(FullyParsedTest, parse_negation_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<LogicalNegationExpression>>(varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<LogicalNegationExpression>>(varDef.expression);
+    const auto expression =
+        dynamic_cast<LogicalNegationExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& nestedExp = expression->expr;
-    ASSERT_TRUE(std::holds_alternative<Constant>(nestedExp));
 
-    const auto& nestedExpConstant = std::get<Constant>(nestedExp);
-    ASSERT_TRUE(std::holds_alternative<bool>(nestedExpConstant.value));
-    EXPECT_TRUE(std::get<bool>(nestedExpConstant.value));
+    const auto nestedExpConstant = dynamic_cast<Constant*>(nestedExp.get());
+    ASSERT_TRUE(nestedExpConstant);
+
+    ASSERT_TRUE(std::holds_alternative<bool>(nestedExpConstant->value));
+    EXPECT_TRUE(std::get<bool>(nestedExpConstant->value));
 }
 
 TEST_F(FullyParsedTest, parse_type_conversion_expression) {
@@ -420,16 +406,14 @@ TEST_F(FullyParsedTest, parse_type_conversion_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<ConversionExpression>>(varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<ConversionExpression>>(varDef.expression);
+    const auto expression = dynamic_cast<ConversionExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& convertedExpr = expression->expr;
-    ASSERT_TRUE(std::holds_alternative<Constant>(convertedExpr));
-    const auto& constant = std::get<Constant>(convertedExpr);
-    ASSERT_TRUE(std::holds_alternative<Integral>(constant.value));
-    EXPECT_EQ(std::get<Integral>(constant.value), 4);
+    const auto constant = dynamic_cast<Constant*>(convertedExpr.get());
+    ASSERT_TRUE(constant);
+    ASSERT_TRUE(std::holds_alternative<Integral>(constant->value));
+    EXPECT_EQ(std::get<Integral>(constant->value), 4);
 
     const auto& type = expression->type;
     ASSERT_TRUE(std::holds_alternative<BuiltInType>(type));
@@ -453,16 +437,14 @@ TEST_F(FullyParsedTest, parse_type_conversion_to_id_type) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<ConversionExpression>>(varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<ConversionExpression>>(varDef.expression);
+    const auto expression = dynamic_cast<ConversionExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& convertedExpr = expression->expr;
-    ASSERT_TRUE(std::holds_alternative<Constant>(convertedExpr));
-    const auto& constant = std::get<Constant>(convertedExpr);
-    ASSERT_TRUE(std::holds_alternative<Integral>(constant.value));
-    EXPECT_EQ(std::get<Integral>(constant.value), 4);
+    const auto constant = dynamic_cast<Constant*>(convertedExpr.get());
+    ASSERT_TRUE(constant);
+    ASSERT_TRUE(std::holds_alternative<Integral>(constant->value));
+    EXPECT_EQ(std::get<Integral>(constant->value), 4);
 
     const auto& type = expression->type;
     ASSERT_TRUE(std::holds_alternative<std::string>(type));
@@ -486,15 +468,13 @@ TEST_F(FullyParsedTest, parse_type_check_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<TypeCheckExpression>>(varDef.expression));
-    const auto& expression =
-        std::get<std::unique_ptr<TypeCheckExpression>>(varDef.expression);
+    const auto expression = dynamic_cast<TypeCheckExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expression);
 
     const auto& convertedExpr = expression->expr;
-    ASSERT_TRUE(std::holds_alternative<VariableAccess>(convertedExpr));
-    const auto& checkedVar = std::get<VariableAccess>(convertedExpr);
-    EXPECT_EQ(checkedVar.name, "checked");
+    const auto checkedVar = dynamic_cast<VariableAccess*>(convertedExpr.get());
+    ASSERT_TRUE(checkedVar);
+    EXPECT_EQ(checkedVar->name, "checked");
 
     const auto& type = expression->type;
     ASSERT_TRUE(std::holds_alternative<BuiltInType>(type));
@@ -520,17 +500,11 @@ TEST_F(FullyParsedTest, parse_field_access_expression) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<FieldAccessExpression>>(
-        varDef.expression));
-
-    const auto& lvalue =
-        std::get<std::unique_ptr<FieldAccessExpression>>(varDef.expression);
+    const auto lvalue = dynamic_cast<FieldAccessExpression*>(varDef.expression.get());
+    ASSERT_TRUE(lvalue);
     EXPECT_EQ(lvalue->field, "secondField");
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<FieldAccessExpression>>(lvalue->expr));
-
-    const auto& nestedlValue =
-        std::get<std::unique_ptr<FieldAccessExpression>>(lvalue->expr);
+    const auto nestedlValue = dynamic_cast<FieldAccessExpression*>(lvalue->expr.get());
+    ASSERT_TRUE(nestedlValue);
     EXPECT_EQ(nestedlValue->field, "firstField");
 }
 
@@ -549,10 +523,9 @@ TEST_F(FullyParsedTest, parse_variable_access) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(std::holds_alternative<VariableAccess>(varDef.expression));
-
-    const auto& varAccess = std::get<VariableAccess>(varDef.expression);
-    EXPECT_EQ(varAccess.name, "secondVar");
+    const auto varAccess = dynamic_cast<VariableAccess*>(varDef.expression.get());
+    ASSERT_TRUE(varAccess);
+    EXPECT_EQ(varAccess->name, "secondVar");
 }
 
 TEST_F(FullyParsedTest, parse_expression_in_parenthesis) {
@@ -576,12 +549,11 @@ TEST_F(FullyParsedTest, parse_expression_in_parenthesis) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(
-        std::holds_alternative<std::unique_ptr<AdditionExpression>>(varDef.expression));
+    const auto expr = dynamic_cast<AdditionExpression*>(varDef.expression.get());
+    ASSERT_TRUE(expr);
 
-    const auto& expr = std::get<std::unique_ptr<AdditionExpression>>(varDef.expression);
-    EXPECT_TRUE(std::holds_alternative<Constant>(expr->lhs));
-    EXPECT_TRUE(std::holds_alternative<std::unique_ptr<AdditionExpression>>(expr->rhs));
+    EXPECT_TRUE(dynamic_cast<Constant*>(expr->lhs.get()));
+    EXPECT_TRUE(dynamic_cast<AdditionExpression*>(expr->rhs.get()));
 }
 
 TEST_F(FullyParsedTest, parse_func_call_expression_no_arguments) {
@@ -601,12 +573,11 @@ TEST_F(FullyParsedTest, parse_func_call_expression_no_arguments) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(std::holds_alternative<FuncCall>(varDef.expression));
+    const auto funcCall = dynamic_cast<FuncCall*>(varDef.expression.get());
+    ASSERT_TRUE(funcCall);
+    EXPECT_EQ(funcCall->name, "foo");
 
-    const auto& funcCall = std::get<FuncCall>(varDef.expression);
-    EXPECT_EQ(funcCall.name, "foo");
-
-    const auto& arguments = funcCall.arguments;
+    const auto& arguments = funcCall->arguments;
     EXPECT_EQ(arguments.size(), 0);
 }
 
@@ -630,24 +601,23 @@ TEST_F(FullyParsedTest, parse_func_call_expression_with_arguments) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(std::holds_alternative<FuncCall>(varDef.expression));
+    const auto funcCall = dynamic_cast<FuncCall*>(varDef.expression.get());
+    ASSERT_TRUE(funcCall);
+    EXPECT_EQ(funcCall->name, "foo");
 
-    const auto& funcCall = std::get<FuncCall>(varDef.expression);
-    EXPECT_EQ(funcCall.name, "foo");
-
-    const auto& arguments = funcCall.arguments;
+    const auto& arguments = funcCall->arguments;
     ASSERT_EQ(arguments.size(), 2);
 
-    ASSERT_TRUE(std::holds_alternative<Constant>(arguments.at(0).value));
-    const auto& firstArg = std::get<Constant>(arguments.at(0).value);
-    ASSERT_TRUE(std::holds_alternative<bool>(firstArg.value));
-    EXPECT_TRUE(std::get<bool>(firstArg.value));
+    const auto firstArg = dynamic_cast<Constant*>(arguments.at(0).value.get());
+    ASSERT_TRUE(firstArg);
+    ASSERT_TRUE(std::holds_alternative<bool>(firstArg->value));
+    EXPECT_TRUE(std::get<bool>(firstArg->value));
     EXPECT_FALSE(arguments.at(0).ref);
 
-    ASSERT_TRUE(std::holds_alternative<Constant>(arguments.at(1).value));
-    const auto& secondArg = std::get<Constant>(arguments.at(1).value);
-    ASSERT_TRUE(std::holds_alternative<bool>(secondArg.value));
-    EXPECT_FALSE(std::get<bool>(secondArg.value));
+    const auto secondArg = dynamic_cast<Constant*>(arguments.at(1).value.get());
+    ASSERT_TRUE(secondArg);
+    ASSERT_TRUE(std::holds_alternative<bool>(secondArg->value));
+    EXPECT_FALSE(std::get<bool>(secondArg->value));
     EXPECT_FALSE(arguments.at(1).ref);
 }
 
@@ -670,19 +640,18 @@ TEST_F(FullyParsedTest, parse_func_call_expression_with_ref_argument) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(std::holds_alternative<FuncCall>(varDef.expression));
+    const auto funcCall = dynamic_cast<FuncCall*>(varDef.expression.get());
+    ASSERT_TRUE(funcCall);
+    EXPECT_EQ(funcCall->name, "foo");
 
-    const auto& funcCall = std::get<FuncCall>(varDef.expression);
-    EXPECT_EQ(funcCall.name, "foo");
-
-    const auto& arguments = funcCall.arguments;
+    const auto& arguments = funcCall->arguments;
     ASSERT_EQ(arguments.size(), 1);
     EXPECT_TRUE(arguments.at(0).ref);
 
-    ASSERT_TRUE(std::holds_alternative<Constant>(arguments.at(0).value));
-    const auto& firstArg = std::get<Constant>(arguments.at(0).value);
-    ASSERT_TRUE(std::holds_alternative<bool>(firstArg.value));
-    EXPECT_TRUE(std::get<bool>(firstArg.value));
+    const auto firstArg = dynamic_cast<Constant*>(arguments.at(0).value.get());
+    ASSERT_TRUE(firstArg);
+    ASSERT_TRUE(std::holds_alternative<bool>(firstArg->value));
+    EXPECT_TRUE(std::get<bool>(firstArg->value));
 }
 
 TEST_F(FullyParsedTest, parse_struct_init_expr_empty) {
@@ -701,8 +670,11 @@ TEST_F(FullyParsedTest, parse_struct_init_expr_empty) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(std::holds_alternative<StructInitExpression>(varDef.expression));
-    const auto& structExprs = std::get<StructInitExpression>(varDef.expression).exprs;
+    const auto structInitExpr =
+        dynamic_cast<StructInitExpression*>(varDef.expression.get());
+    ASSERT_TRUE(structInitExpr);
+
+    const auto& structExprs = structInitExpr->exprs;
     ASSERT_TRUE(structExprs.empty());
 }
 
@@ -725,17 +697,20 @@ TEST_F(FullyParsedTest, parse_struct_init_expr) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(prog.statements.at(0)));
 
     const auto& varDef = std::get<VarDef>(prog.statements.at(0));
-    ASSERT_TRUE(std::holds_alternative<StructInitExpression>(varDef.expression));
-    const auto& structExprs = std::get<StructInitExpression>(varDef.expression).exprs;
+    const auto structInitExpr =
+        dynamic_cast<StructInitExpression*>(varDef.expression.get());
+    ASSERT_TRUE(structInitExpr);
+
+    const auto& structExprs = structInitExpr->exprs;
     ASSERT_EQ(structExprs.size(), 2);
 
-    ASSERT_TRUE(std::holds_alternative<Constant>(structExprs.at(0)));
-    const auto& firstConstant = std::get<Constant>(structExprs.at(0));
-    ASSERT_TRUE(std::holds_alternative<bool>(firstConstant.value));
-    EXPECT_TRUE(std::get<bool>(firstConstant.value));
+    const auto firstConstant = dynamic_cast<Constant*>(structExprs.at(0).get());
+    ASSERT_TRUE(firstConstant);
+    ASSERT_TRUE(std::holds_alternative<bool>(firstConstant->value));
+    EXPECT_TRUE(std::get<bool>(firstConstant->value));
 
-    ASSERT_TRUE(std::holds_alternative<Constant>(structExprs.at(1)));
-    const auto& secondConstant = std::get<Constant>(structExprs.at(1));
-    ASSERT_TRUE(std::holds_alternative<bool>(secondConstant.value));
-    EXPECT_FALSE(std::get<bool>(secondConstant.value));
+    const auto secondConstant = dynamic_cast<Constant*>(structExprs.at(1).get());
+    ASSERT_TRUE(secondConstant);
+    ASSERT_TRUE(std::holds_alternative<bool>(secondConstant->value));
+    EXPECT_FALSE(std::get<bool>(secondConstant->value));
 }

@@ -38,7 +38,8 @@ void Parser::expectEndOfFile() const {
 /// STMTS = { STMT }
 Statements Parser::parseStatements() {
     Statements statements;
-    while (auto statement = parseStatement()) statements.push_back(std::move(*statement));
+    while (auto statement = parseStatement())
+        statements.push_back(std::move(*statement));
     return statements;
 }
 
@@ -79,7 +80,7 @@ std::optional<Statement> Parser::parseIfStatement() {
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(), "Missing right curly brace"));
 
-    return IfStatement{std::move(*expression), std::move(statements)};
+    return IfStatement{std::move(expression), std::move(statements)};
 }
 
 /// WHILE_STMT = while EXPR '{' STMTS '}'
@@ -101,7 +102,7 @@ std::optional<Statement> Parser::parseWhileStatement() {
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(), "Missing right curly brace"));
 
-    return WhileStatement{std::move(*expression), std::move(statements)};
+    return WhileStatement{std::move(expression), std::move(statements)};
 }
 
 /// RET_STMT = return [ EXPR ] ';'
@@ -223,7 +224,7 @@ Assignment Parser::parseAssignment(LValue lvalue) {
     expect(Token::Type::SEMI,
            SyntaxException(currentToken_.getPosition(), "Missing semicolon"));
 
-    return Assignment{.lhs = std::move(lvalue), .rhs = std::move(*expression)};
+    return Assignment{.lhs = std::move(lvalue), .rhs = std::move(expression)};
 }
 
 /// BUILT_IN_DEF = BUILT_IN_TYPE DEF
@@ -311,7 +312,7 @@ std::optional<FuncCall> Parser::parseFuncCall(const std::string& name) {
     expect(Token::Type::R_PAR,
            SyntaxException(currentToken_.getPosition(),
                            "Missing right parenthesis after function call arguments"));
-    return FuncCall{.name = name, .arguments = std::move(arguments)};
+    return FuncCall{name, std::move(arguments)};
 }
 
 /// STRUCT_DEF = struct ID '{' FIELDS '}'
@@ -382,32 +383,53 @@ std::optional<Field> Parser::parseField() {
 }
 
 /// EXPR = DISJ | STRUCT_INIT
-std::optional<Expression> Parser::parseExpression() {
+PExpression Parser::parseExpression() {
     if (auto expr = parseStructInitExpression())
         return expr;
     return parseDisjunctionExpression();
 }
 
 /// STRUCT_INIT = '{' { EXPRS } '}'
-std::optional<Expression> Parser::parseStructInitExpression() {
+PExpression Parser::parseStructInitExpression() {
     if (currentToken_.getType() != Token::Type::L_C_BR)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
-    auto exprs = parseList<Expression>(&Parser::parseExpression);
+    auto exprs = parseExpressionList();
 
     expect(
         Token::Type::R_C_BR,
         SyntaxException(currentToken_.getPosition(),
                         "Missing right curly brace at the end of struct initialization"));
-    return StructInitExpression{.exprs = std::move(exprs)};
+    return std::make_unique<StructInitExpression>(std::move(exprs));
+}
+
+/// EXPRS = [ EXPR { ',' EXPR } ]
+std::vector<PExpression> Parser::parseExpressionList() {
+    std::vector<PExpression> exprs;
+
+    auto expr = parseExpression();
+    if (!expr)
+        return exprs;
+
+    exprs.push_back(std::move(expr));
+
+    while (currentToken_.getType() == Token::Type::CMA) {
+        consumeToken();
+        expr = parseExpression();
+        if (!expr)
+            throw SyntaxException(currentToken_.getPosition(),
+                                  "Expected expression after comma");
+        exprs.push_back(std::move(expr));
+    }
+    return exprs;
 }
 
 /// DISJ = CONJ { or CONJ }
-std::optional<Expression> Parser::parseDisjunctionExpression() {
-    auto leftLogicFactor = parseConjunctionExpression();
+PExpression Parser::parseDisjunctionExpression() {
+    PExpression leftLogicFactor = parseConjunctionExpression();
     if (!leftLogicFactor)
-        return std::nullopt;
+        return nullptr;
 
     while (currentToken_.getType() == Token::Type::OR_KW) {
         consumeToken();
@@ -415,19 +437,18 @@ std::optional<Expression> Parser::parseDisjunctionExpression() {
         if (!rightLogicFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after 'or' keyword");
-        leftLogicFactor =
-            std::unique_ptr<DisjunctionExpression>(new DisjunctionExpression{
-                std::move(*leftLogicFactor), std::move(*rightLogicFactor)});
+        leftLogicFactor = std::make_unique<DisjunctionExpression>(
+            std::move(leftLogicFactor), std::move(rightLogicFactor));
     }
 
     return leftLogicFactor;
 }
 
 /// CONJ = EQ { and EQ }
-std::optional<Expression> Parser::parseConjunctionExpression() {
+PExpression Parser::parseConjunctionExpression() {
     auto leftLogicFactor = parseEqualExpression();
     if (!leftLogicFactor)
-        return std::nullopt;
+        return nullptr;
 
     while (currentToken_.getType() == Token::Type::AND_KW) {
         consumeToken();
@@ -435,9 +456,8 @@ std::optional<Expression> Parser::parseConjunctionExpression() {
         if (!rightLogicFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after 'and' keyword");
-        leftLogicFactor =
-            std::unique_ptr<ConjunctionExpression>(new ConjunctionExpression{
-                std::move(*leftLogicFactor), std::move(*rightLogicFactor)});
+        leftLogicFactor = std::make_unique<ConjunctionExpression>(
+            std::move(leftLogicFactor), std::move(rightLogicFactor));
     }
 
     return leftLogicFactor;
@@ -445,10 +465,10 @@ std::optional<Expression> Parser::parseConjunctionExpression() {
 
 /// EQ = REL [ '==' REL ]
 ///    | REL [ '!=' REL ]
-std::optional<Expression> Parser::parseEqualExpression() {
+PExpression Parser::parseEqualExpression() {
     auto leftEqFactor = parseRelExpression();
     if (!leftEqFactor)
-        return std::nullopt;
+        return nullptr;
 
     if (const auto& ctor = ComparisonExpression::getCtor(currentToken_.getType())) {
         consumeToken();
@@ -456,7 +476,7 @@ std::optional<Expression> Parser::parseEqualExpression() {
         if (!rightEqFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after (not)equal operator");
-        leftEqFactor = (*ctor)(std::move(*leftEqFactor), std::move(*rightEqFactor));
+        leftEqFactor = (*ctor)(std::move(leftEqFactor), std::move(rightEqFactor));
     }
 
     return leftEqFactor;
@@ -466,10 +486,10 @@ std::optional<Expression> Parser::parseEqualExpression() {
 ///     | ADD [ '>' ADD ]
 ///     | ADD [ '<=' ADD ]
 ///     | ADD [ '>=' ADD ]
-std::optional<Expression> Parser::parseRelExpression() {
+PExpression Parser::parseRelExpression() {
     auto leftRelFactor = parseAdditiveExpression();
     if (!leftRelFactor)
-        return std::nullopt;
+        return nullptr;
 
     if (const auto& ctor = RelationExpression::getCtor(currentToken_.getType())) {
         consumeToken();
@@ -477,7 +497,7 @@ std::optional<Expression> Parser::parseRelExpression() {
         if (!rightRelFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after relation operator");
-        leftRelFactor = (*ctor)(std::move(*leftRelFactor), std::move(*rightRelFactor));
+        leftRelFactor = (*ctor)(std::move(leftRelFactor), std::move(rightRelFactor));
     }
 
     return leftRelFactor;
@@ -485,10 +505,10 @@ std::optional<Expression> Parser::parseRelExpression() {
 
 /// ADD = TERM { '+' TERM }
 ///     | TERM { '-' TERM }
-std::optional<Expression> Parser::parseAdditiveExpression() {
+PExpression Parser::parseAdditiveExpression() {
     auto leftTerm = parseMultiplicativeExpression();
     if (!leftTerm)
-        return std::nullopt;
+        return nullptr;
 
     while (const auto& ctor = AdditionExpression::getCtor(currentToken_.getType())) {
         consumeToken();
@@ -496,7 +516,7 @@ std::optional<Expression> Parser::parseAdditiveExpression() {
         if (!rightTerm)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after additive operator");
-        leftTerm = (*ctor)(std::move(*leftTerm), std::move(*rightTerm));
+        leftTerm = (*ctor)(std::move(leftTerm), std::move(rightTerm));
     }
 
     return leftTerm;
@@ -504,10 +524,10 @@ std::optional<Expression> Parser::parseAdditiveExpression() {
 
 /// TERM = FACTOR { '*' FACTOR }
 ///      | FACTOR { '/' FACTOR }
-std::optional<Expression> Parser::parseMultiplicativeExpression() {
+PExpression Parser::parseMultiplicativeExpression() {
     auto leftFactor = parseNegationExpression();
     if (!leftFactor)
-        return std::nullopt;
+        return nullptr;
 
     while (const auto& ctor =
                MultiplicativeExpression::getCtor(currentToken_.getType())) {
@@ -516,30 +536,30 @@ std::optional<Expression> Parser::parseMultiplicativeExpression() {
         if (!rightFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after multiplicative operator");
-        leftFactor = (*ctor)(std::move(*leftFactor), std::move(*rightFactor));
+        leftFactor = (*ctor)(std::move(leftFactor), std::move(rightFactor));
     }
 
     return leftFactor;
 }
 
 /// FACTOR = [ '-' | not ] UNARY
-std::optional<Expression> Parser::parseNegationExpression() {
+PExpression Parser::parseNegationExpression() {
     const auto& ctor = NegationExpression::getCtor(currentToken_.getType());
     if (ctor)
         consumeToken();
 
     auto expr = parseTypeExpression();
     if (ctor)
-        return (*ctor)(std::move(*expr));
+        return (*ctor)(std::move(expr));
     return expr;
 }
 
 /// UNARY = SRC [ as TYPE ]
 ///       | SRC [ is TYPE ]
-std::optional<Expression> Parser::parseTypeExpression() {
+PExpression Parser::parseTypeExpression() {
     auto expr = parseFieldAccessExpression();
     if (!expr)
-        return std::nullopt;
+        return nullptr;
 
     if (const auto& ctor = TypeExpression::getCtor(currentToken_.getType())) {
         consumeToken();
@@ -550,24 +570,23 @@ std::optional<Expression> Parser::parseTypeExpression() {
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected type after is/as keyword");
 
-        expr = (*ctor)(std::move(*expr), *type);
+        expr = (*ctor)(std::move(expr), *type);
     }
     return expr;
 }
 
 /// SRC = CNTNR { '.' ID }
-std::optional<Expression> Parser::parseFieldAccessExpression() {
+PExpression Parser::parseFieldAccessExpression() {
     auto expr = parseContainerExpression();
     if (!expr)
-        return std::nullopt;
+        return nullptr;
 
     while (currentToken_.getType() == Token::Type::DOT) {
         consumeToken();
         auto field = expectAndReturnValue<std::string>(
             Token::Type::ID, SyntaxException(currentToken_.getPosition(),
                                              "Expected field name after dot operator"));
-        expr = std::unique_ptr<FieldAccessExpression>(new FieldAccessExpression{
-            .expr = std::move(*expr), .field = std::move(field)});
+        expr = std::make_unique<FieldAccessExpression>(std::move(expr), std::move(field));
     }
 
     return expr;
@@ -576,7 +595,7 @@ std::optional<Expression> Parser::parseFieldAccessExpression() {
 /// CNTNR = '(' EXPR ')'
 ///       | CONST
 ///       | CALL_OR_VAR
-std::optional<Expression> Parser::parseContainerExpression() {
+PExpression Parser::parseContainerExpression() {
     if (auto expr = parseNestedExpression())
         return expr;
     if (auto expr = parseConstant())
@@ -584,9 +603,9 @@ std::optional<Expression> Parser::parseContainerExpression() {
     return parseVariableAccessOrFuncCall();
 }
 
-std::optional<Expression> Parser::parseNestedExpression() {
+PExpression Parser::parseNestedExpression() {
     if (currentToken_.getType() != Token::Type::L_PAR)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto expr = parseExpression();
@@ -597,25 +616,25 @@ std::optional<Expression> Parser::parseNestedExpression() {
     return expr;
 }
 
-std::optional<Expression> Parser::parseConstant() {
+PExpression Parser::parseConstant() {
     if (!currentToken_.isConstant())
-        return std::nullopt;
+        return nullptr;
 
     const auto value = currentToken_.getValue();
     consumeToken();
-    return Constant{.value = value};
+    return std::make_unique<Constant>(value);
 }
 
 /// CALL_OR_VAR = ID [ '(' ARGS ')' ]
-std::optional<Expression> Parser::parseVariableAccessOrFuncCall() {
+PExpression Parser::parseVariableAccessOrFuncCall() {
     if (currentToken_.getType() != Token::Type::ID)
-        return std::nullopt;
+        return nullptr;
     const auto name = std::get<std::string>(currentToken_.getValue());
     consumeToken();
 
-    if (auto expr = parseFuncCall(name))
-        return expr;
-    return VariableAccess{.name = name};
+    if (auto funcCall = parseFuncCall(name))
+        return std::make_unique<FuncCall>(std::move(*funcCall));
+    return std::make_unique<VariableAccess>(name);
 }
 
 /// ARG = [ ref ] EXPR
@@ -632,7 +651,7 @@ std::optional<Argument> Parser::parseArgument() {
         return std::nullopt;
     }
 
-    return Argument{.value = std::move(*expr), .ref = ref};
+    return Argument{.value = std::move(expr), .ref = ref};
 }
 
 Parser::StatementParsers Parser::statementParsers_{

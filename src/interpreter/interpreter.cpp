@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <iostream>
 
+#include "expr_interpreter.hpp"
+
 Interpreter::Interpreter(const Program& program, std::ostream& out)
     : program_{program}, out_{out} {
     callStack_.emplace(nullptr);
@@ -30,25 +32,20 @@ CallContext::FuncWithCtx Interpreter::getFunctionWithCtx(std::string_view name) 
     return *callStack_.top().getFunctionWithCtx(name);
 }
 
-ExpressionInterpreter::ExpressionInterpreter(const Interpreter& interpreter)
-    : interpreter_{interpreter} {}
-
-Value ExpressionInterpreter::operator()(const Constant& expr) const {
-    return expr.value;
-}
-
-Value ExpressionInterpreter::operator()(const VariableAccess& expr) const {
-    return interpreter_.readVariable(expr.name)->value;
+Value Interpreter::getValueFromExpr(const Expression* expr) const {
+    auto exprInterpreter = ExpressionInterpreter(*this);
+    expr->accept(exprInterpreter);
+    return exprInterpreter.getValue();
 }
 
 void Interpreter::operator()(const PrintStatement& stmt) const {
-    const auto value = std::visit(ExpressionInterpreter(*this), *stmt.expression);
-    std::visit(ValuePrinter(out_), value);
+    auto value = getValueFromExpr(stmt.expression.get());
+    std::visit(ValuePrinter(out_), std::move(value));
     out_ << '\n';
 }
 
 void Interpreter::operator()(const VarDef& stmt) {
-    auto value = std::visit(ExpressionInterpreter(*this), stmt.expression);
+    auto value = getValueFromExpr(stmt.expression.get());
     auto valueRef = std::make_shared<ValueObj>(std::move(value));
     addVariable(stmt.name, valueRef);
 }
@@ -56,7 +53,7 @@ void Interpreter::operator()(const VarDef& stmt) {
 void Interpreter::operator()(const Assignment& stmt) const {
     auto name = std::get<std::string>(stmt.lhs);
     auto valueRef = readVariable(name);
-    valueRef->value = std::visit(ExpressionInterpreter(*this), stmt.rhs);
+    valueRef->value = getValueFromExpr(stmt.rhs.get());
 }
 
 void Interpreter::operator()(const FuncDef& stmt) {
@@ -97,10 +94,13 @@ void checkArgRef(const Argument& arg, const Parameter& param) {
 void Interpreter::passArgument(const Argument& arg, const Parameter& param) {
     checkArgRef(arg, param);
 
-    auto value = std::visit(ExpressionInterpreter(*this), arg.value);
+    auto value = getValueFromExpr(arg.value.get());
     auto valueRef = std::make_shared<ValueObj>(std::move(value));
     if (arg.ref) {
-        auto name = std::get<VariableAccess>(arg.value).name;
+        auto varAccess = dynamic_cast<VariableAccess*>(arg.value.get());
+        if (!varAccess)
+            throw std::runtime_error("Expected variable after ref keyword");
+        auto name = varAccess->name;
         valueRef = readVariable(name);
     }
     callStack_.top().addVariable(param.name, std::move(valueRef));

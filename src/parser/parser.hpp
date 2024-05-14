@@ -57,25 +57,26 @@ class Parser {
     std::optional<Field> parseField();
     std::optional<VariantDef> parseVariantDef();
     std::optional<Type> parseType();
-    std::optional<Expression> parseExpression();
-    std::optional<Expression> parseStructInitExpression();
-    std::optional<Expression> parseDisjunctionExpression();
-    std::optional<Expression> parseConjunctionExpression();
-    std::optional<Expression> parseEqualExpression();
-    std::optional<Expression> parseRelExpression();
-    std::optional<Expression> parseAdditiveExpression();
-    std::optional<Expression> parseMultiplicativeExpression();
-    std::optional<Expression> parseNegationExpression();
-    std::optional<Expression> parseTypeExpression();
-    std::optional<Expression> parseFieldAccessExpression();
-    std::optional<Expression> parseContainerExpression();
-    std::optional<Expression> parseNestedExpression();
-    std::optional<Expression> parseConstant();
-    std::optional<Expression> parseVariableAccessOrFuncCall();
+    PExpression parseExpression();
+    PExpression parseStructInitExpression();
+    PExpression parseDisjunctionExpression();
+    PExpression parseConjunctionExpression();
+    PExpression parseEqualExpression();
+    PExpression parseRelExpression();
+    PExpression parseAdditiveExpression();
+    PExpression parseMultiplicativeExpression();
+    PExpression parseNegationExpression();
+    PExpression parseTypeExpression();
+    PExpression parseFieldAccessExpression();
+    PExpression parseContainerExpression();
+    PExpression parseNestedExpression();
+    PExpression parseConstant();
+    PExpression parseVariableAccessOrFuncCall();
     std::optional<Argument> parseArgument();
 
     template <typename T, typename ElementParser>
     std::vector<T> parseList(ElementParser elementParser);
+    std::vector<PExpression> parseExpressionList();
 
     using StatementParsers =
         std::initializer_list<std::function<std::optional<Statement>(Parser&)>>;

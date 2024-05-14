@@ -25,50 +25,51 @@ class BasePrinter {
     static constexpr unsigned indentWidth_{4};
 };
 
-class ExpressionPrinter : public BasePrinter {
+class ExpressionPrinter : public BasePrinter, public ExpressionVisitor {
    public:
     using BasePrinter::BasePrinter;
 
-    std::string operator()(const StructInitExpression& expr) const;
-    std::string operator()(
-        const std::unique_ptr<DisjunctionExpression>& disjunction) const;
-    std::string operator()(
-        const std::unique_ptr<ConjunctionExpression>& conjunction) const;
-    std::string operator()(const std::unique_ptr<EqualExpression>& expr) const;
-    std::string operator()(const std::unique_ptr<NotEqualExpression>& expr) const;
-    std::string operator()(const std::unique_ptr<LessThanExpression>& expr) const;
-    std::string operator()(const std::unique_ptr<LessThanOrEqualExpression>& expr) const;
-    std::string operator()(const std::unique_ptr<GreaterThanExpression>& expr) const;
-    std::string operator()(
-        const std::unique_ptr<GreaterThanOrEqualExpression>& expr) const;
-    std::string operator()(const std::unique_ptr<AdditionExpression>& expr) const;
-    std::string operator()(const std::unique_ptr<SubtractionExpression>& expr) const;
-    std::string operator()(const std::unique_ptr<MultiplicationExpression>& expr) const;
-    std::string operator()(const std::unique_ptr<DivisionExpression>& expr) const;
-    std::string operator()(const std::unique_ptr<FieldAccessExpression>& expr) const;
-    std::string operator()(const Constant& expr) const;
-    std::string operator()(const VariableAccess& expr) const;
-    std::string operator()(const auto& expr) const;
+    void operator()(const StructInitExpression& expr) const override;
+    void operator()(const DisjunctionExpression& expr) const override;
+    void operator()(const ConjunctionExpression& expr) const override;
+    void operator()(const EqualExpression& expr) const override;
+    void operator()(const NotEqualExpression& expr) const override;
+    void operator()(const LessThanExpression& expr) const override;
+    void operator()(const LessThanOrEqualExpression& expr) const override;
+    void operator()(const GreaterThanExpression& expr) const override;
+    void operator()(const GreaterThanOrEqualExpression& expr) const override;
+    void operator()(const AdditionExpression& expr) const override;
+    void operator()(const SubtractionExpression& expr) const override;
+    void operator()(const MultiplicationExpression& expr) const override;
+    void operator()(const DivisionExpression& expr) const override;
+    void operator()(const SignChangeExpression&) const override;
+    void operator()(const LogicalNegationExpression&) const override;
+    void operator()(const ConversionExpression&) const override;
+    void operator()(const TypeCheckExpression&) const override;
+    void operator()(const FieldAccessExpression& expr) const override;
+    void operator()(const Constant& expr) const override;
+    void operator()(const FuncCall&) const override;
+    void operator()(const VariableAccess& expr) const override;
 
    private:
-    std::string printBinaryExpression(const auto& expression) const;
+    void printBinaryExpression(const auto& expression) const;
 };
 
 class StatementPrinter : public BasePrinter {
    public:
     using BasePrinter::BasePrinter;
 
-    std::string operator()(const IfStatement& ifStatement) const;
-    std::string operator()(const WhileStatement& whileStatement) const;
-    std::string operator()(const ReturnStatement& stmt) const;
-    std::string operator()(const PrintStatement& stmt) const;
-    std::string operator()(const FuncDef& funcDef) const;
-    std::string operator()(const Assignment& stmt) const;
-    std::string operator()(const VarDef& stmt) const;
-    std::string operator()(const FuncCall& stmt) const;
-    std::string operator()(const StructDef& stmt) const;
-    std::string operator()(const VariantDef& stmt) const;
-    std::string operator()(const auto& stmt) const;
+    void operator()(const IfStatement& ifStatement) const;
+    void operator()(const WhileStatement& whileStatement) const;
+    void operator()(const ReturnStatement& stmt) const;
+    void operator()(const PrintStatement& stmt) const;
+    void operator()(const FuncDef& funcDef) const;
+    void operator()(const Assignment& stmt) const;
+    void operator()(const VarDef& stmt) const;
+    void operator()(const FuncCall& stmt) const;
+    void operator()(const StructDef& stmt) const;
+    void operator()(const VariantDef& stmt) const;
+    void operator()(const auto& stmt) const;
 };
 
 class LValuePrinter : public BasePrinter {

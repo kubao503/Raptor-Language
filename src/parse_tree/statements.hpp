@@ -20,14 +20,14 @@ struct FieldAccess {
 
 struct Assignment {
     LValue lhs;
-    Expression rhs;
+    PExpression rhs;
 };
 
 struct VarDef {
     bool isConst{false};
     Type type{""};
     std::string name;
-    Expression expression;
+    PExpression expression;
 };
 
 struct Parameter {
@@ -71,21 +71,21 @@ using Statement =
 using Statements = std::vector<Statement>;
 
 struct IfStatement {
-    Expression condition;
+    PExpression condition;
     Statements statements;
 };
 
 struct WhileStatement {
-    Expression condition;
+    PExpression condition;
     Statements statements;
 };
 
 struct ReturnStatement {
-    std::optional<Expression> expression;
+    PExpression expression;
 };
 
 struct PrintStatement {
-    std::optional<Expression> expression;
+    PExpression expression;
 };
 
 class FuncDef {
