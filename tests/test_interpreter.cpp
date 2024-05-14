@@ -1,11 +1,15 @@
 #include <gtest/gtest.h>
 
+#include "expr_interpreter.hpp"
 #include "interpreter.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
 
 class InterpreterTest : public testing::Test {
    protected:
+    InterpreterTest()
+        : interpreter_{output_} {}
+
     void SetUp(const std::string& input) {
         stream_ = std::istringstream(input);
         source_ = std::make_unique<Source>(stream_);
@@ -13,8 +17,8 @@ class InterpreterTest : public testing::Test {
         parser_ = std::make_unique<Parser>(*lexer_);
     }
 
-    std::string interpret() {
-        Interpreter(parser_->parseProgram(), output_);
+    std::string interpretAndgetOutput() {
+        interpreter_.interpret(parser_->parseProgram());
         return output_.str();
     }
 
@@ -22,22 +26,23 @@ class InterpreterTest : public testing::Test {
     std::unique_ptr<Source> source_;
     std::unique_ptr<Lexer> lexer_;
     std::unique_ptr<Parser> parser_;
+    Interpreter interpreter_;
     std::stringstream output_;
 };
 
 TEST_F(InterpreterTest, empty_program) {
     SetUp("");
-    EXPECT_EQ(interpret(), "");
+    EXPECT_EQ(interpretAndgetOutput(), "");
 }
 
 TEST_F(InterpreterTest, basic_print) {
     SetUp("print 5;");
-    EXPECT_EQ(interpret(), "5\n");
+    EXPECT_EQ(interpretAndgetOutput(), "5\n");
 }
 
 TEST_F(InterpreterTest, print_new_line) {
     SetUp("print;");
-    EXPECT_EQ(interpret(), "\n");
+    EXPECT_EQ(interpretAndgetOutput(), "\n");
 }
 
 TEST_F(InterpreterTest, global_variable) {
@@ -47,7 +52,7 @@ TEST_F(InterpreterTest, global_variable) {
         "}"
         "int x = 5;"
         "foo();");
-    EXPECT_EQ(interpret(), "5\n");
+    EXPECT_EQ(interpretAndgetOutput(), "5\n");
 }
 
 TEST_F(InterpreterTest, variable_in_parent) {
@@ -60,7 +65,7 @@ TEST_F(InterpreterTest, variable_in_parent) {
         "    nested();"
         "}"
         "parent();");
-    EXPECT_EQ(interpret(), "24\n");
+    EXPECT_EQ(interpretAndgetOutput(), "24\n");
 }
 
 TEST_F(InterpreterTest, function_in_parent) {
@@ -75,7 +80,7 @@ TEST_F(InterpreterTest, function_in_parent) {
         "    nested();"
         "}"
         "parent();");
-    EXPECT_EQ(interpret(), "42\n");
+    EXPECT_EQ(interpretAndgetOutput(), "42\n");
 }
 
 TEST_F(InterpreterTest, assignment) {
@@ -83,7 +88,7 @@ TEST_F(InterpreterTest, assignment) {
         "int x = 5;"
         "x = 20;"
         "print x;");
-    EXPECT_EQ(interpret(), "20\n");
+    EXPECT_EQ(interpretAndgetOutput(), "20\n");
 }
 
 TEST_F(InterpreterTest, function_multiple_args) {
@@ -93,7 +98,7 @@ TEST_F(InterpreterTest, function_multiple_args) {
         "    print b;"
         "}"
         "foo(5, 7);");
-    EXPECT_EQ(interpret(), "5\n7\n");
+    EXPECT_EQ(interpretAndgetOutput(), "5\n7\n");
 }
 
 TEST_F(InterpreterTest, function_pass_by_value) {
@@ -105,7 +110,7 @@ TEST_F(InterpreterTest, function_pass_by_value) {
         "int x = 5;"
         "foo(x);"
         "print x;");
-    EXPECT_EQ(interpret(), "27\n5\n");
+    EXPECT_EQ(interpretAndgetOutput(), "27\n5\n");
 }
 
 TEST_F(InterpreterTest, function_pass_by_ref) {
@@ -117,5 +122,5 @@ TEST_F(InterpreterTest, function_pass_by_ref) {
         "int x = 5;"
         "foo(ref x);"
         "print x;");
-    EXPECT_EQ(interpret(), "27\n27\n");
+    EXPECT_EQ(interpretAndgetOutput(), "27\n27\n");
 }

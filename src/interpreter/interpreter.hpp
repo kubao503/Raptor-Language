@@ -9,7 +9,8 @@
 
 class Interpreter {
    public:
-    Interpreter(const Program& program, std::ostream& out);
+    Interpreter(std::ostream& out);
+    void interpret(const Program& program);
 
     ValueRef readVariable(std::string_view name) const;
 
@@ -23,7 +24,6 @@ class Interpreter {
     void operator()(const auto&) const { throw std::runtime_error("unknown statement"); }
 
    private:
-    void interpret();
     void addVariable(const std::string& name, ValueRef ref);
     void addFunction(const std::string& name, const FuncDef* func);
     void passArguments(const Arguments& args, const Parameters& params);
@@ -31,7 +31,6 @@ class Interpreter {
 
     std::optional<Value> getValueFromExpr(const Expression* expr) const;
 
-    const Program& program_;
     std::stack<CallContext> callStack_;
     std::ostream& out_;
 };

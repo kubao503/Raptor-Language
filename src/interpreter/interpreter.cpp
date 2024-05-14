@@ -5,14 +5,13 @@
 
 #include "expr_interpreter.hpp"
 
-Interpreter::Interpreter(const Program& program, std::ostream& out)
-    : program_{program}, out_{out} {
+Interpreter::Interpreter(std::ostream& out)
+    : out_{out} {
     callStack_.emplace(nullptr);
-    interpret();
 }
 
-void Interpreter::interpret() {
-    for (const auto& stmt : program_.statements)
+void Interpreter::interpret(const Program& program) {
+    for (const auto& stmt : program.statements)
         std::visit(*this, stmt);
 }
 
