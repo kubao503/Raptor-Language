@@ -29,7 +29,7 @@ class Interpreter {
     void passArguments(const Arguments& args, const Parameters& params);
     void passArgument(const Argument& arg, const Parameter& param);
 
-    Value getValueFromExpr(const Expression* expr) const;
+    std::optional<Value> getValueFromExpr(const Expression* expr) const;
 
     const Program& program_;
     std::stack<CallContext> callStack_;

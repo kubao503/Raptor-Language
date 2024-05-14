@@ -35,6 +35,11 @@ TEST_F(InterpreterTest, basic_print) {
     EXPECT_EQ(interpret(), "5\n");
 }
 
+TEST_F(InterpreterTest, print_new_line) {
+    SetUp("print;");
+    EXPECT_EQ(interpret(), "\n");
+}
+
 TEST_F(InterpreterTest, global_variable) {
     SetUp(
         "void foo() {"

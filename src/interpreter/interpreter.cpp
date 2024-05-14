@@ -32,28 +32,32 @@ CallContext::FuncWithCtx Interpreter::getFunctionWithCtx(std::string_view name) 
     return *callStack_.top().getFunctionWithCtx(name);
 }
 
-Value Interpreter::getValueFromExpr(const Expression* expr) const {
+std::optional<Value> Interpreter::getValueFromExpr(const Expression* expr) const {
+    if (!expr)
+        return std::nullopt;
     auto exprInterpreter = ExpressionInterpreter(*this);
     expr->accept(exprInterpreter);
     return exprInterpreter.getValue();
 }
 
 void Interpreter::operator()(const PrintStatement& stmt) const {
-    auto value = getValueFromExpr(stmt.expression.get());
-    std::visit(ValuePrinter(out_), std::move(value));
+    auto expr = stmt.expression.get();
+    if (auto value = getValueFromExpr(expr))
+        std::visit(ValuePrinter(out_), std::move(*value));
+
     out_ << '\n';
 }
 
 void Interpreter::operator()(const VarDef& stmt) {
     auto value = getValueFromExpr(stmt.expression.get());
-    auto valueRef = std::make_shared<ValueObj>(std::move(value));
+    auto valueRef = std::make_shared<ValueObj>(std::move(*value));
     addVariable(stmt.name, valueRef);
 }
 
 void Interpreter::operator()(const Assignment& stmt) const {
     auto name = std::get<std::string>(stmt.lhs);
     auto valueRef = readVariable(name);
-    valueRef->value = getValueFromExpr(stmt.rhs.get());
+    valueRef->value = getValueFromExpr(stmt.rhs.get()).value();
 }
 
 void Interpreter::operator()(const FuncDef& stmt) {
@@ -95,7 +99,7 @@ void Interpreter::passArgument(const Argument& arg, const Parameter& param) {
     checkArgRef(arg, param);
 
     auto value = getValueFromExpr(arg.value.get());
-    auto valueRef = std::make_shared<ValueObj>(std::move(value));
+    auto valueRef = std::make_shared<ValueObj>(std::move(*value));
     if (arg.ref) {
         auto varAccess = dynamic_cast<VariableAccess*>(arg.value.get());
         if (!varAccess)
