@@ -46,4 +46,12 @@ struct ValuePrinter {
     std::ostream& out_;
 };
 
+struct ValueToType {
+    Type operator()(Integral) const { return BuiltInType::INT; }
+    Type operator()(Floating) const { return BuiltInType::FLOAT; }
+    Type operator()(bool) const { return BuiltInType::BOOL; }
+    Type operator()(const std::string&) const { return BuiltInType::STR; }
+    Type operator()(const std::monostate&) const { throw std::runtime_error("No value"); }
+};
+
 #endif

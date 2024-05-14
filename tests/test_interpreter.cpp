@@ -124,3 +124,19 @@ TEST_F(InterpreterTest, function_pass_by_ref) {
         "print x;");
     EXPECT_EQ(interpretAndgetOutput(), "27\n27\n");
 }
+
+TEST_F(InterpreterTest, function_invalid_arg_count) {
+    SetUp(
+        "void foo(int a, int b) {"
+        "}"
+        "foo(5);");
+    EXPECT_THROW(interpretAndgetOutput(), std::runtime_error);
+}
+
+TEST_F(InterpreterTest, function_invalid_arg_type) {
+    SetUp(
+        "void foo(str name) {"
+        "}"
+        "foo(5);");
+    EXPECT_THROW(interpretAndgetOutput(), std::runtime_error);
+}

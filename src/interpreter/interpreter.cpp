@@ -96,8 +96,11 @@ void checkArgRef(const Argument& arg, const Parameter& param) {
 
 void Interpreter::passArgument(const Argument& arg, const Parameter& param) {
     checkArgRef(arg, param);
-
     auto value = getValueFromExpr(arg.value.get());
+
+    if (std::visit(ValueToType(), *value) != param.type)
+        throw std::runtime_error("Argument type does not match");
+
     auto valueRef = std::make_shared<ValueObj>(std::move(*value));
     if (arg.ref) {
         auto varAccess = dynamic_cast<VariableAccess*>(arg.value.get());
