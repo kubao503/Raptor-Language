@@ -616,11 +616,18 @@ PExpression Parser::parseNestedExpression() {
     return expr;
 }
 
+struct TokenValueToConstantValue {
+    Constant::Value operator()(const std::monostate&) const {
+        throw std::runtime_error("Expected token to have value");
+    }
+    Constant::Value operator()(const auto& v) const { return v; }
+};
+
 PExpression Parser::parseConstant() {
     if (!currentToken_.isConstant())
         return nullptr;
 
-    const auto value = currentToken_.getValue();
+    const auto value = std::visit(TokenValueToConstantValue(), currentToken_.getValue());
     consumeToken();
     return std::make_unique<Constant>(value);
 }

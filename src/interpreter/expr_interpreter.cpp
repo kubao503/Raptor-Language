@@ -2,6 +2,13 @@
 
 #include "interpreter.hpp"
 
+struct ValueToType {
+    Type operator()(Integral) const { return BuiltInType::INT; }
+    Type operator()(Floating) const { return BuiltInType::FLOAT; }
+    Type operator()(bool) const { return BuiltInType::BOOL; }
+    Type operator()(const std::string&) const { return BuiltInType::STR; }
+};
+
 ExpressionInterpreter::ExpressionInterpreter(const Interpreter& interpreter)
     : interpreter_{interpreter} {}
 
@@ -25,11 +32,14 @@ void ExpressionInterpreter::operator()(const TypeCheckExpression&) const {}
 void ExpressionInterpreter::operator()(const FieldAccessExpression&) const {}
 
 void ExpressionInterpreter::operator()(const Constant& expr) const {
-    lastResult_ = expr.value;
+    auto type = std::visit(ValueToType(), expr.value);
+    ValueObj::Value value =
+        std::visit([](const auto& v) -> ValueObj::Value { return v; }, expr.value);
+    lastResult_ = std::make_shared<ValueObj>(value, std::move(type));
 }
 
 void ExpressionInterpreter::operator()(const FuncCall&) const {}
 
 void ExpressionInterpreter::operator()(const VariableAccess& expr) const {
-    lastResult_ = interpreter_.readVariable(expr.name)->value;
+    lastResult_ = interpreter_.readVariable(expr.name);
 }

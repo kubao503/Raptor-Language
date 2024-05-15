@@ -19,8 +19,12 @@ void Interpreter::addVariable(const std::string& name, ValueRef ref) {
     callStack_.top().addVariable(name, ref);
 }
 
-void Interpreter::addFunction(const std::string& name, const FuncDef* func) {
-    callStack_.top().addFunction(name, func);
+void Interpreter::addFunction(const FuncDef* funcDef) {
+    callStack_.top().addFunction(funcDef);
+}
+
+void Interpreter::addStruct(const StructDef* structDef) {
+    callStack_.top().addStruct(structDef);
 }
 
 ValueRef Interpreter::readVariable(std::string_view name) const {
@@ -31,7 +35,7 @@ CallContext::FuncWithCtx Interpreter::getFunctionWithCtx(std::string_view name) 
     return *callStack_.top().getFunctionWithCtx(name);
 }
 
-std::optional<Value> Interpreter::getValueFromExpr(const Expression* expr) const {
+std::optional<ValueRef> Interpreter::getValueFromExpr(const Expression* expr) const {
     if (!expr)
         return std::nullopt;
     auto exprInterpreter = ExpressionInterpreter(*this);
@@ -39,28 +43,42 @@ std::optional<Value> Interpreter::getValueFromExpr(const Expression* expr) const
     return exprInterpreter.getValue();
 }
 
+struct ValuePrinter {
+    ValuePrinter(std::ostream& out)
+        : out_{out} {}
+
+    void operator()(const StructObj&) const {}
+    void operator()(const auto& type) const { out_ << std::boolalpha << type; }
+
+   private:
+    std::ostream& out_;
+};
+
 void Interpreter::operator()(const PrintStatement& stmt) const {
     auto expr = stmt.expression.get();
-    if (auto value = getValueFromExpr(expr))
-        std::visit(ValuePrinter(out_), std::move(*value));
-
+    if (auto valueRef = getValueFromExpr(expr))
+        std::visit(ValuePrinter(out_), std::move((*valueRef)->value));
     out_ << '\n';
 }
 
 void Interpreter::operator()(const VarDef& stmt) {
-    auto value = getValueFromExpr(stmt.expression.get());
-    auto valueRef = std::make_shared<ValueObj>(std::move(*value));
-    addVariable(stmt.name, valueRef);
+    auto valueRef = getValueFromExpr(stmt.expression.get());
+    addVariable(stmt.name, *valueRef);
 }
 
 void Interpreter::operator()(const Assignment& stmt) const {
     auto name = std::get<std::string>(stmt.lhs);
     auto valueRef = readVariable(name);
-    valueRef->value = getValueFromExpr(stmt.rhs.get()).value();
+    auto newValue = getValueFromExpr(stmt.rhs.get()).value();
+
+    if (valueRef->type != newValue->type)
+        throw std::runtime_error("Mismatched types at assignment");
+
+    valueRef->value = std::move(newValue->value);
 }
 
 void Interpreter::operator()(const FuncDef& stmt) {
-    addFunction(stmt.getName(), &stmt);
+    addFunction(&stmt);
 }
 
 void checkArgsCount(const Arguments& args, const Parameters& params) {
@@ -83,7 +101,7 @@ void Interpreter::operator()(const FuncCall& stmt) {
 }
 
 void Interpreter::passArguments(const Arguments& args, const Parameters& params) {
-    for (size_t i{0}; i < args.size(); ++i)
+    for (std::size_t i{0}; i < args.size(); ++i)
         passArgument(args.at(i), params.at(i));
 }
 
@@ -96,22 +114,17 @@ void checkArgRef(const Argument& arg, const Parameter& param) {
 
 void Interpreter::passArgument(const Argument& arg, const Parameter& param) {
     checkArgRef(arg, param);
-    auto value = getValueFromExpr(arg.value.get());
+    auto valueRef = getValueFromExpr(arg.value.get());
 
-    if (std::visit(ValueToType(), *value) != param.type)
-        throw std::runtime_error("Argument type does not match");
+    if ((*valueRef)->type != param.type)
+        throw std::runtime_error("Argument type does not match with parameter type");
 
-    auto valueRef = std::make_shared<ValueObj>(std::move(*value));
-    if (arg.ref) {
-        auto varAccess = dynamic_cast<VariableAccess*>(arg.value.get());
-        if (!varAccess)
-            throw std::runtime_error("Expected variable after ref keyword");
-        auto name = varAccess->name;
-        valueRef = readVariable(name);
-    }
-    callStack_.top().addVariable(param.name, std::move(valueRef));
+    if (!arg.ref)
+        valueRef = std::make_shared<ValueObj>(**valueRef);
+
+    callStack_.top().addVariable(param.name, std::move(*valueRef));
 }
 
-void ValuePrinter::operator()(const auto& type) const {
-    out_ << std::boolalpha << type;
+void Interpreter::operator()(const StructDef& stmt) {
+    addStruct(&stmt);
 }

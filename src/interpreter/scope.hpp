@@ -9,45 +9,40 @@
 
 #include "parse_tree.hpp"
 #include "types.hpp"
-
-struct ValueObj {
-    ValueObj(Value value)
-        : value{value} {}
-
-    Value value;
-};
-
-using ValueRef = std::shared_ptr<ValueObj>;
-using Symbol = std::pair<std::string, ValueRef>;
+#include "value_obj.hpp"
 
 class Scope {
+    using VarEntry = std::pair<std::string, ValueRef>;
+    using FuncDefEntry = const FuncDef*;
+    using StructDefEntry = const StructDef*;
+
    public:
     void addVariable(const std::string& name, ValueRef ref) {
         variables_.emplace_back(name, ref);
     }
 
-    void addFunction(const std::string& name, const FuncDef* func) {
-        functions_.emplace_back(name, func);
-    }
+    void addFunction(const FuncDef* func) { functions_.emplace_back(func); }
+
+    void addStruct(const StructDef* structDef) { structs_.emplace_back(structDef); }
 
     std::optional<ValueRef> readVariable(std::string_view name) const {
-        auto res = std::ranges::find(variables_, name, &Symbol::first);
+        auto res = std::ranges::find(variables_, name, &VarEntry::first);
         if (res != variables_.end())
             return res->second;
         return std::nullopt;
     }
 
     std::optional<const FuncDef*> getFunction(std::string_view name) const {
-        auto res = std::ranges::find(functions_, name, &FunctionPair::first);
+        auto res = std::ranges::find(functions_, name, &FuncDef::getName);
         if (res != functions_.end())
-            return res->second;
+            return *res;
         return std::nullopt;
     }
 
    private:
-    std::vector<Symbol> variables_;
-    using FunctionPair = std::pair<std::string, const FuncDef*>;
-    std::vector<FunctionPair> functions_;
+    std::vector<VarEntry> variables_;
+    std::vector<FuncDefEntry> functions_;
+    std::vector<StructDefEntry> structs_;
 };
 
 #endif

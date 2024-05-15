@@ -91,6 +91,13 @@ TEST_F(InterpreterTest, assignment) {
     EXPECT_EQ(interpretAndgetOutput(), "20\n");
 }
 
+TEST_F(InterpreterTest, assignment_mismatched_types) {
+    SetUp(
+        "int x = 5;"
+        "x = true;");
+    EXPECT_THROW(interpretAndgetOutput(), std::runtime_error);
+}
+
 TEST_F(InterpreterTest, function_multiple_args) {
     SetUp(
         "void foo(int a, int b) {"
@@ -139,4 +146,15 @@ TEST_F(InterpreterTest, function_invalid_arg_type) {
         "}"
         "foo(5);");
     EXPECT_THROW(interpretAndgetOutput(), std::runtime_error);
+}
+
+TEST_F(InterpreterTest, struct_definition) {
+    SetUp(
+        "struct Point {"
+        "    int x,"
+        "    int y"
+        "}"
+        "Point p = {1, 2};");
+    interpretAndgetOutput();
+    auto valueRef = interpreter_.readVariable("p");
 }

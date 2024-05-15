@@ -259,6 +259,8 @@ struct FieldAccessExpression : public Expression {
 };
 
 struct Constant : public Expression {
+    using Value = std::variant<Integral, Floating, bool, std::string>;
+
     Value value;
 
     Constant(Value value)

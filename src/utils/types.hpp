@@ -7,6 +7,4 @@
 using Integral = unsigned int;
 using Floating = float;
 
-using Value = std::variant<std::monostate, Integral, Floating, bool, std::string>;
-
 #endif

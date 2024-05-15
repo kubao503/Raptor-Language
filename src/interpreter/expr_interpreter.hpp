@@ -2,6 +2,7 @@
 #define EXPR_INTERPRETER
 
 #include "parse_tree.hpp"
+#include "value_obj.hpp"
 
 class Interpreter;
 
@@ -9,7 +10,7 @@ class ExpressionInterpreter : public ExpressionVisitor {
    public:
     ExpressionInterpreter(const Interpreter& interpreter);
 
-    Value getValue() const { return lastResult_; }
+    ValueRef getValue() const { return lastResult_; }
 
     void operator()(const StructInitExpression&) const override;
     void operator()(const DisjunctionExpression&) const override;
@@ -35,7 +36,7 @@ class ExpressionInterpreter : public ExpressionVisitor {
 
    private:
     const Interpreter& interpreter_;
-    mutable Value lastResult_;
+    mutable ValueRef lastResult_;
 };
 
 #endif

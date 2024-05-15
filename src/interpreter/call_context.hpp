@@ -14,9 +14,9 @@ class CallContext {
         scopes_.back().addVariable(name, std::move(ref));
     }
 
-    void addFunction(const std::string name, const FuncDef* func) {
-        scopes_.back().addFunction(name, func);
-    }
+    void addFunction(const FuncDef* func) { scopes_.back().addFunction(func); }
+
+    void addStruct(const StructDef* structDef) { scopes_.back().addStruct(structDef); }
 
     std::optional<ValueRef> readVariable(std::string_view name) const;
 
