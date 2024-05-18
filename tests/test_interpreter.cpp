@@ -37,27 +37,80 @@ TEST_F(InterpreterTest, empty_program) {
     EXPECT_EQ(interpretAndGetOutput(), "");
 }
 
-TEST_F(InterpreterTest, basic_print) {
-    SetUp("print 5;");
-    EXPECT_EQ(interpretAndGetOutput(), "5\n");
-}
-
 TEST_F(InterpreterTest, print_new_line) {
     SetUp("print;");
     EXPECT_EQ(interpretAndGetOutput(), "\n");
 }
 
-TEST_F(InterpreterTest, global_variable) {
+TEST_F(InterpreterTest, print_constant) {
+    SetUp("print 5;");
+    EXPECT_EQ(interpretAndGetOutput(), "5\n");
+}
+
+TEST_F(InterpreterTest, var_def) {
+    SetUp(
+        "int x = 5;"
+        "print x;");
+    EXPECT_EQ(interpretAndGetOutput(), "5\n");
+}
+
+TEST_F(InterpreterTest, var_shadowing) {
+    SetUp(
+        "int x = 5;"
+        "void foo() {"
+        "    int x = 22;"
+        "    print x;"
+        "}"
+        "foo();");
+    EXPECT_EQ(interpretAndGetOutput(), "22\n");
+}
+
+TEST_F(InterpreterTest, var_not_found) {
     SetUp(
         "void foo() {"
         "    print x;"
         "}"
-        "int x = 5;"
         "foo();");
-    EXPECT_EQ(interpretAndGetOutput(), "5\n");
+    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
 }
 
-TEST_F(InterpreterTest, variable_in_parent) {
+TEST_F(InterpreterTest, var_redefinition) {
+    SetUp(
+        "int x = 5;"
+        "int x = 10;");
+    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
+}
+
+TEST_F(InterpreterTest, var_def_mismatched_types) {
+    SetUp("int x = true;");
+    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
+}
+
+TEST_F(InterpreterTest, assignment) {
+    SetUp(
+        "int x = 5;"
+        "x = 20;"
+        "print x;");
+    EXPECT_EQ(interpretAndGetOutput(), "20\n");
+}
+
+TEST_F(InterpreterTest, assignment_mismatched_types) {
+    SetUp(
+        "int x = 5;"
+        "x = true;");
+    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
+}
+
+TEST_F(InterpreterTest, func_call) {
+    SetUp(
+        "void fun() {"
+        R"(    print "Inside function";)"
+        "}"
+        "fun();");
+    EXPECT_EQ(interpretAndGetOutput(), "Inside function\n");
+}
+
+TEST_F(InterpreterTest, variable_in_parent_context) {
     SetUp(
         "void parent() {"
         "    void nested() {"
@@ -70,7 +123,7 @@ TEST_F(InterpreterTest, variable_in_parent) {
     EXPECT_EQ(interpretAndGetOutput(), "24\n");
 }
 
-TEST_F(InterpreterTest, function_in_parent) {
+TEST_F(InterpreterTest, function_in_parent_context) {
     SetUp(
         "void parent() {"
         "    void nested() {"
@@ -83,26 +136,6 @@ TEST_F(InterpreterTest, function_in_parent) {
         "}"
         "parent();");
     EXPECT_EQ(interpretAndGetOutput(), "42\n");
-}
-
-TEST_F(InterpreterTest, assignment) {
-    SetUp(
-        "int x = 5;"
-        "x = 20;"
-        "print x;");
-    EXPECT_EQ(interpretAndGetOutput(), "20\n");
-}
-
-TEST_F(InterpreterTest, var_def_mismatched_types) {
-    SetUp("int x = true;");
-    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
-}
-
-TEST_F(InterpreterTest, assignment_mismatched_types) {
-    SetUp(
-        "int x = 5;"
-        "x = true;");
-    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
 }
 
 TEST_F(InterpreterTest, function_multiple_args) {
@@ -155,6 +188,11 @@ TEST_F(InterpreterTest, function_invalid_arg_type) {
     EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
 }
 
+TEST_F(InterpreterTest, function_not_found) {
+    SetUp("foo(5);");
+    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
+}
+
 TEST_F(InterpreterTest, struct_definition) {
     SetUp(
         "struct Point {"
@@ -187,7 +225,7 @@ TEST_F(InterpreterTest, struct_var_def) {
         "Point p = {1, 2.0};");
     interpretAndGetOutput();
 
-    auto valueRef = interpreter_.readVariable("p");
+    auto valueRef = interpreter_.getVariable("p");
     ASSERT_TRUE(std::holds_alternative<NamedStructObj>(valueRef->value));
     auto structObj = std::get<NamedStructObj>(valueRef->value);
 
@@ -212,7 +250,7 @@ TEST_F(InterpreterTest, struct_assignment) {
         "p = {4, 5.0};");
     interpretAndGetOutput();
 
-    auto valueRef = interpreter_.readVariable("p");
+    auto valueRef = interpreter_.getVariable("p");
     ASSERT_TRUE(std::holds_alternative<NamedStructObj>(valueRef->value));
     auto structObj = std::get<NamedStructObj>(valueRef->value);
 
@@ -225,6 +263,11 @@ TEST_F(InterpreterTest, struct_assignment) {
     const auto secondField = structObj.values.at(1);
     ASSERT_TRUE(std::holds_alternative<Floating>(secondField->value));
     EXPECT_EQ(std::get<Floating>(secondField->value), 5.0f);
+}
+
+TEST_F(InterpreterTest, struct_not_found) {
+    SetUp("MyStruct x = {1, 2};");
+    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
 }
 
 TEST_F(InterpreterTest, struct_field_access) {

@@ -17,34 +17,13 @@ class Scope {
     using StructDefEntry = const StructDef*;
 
    public:
-    void addVariable(const std::string& name, ValueRef ref) {
-        variables_.emplace_back(name, std::move(ref));
-    }
+    void addVariable(const std::string& name, ValueRef ref);
+    void addFunction(const FuncDef* func);
+    void addStruct(const StructDef* structDef);
 
-    void addFunction(const FuncDef* func) { functions_.emplace_back(func); }
-
-    void addStruct(const StructDef* structDef) { structs_.emplace_back(structDef); }
-
-    std::optional<ValueRef> readVariable(std::string_view name) const {
-        auto res = std::ranges::find(variables_, name, &VarEntry::first);
-        if (res != variables_.end())
-            return res->second;
-        return std::nullopt;
-    }
-
-    std::optional<const FuncDef*> getFunction(std::string_view name) const {
-        auto res = std::ranges::find(functions_, name, &FuncDef::getName);
-        if (res != functions_.end())
-            return *res;
-        return std::nullopt;
-    }
-
-    std::optional<StructDefEntry> getStructDef(std::string_view name) const {
-        auto res = std::ranges::find(structs_, name, &StructDef::name);
-        if (res != structs_.end())
-            return *res;
-        return std::nullopt;
-    }
+    std::optional<ValueRef> getVariable(std::string_view name) const;
+    std::optional<const FuncDef*> getFunction(std::string_view name) const;
+    std::optional<StructDefEntry> getStructDef(std::string_view name) const;
 
    private:
     std::vector<VarEntry> variables_;

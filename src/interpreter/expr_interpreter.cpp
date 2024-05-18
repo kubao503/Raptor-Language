@@ -103,5 +103,5 @@ void ExpressionInterpreter::operator()(const FuncCall&) const {
 }
 
 void ExpressionInterpreter::operator()(const VariableAccess& expr) const {
-    lastResult_ = interpreter_.readVariable(expr.name);
+    lastResult_ = interpreter_.getVariable(expr.name);
 }

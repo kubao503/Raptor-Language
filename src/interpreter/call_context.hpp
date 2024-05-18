@@ -18,7 +18,7 @@ class CallContext {
 
     void addStruct(const StructDef* structDef) { scopes_.back().addStruct(structDef); }
 
-    std::optional<ValueRef> readVariable(std::string_view name) const;
+    std::optional<ValueRef> getVariable(std::string_view name) const;
 
     using FuncWithCtx = std::pair<const FuncDef*, const CallContext*>;
     std::optional<FuncWithCtx> getFunctionWithCtx(std::string_view name) const;

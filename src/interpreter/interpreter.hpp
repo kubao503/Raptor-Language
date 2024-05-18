@@ -12,7 +12,7 @@ class Interpreter {
     Interpreter(std::ostream& out);
     void interpret(const Program& program);
 
-    ValueRef readVariable(std::string_view name) const;
+    ValueRef getVariable(std::string_view name) const;
     CallContext::FuncWithCtx getFunctionWithCtx(std::string_view name) const;
     const StructDef* getStructDef(std::string_view name) const;
 
@@ -29,14 +29,13 @@ class Interpreter {
     void addFunction(const FuncDef* func);
     void addStruct(const StructDef* structDef);
 
-    NamedStructObj nameStructObj(const StructObj& structObj, std::string_view name) const;
-    ValueRef convertToNamed(const Type& varDefType, ValueRef valueRef) const;
-    ValueRef convertToNamed(ValueRef oldValueRef, ValueRef newValueRef) const;
+    ValueRef makeNamed(const Type& varDefType, ValueRef valueRef) const;
+    ValueRef makeNamed(ValueRef oldValueRef, ValueRef newValueRef) const;
 
     void passArguments(const Arguments& args, const Parameters& params);
     void passArgument(const Argument& arg, const Parameter& param);
 
-    std::optional<ValueRef> getValueFromExpr(const Expression* expr) const;
+    ValueRef getValueFromExpr(const Expression& expr) const;
 
     std::stack<CallContext> callStack_;
     std::ostream& out_;

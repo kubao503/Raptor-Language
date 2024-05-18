@@ -3,6 +3,7 @@ add_library(
     interpreter.cpp
     expr_interpreter.cpp
     call_context.cpp
+    scope.cpp
 )
 
 target_include_directories(interpreter INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
