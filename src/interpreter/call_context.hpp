@@ -22,6 +22,7 @@ class CallContext {
 
     using FuncWithCtx = std::pair<const FuncDef*, const CallContext*>;
     std::optional<FuncWithCtx> getFunctionWithCtx(std::string_view name) const;
+    std::optional<const StructDef*> getStructDef(std::string_view name) const;
 
    private:
     const CallContext* parentContext_{nullptr};

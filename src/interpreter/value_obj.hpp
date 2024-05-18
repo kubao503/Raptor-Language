@@ -16,14 +16,21 @@ struct StructObj {
     std::vector<ValueRef> values;
 };
 
+struct NamedStructObj : public StructObj {
+    NamedStructObj(std::vector<ValueRef> values, const StructDef* structDef)
+        : StructObj{std::move(values)}, structDef{structDef} {
+        if (!structDef)
+            throw std::runtime_error(
+                "Cannot instantiate StructObj without struct definition");
+    }
+
+    const StructDef* structDef;
+};
+
 struct ValueObj {
-    using Value = std::variant<Integral, Floating, bool, std::string, StructObj>;
-
-    ValueObj(Value value, Type type)
-        : value{std::move(value)}, type{std::move(type)} {}
-
+    using Value =
+        std::variant<Integral, Floating, bool, std::string, StructObj, NamedStructObj>;
     Value value;
-    Type type;
 };
 
 #endif

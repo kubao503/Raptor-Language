@@ -18,7 +18,7 @@ class Scope {
 
    public:
     void addVariable(const std::string& name, ValueRef ref) {
-        variables_.emplace_back(name, ref);
+        variables_.emplace_back(name, std::move(ref));
     }
 
     void addFunction(const FuncDef* func) { functions_.emplace_back(func); }
@@ -35,6 +35,13 @@ class Scope {
     std::optional<const FuncDef*> getFunction(std::string_view name) const {
         auto res = std::ranges::find(functions_, name, &FuncDef::getName);
         if (res != functions_.end())
+            return *res;
+        return std::nullopt;
+    }
+
+    std::optional<StructDefEntry> getStructDef(std::string_view name) const {
+        auto res = std::ranges::find(structs_, name, &StructDef::name);
+        if (res != structs_.end())
             return *res;
         return std::nullopt;
     }

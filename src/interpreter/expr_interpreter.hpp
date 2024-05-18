@@ -12,7 +12,7 @@ class ExpressionInterpreter : public ExpressionVisitor {
 
     ValueRef getValue() const { return lastResult_; }
 
-    void operator()(const StructInitExpression&) const override;
+    void operator()(const StructInitExpression& expr) const override;
     void operator()(const DisjunctionExpression&) const override;
     void operator()(const ConjunctionExpression&) const override;
     void operator()(const EqualExpression&) const override;
@@ -29,7 +29,7 @@ class ExpressionInterpreter : public ExpressionVisitor {
     void operator()(const LogicalNegationExpression&) const override;
     void operator()(const ConversionExpression&) const override;
     void operator()(const TypeCheckExpression&) const override;
-    void operator()(const FieldAccessExpression&) const override;
+    void operator()(const FieldAccessExpression& expr) const override;
     void operator()(const Constant& expr) const override;
     void operator()(const FuncCall&) const override;
     void operator()(const VariableAccess& expr) const override;

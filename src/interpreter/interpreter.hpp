@@ -13,8 +13,8 @@ class Interpreter {
     void interpret(const Program& program);
 
     ValueRef readVariable(std::string_view name) const;
-
     CallContext::FuncWithCtx getFunctionWithCtx(std::string_view name) const;
+    const StructDef* getStructDef(std::string_view name) const;
 
     void operator()(const PrintStatement& stmt) const;
     void operator()(const VarDef& stmt);
@@ -25,9 +25,13 @@ class Interpreter {
     void operator()(const auto&) const { throw std::runtime_error("unknown statement"); }
 
    private:
-    void addVariable(const std::string& name, ValueRef ref);
+    void addVariable(const std::string& name, ValueRef valueRef);
     void addFunction(const FuncDef* func);
     void addStruct(const StructDef* structDef);
+
+    NamedStructObj nameStructObj(const StructObj& structObj, std::string_view name) const;
+    ValueRef convertToNamed(const Type& varDefType, ValueRef valueRef) const;
+    ValueRef convertToNamed(ValueRef oldValueRef, ValueRef newValueRef) const;
 
     void passArguments(const Arguments& args, const Parameters& params);
     void passArgument(const Argument& arg, const Parameter& param);
