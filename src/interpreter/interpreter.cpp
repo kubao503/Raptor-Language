@@ -76,20 +76,23 @@ ValueRef Interpreter::getValueFromExpr(const Expression& expr) const {
 }
 
 struct ValuePrinter {
-    ValuePrinter(std::ostream& out)
+    explicit ValuePrinter(std::ostream& out)
         : out_{out} {}
 
-    void operator()(const NamedStructObj& s) const {
-        for (auto v : s.values)
-            out_ << v;
-    }
-    void operator()(const StructObj& s) const {
-        for (auto v : s.values)
-            out_ << v;
-    }
-    void operator()(const auto& v) const { out_ << v; }
+    void operator()(const NamedStructObj& s) const { printStruct(s.values); }
+    void operator()(const StructObj& s) const { printStruct(s.values); }
+    void operator()(const auto& v) const { out_ << std::boolalpha << v; }
 
    private:
+    void printStruct(const std::vector<ValueRef>& values) const {
+        out_ << "{ ";
+        for (auto v : values) {
+            std::visit(*this, v->value);
+            out_ << ' ';
+        }
+        out_ << '}';
+    }
+
     std::ostream& out_;
 };
 

@@ -58,7 +58,7 @@ SymbolNotFound::SymbolNotFound(const Position& position, const SymbolNotFound& e
 
 TypeMismatch::TypeMismatch(const Position& position, Type expected, Type actual)
     : BaseException{position, "Expected: " + std::visit(TypeToString(), expected)
-                                  + "\nActual:" + std::visit(TypeToString(), actual)},
+                                  + "\nActual: " + std::visit(TypeToString(), actual)},
       expected_{expected},
       actual_{actual} {}
 
