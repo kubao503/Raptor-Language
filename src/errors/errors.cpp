@@ -47,6 +47,15 @@ struct TypeToString {
     std::string operator()(const std::string& type) { return type; }
 };
 
+SymbolNotFound::SymbolNotFound(const Position& position, std::string type,
+                               std::string symbol)
+    : BaseException{position, type + " " + symbol + " not found"},
+      type_{type},
+      symbol_{symbol} {}
+
+SymbolNotFound::SymbolNotFound(const Position& position, SymbolNotFound e)
+    : SymbolNotFound{position, e.type_, e.symbol_} {}
+
 TypeMismatch::TypeMismatch(const Position& position, Type expected, Type actual)
     : BaseException{position, "Expected: " + std::visit(TypeToString(), expected)
                                   + "\nActual:" + std::visit(TypeToString(), actual)},

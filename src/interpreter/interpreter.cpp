@@ -143,6 +143,8 @@ void Interpreter::operator()(const VarDef& stmt) {
         valueRef = checkTypeAndConvert(stmt.type, std::move(valueRef));
     } catch (const TypeMismatch& e) {
         throw TypeMismatch{stmt.position, e};
+    } catch (const SymbolNotFound& e) {
+        throw SymbolNotFound{stmt.position, e};
     }
 
     addVariable(stmt.name, std::move(valueRef));

@@ -6,8 +6,12 @@
 
 class SymbolNotFound : public BaseException {
    public:
-    SymbolNotFound(const Position& position, std::string type, std::string symbol)
-        : BaseException{position, type + " " + symbol + " not found"} {}
+    SymbolNotFound(const Position& position, std::string type, std::string symbol);
+    SymbolNotFound(const Position& position, SymbolNotFound e);
+
+   private:
+    std::string type_;
+    std::string symbol_;
 };
 
 class TypeMismatch : public BaseException {
