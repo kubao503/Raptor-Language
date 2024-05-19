@@ -92,9 +92,9 @@ TEST_F(InterpreterTest, var_not_found) {
 
 TEST_F(InterpreterTest, var_redefinition) {
     SetUp(
-        "int x = 5;"
+        "int x = 5;\n"
         "int x = 10;");
-    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
+    interpretAndExpectThrowAt<VariableRedefinition>({2, 1});
 }
 
 TEST_F(InterpreterTest, var_def_mismatched_types) {

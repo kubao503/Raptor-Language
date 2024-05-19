@@ -53,7 +53,7 @@ SymbolNotFound::SymbolNotFound(const Position& position, std::string type,
       type_{type},
       symbol_{symbol} {}
 
-SymbolNotFound::SymbolNotFound(const Position& position, SymbolNotFound e)
+SymbolNotFound::SymbolNotFound(const Position& position, const SymbolNotFound& e)
     : SymbolNotFound{position, e.type_, e.symbol_} {}
 
 TypeMismatch::TypeMismatch(const Position& position, Type expected, Type actual)
@@ -62,5 +62,8 @@ TypeMismatch::TypeMismatch(const Position& position, Type expected, Type actual)
       expected_{expected},
       actual_{actual} {}
 
-TypeMismatch::TypeMismatch(const Position& position, TypeMismatch e)
+TypeMismatch::TypeMismatch(const Position& position, const TypeMismatch& e)
     : TypeMismatch{position, e.expected_, e.actual_} {}
+
+Redefinition::Redefinition(const Position& position, std::string type, std::string name)
+    : BaseException{position, "Redefinition of " + name + " " + type}, name_{name} {}

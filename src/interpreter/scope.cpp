@@ -1,8 +1,10 @@
 #include "scope.hpp"
 
+#include "interpreter_errors.hpp"
+
 void Scope::addVariable(const std::string& name, ValueRef ref) {
     if (getVariable(name))
-        throw std::runtime_error("Redefinition of variable " + name);
+        throw VariableRedefinition{{}, name};
     variables_.emplace_back(name, std::move(ref));
 }
 

@@ -7,19 +7,19 @@
 #include "interpreter_errors.hpp"
 
 struct TypeComparer {
-    bool operator()(Integral, BuiltInType variableType) {
+    bool operator()(BuiltInType variableType, Integral) {
         return variableType == BuiltInType::INT;
     }
-    bool operator()(Floating, BuiltInType variableType) {
+    bool operator()(BuiltInType variableType, Floating) {
         return variableType == BuiltInType::FLOAT;
     }
-    bool operator()(bool, BuiltInType variableType) {
+    bool operator()(BuiltInType variableType, bool) {
         return variableType == BuiltInType::BOOL;
     }
-    bool operator()(const std::string&, BuiltInType variableType) {
+    bool operator()(BuiltInType variableType, const std::string&) {
         return variableType == BuiltInType::STR;
     }
-    bool operator()(const NamedStructObj& value, const std::string& variableType) {
+    bool operator()(const std::string& variableType, const NamedStructObj& value) {
         return value.structDef->name == variableType;
     }
     bool operator()(auto, auto) { return false; }
@@ -113,7 +113,7 @@ ValueRef Interpreter::checkTypeAndConvert(const Type& type, ValueRef valueRef) c
         valueRef = std::make_shared<ValueObj>(namedStructObj);
     }
 
-    if (!std::visit(TypeComparer(), valueRef->value, type))
+    if (!std::visit(TypeComparer(), type, valueRef->value))
         throw TypeMismatch{{}, type, std::visit(ValueToType(), valueRef->value)};
 
     return valueRef;
@@ -147,7 +147,11 @@ void Interpreter::operator()(const VarDef& stmt) {
         throw SymbolNotFound{stmt.position, e};
     }
 
-    addVariable(stmt.name, std::move(valueRef));
+    try {
+        addVariable(stmt.name, std::move(valueRef));
+    } catch (const VariableRedefinition& e) {
+        throw VariableRedefinition{stmt.position, e};
+    }
 }
 
 void Interpreter::operator()(const Assignment& stmt) const {
