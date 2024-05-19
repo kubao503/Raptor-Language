@@ -126,6 +126,24 @@ TEST_F(InterpreterTest, func_call) {
     EXPECT_EQ(interpretAndGetOutput(), "Inside function\n");
 }
 
+TEST_F(InterpreterTest, function_redefinition) {
+    SetUp(
+        "void fun() { }\n"
+        "int fun(int a) { }");
+    interpretAndExpectThrowAt<FunctionRedefinition>({2, 1});
+}
+
+TEST_F(InterpreterTest, function_shadowing) {
+    SetUp(
+        "void fun() { print 1; }"
+        "void main() {"
+        "    int fun() { print 2; }"
+        "    fun();"
+        "}"
+        "main();");
+    EXPECT_EQ(interpretAndGetOutput(), "2\n");
+}
+
 TEST_F(InterpreterTest, variable_in_parent_context) {
     SetUp(
         "void parent() {"

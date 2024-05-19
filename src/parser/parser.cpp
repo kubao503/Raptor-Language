@@ -54,12 +54,16 @@ Statements Parser::parseStatements() {
 ///      | STRUCT_DEF
 ///      | VNT_DEF
 std::optional<Statement> Parser::parseStatement() {
+    auto prevPosition = statementPosition_;
     statementPosition_ = currentToken_.getPosition();
 
     for (const auto& parser : statementParsers_) {
-        if (auto statement = parser(*this))
+        if (auto statement = parser(*this)) {
+            statementPosition_ = prevPosition;
             return statement;
+        }
     }
+    statementPosition_ = prevPosition;
     return std::nullopt;
 }
 
@@ -263,7 +267,6 @@ std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
                                             const std::string& name) {
     if (currentToken_.getType() != Token::Type::L_PAR)
         return std::nullopt;
-    auto position = currentToken_.getPosition();
     consumeToken();
 
     auto parameters = parseList<Parameter>(&Parser::parseParameter);
@@ -281,7 +284,7 @@ std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
            SyntaxException(currentToken_.getPosition(),
                            "Missing right curly brace after function body"));
     return FuncDef(returnType, name, std::move(parameters), std::move(statements),
-                   std::move(position));
+                   statementPosition_);
 }
 
 /// PARAM = [ ref ] TYPE ID

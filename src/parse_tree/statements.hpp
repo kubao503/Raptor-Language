@@ -97,6 +97,7 @@ class FuncDef {
     const std::string& getName() const { return name_; }
     const Parameters& getParameters() const { return parameters_; }
     const Statements& getStatements() const { return statements_; }
+    const Position& getPosition() const { return position_; }
 
    private:
     ReturnType returnType_{""};

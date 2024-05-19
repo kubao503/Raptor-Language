@@ -36,7 +36,15 @@ class VariableRedefinition : public Redefinition {
     VariableRedefinition(const Position& position, std::string name)
         : Redefinition{position, "variable", std::move(name)} {}
     VariableRedefinition(const Position& position, const VariableRedefinition& e)
-        : Redefinition{position, "variable", e.name_} {}
+        : VariableRedefinition{position, e.name_} {}
+};
+
+class FunctionRedefinition : public Redefinition {
+   public:
+    FunctionRedefinition(const Position& position, std::string name)
+        : Redefinition{position, "function", std::move(name)} {}
+    FunctionRedefinition(const Position& position, const FunctionRedefinition& e)
+        : FunctionRedefinition{position, e.name_} {}
 };
 
 #endif

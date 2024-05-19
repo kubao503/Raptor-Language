@@ -172,7 +172,11 @@ void Interpreter::operator()(const Assignment& stmt) const {
 }
 
 void Interpreter::operator()(const FuncDef& stmt) {
-    addFunction(&stmt);
+    try {
+        addFunction(&stmt);
+    } catch (const FunctionRedefinition& e) {
+        throw FunctionRedefinition{stmt.getPosition(), e};
+    }
 }
 
 void Interpreter::operator()(const FuncCall& stmt) {

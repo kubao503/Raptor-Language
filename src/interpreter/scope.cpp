@@ -9,6 +9,8 @@ void Scope::addVariable(const std::string& name, ValueRef ref) {
 }
 
 void Scope::addFunction(const FuncDef* func) {
+    if (getFunction(func->getName()))
+        throw FunctionRedefinition{{}, func->getName()};
     functions_.emplace_back(func);
 }
 
