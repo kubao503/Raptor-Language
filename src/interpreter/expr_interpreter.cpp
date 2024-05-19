@@ -1,6 +1,7 @@
 #include "expr_interpreter.hpp"
 
 #include "interpreter.hpp"
+#include "interpreter_errors.hpp"
 
 ExpressionInterpreter::ExpressionInterpreter(const Interpreter& interpreter)
     : interpreter_{interpreter} {}
@@ -103,5 +104,8 @@ void ExpressionInterpreter::operator()(const FuncCall&) const {
 }
 
 void ExpressionInterpreter::operator()(const VariableAccess& expr) const {
-    lastResult_ = interpreter_.getVariable(expr.name);
+    auto variable = interpreter_.getVariable(expr.name);
+    if (!variable)
+        throw SymbolNotFound{expr.position, "Variable", expr.name};
+    lastResult_ = *variable;
 }

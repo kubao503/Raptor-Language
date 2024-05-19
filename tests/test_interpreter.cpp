@@ -2,6 +2,7 @@
 
 #include "expr_interpreter.hpp"
 #include "interpreter.hpp"
+#include "interpreter_errors.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
 
@@ -15,12 +16,27 @@ class InterpreterTest : public testing::Test {
         source_ = std::make_unique<Source>(stream_);
         lexer_ = std::make_unique<Lexer>(*source_);
         parser_ = std::make_unique<Parser>(*lexer_);
+        program_ = parser_->parseProgram();
     }
 
     std::string interpretAndGetOutput() {
-        program_ = parser_->parseProgram();
         interpreter_.interpret(program_);
         return output_.str();
+    }
+
+    template <typename Exception>
+    void interpretAndExpectThrowAt(Position position) {
+        EXPECT_THROW(
+            {
+                try {
+                    interpreter_.interpret(program_);
+                } catch (const Exception& e) {
+                    EXPECT_EQ(e.getPosition().line, position.line);
+                    EXPECT_EQ(e.getPosition().column, position.column);
+                    throw;
+                }
+            },
+            Exception);
     }
 
     std::istringstream stream_;
@@ -67,11 +83,11 @@ TEST_F(InterpreterTest, var_shadowing) {
 
 TEST_F(InterpreterTest, var_not_found) {
     SetUp(
-        "void foo() {"
-        "    print x;"
-        "}"
+        "void foo() {\n"
+        "    print x;\n"
+        "}\n"
         "foo();");
-    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
+    interpretAndExpectThrowAt<SymbolNotFound>({2, 11});
 }
 
 TEST_F(InterpreterTest, var_redefinition) {
@@ -190,7 +206,7 @@ TEST_F(InterpreterTest, function_invalid_arg_type) {
 
 TEST_F(InterpreterTest, function_not_found) {
     SetUp("foo(5);");
-    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
+    interpretAndExpectThrowAt<SymbolNotFound>({1, 1});
 }
 
 TEST_F(InterpreterTest, struct_definition) {
@@ -200,7 +216,7 @@ TEST_F(InterpreterTest, struct_definition) {
         "    Point y"
         "}");
     interpretAndGetOutput();
-    auto structDef = interpreter_.getStructDef("Point");
+    const StructDef* structDef = interpreter_.getStructDef("Point").value();
 
     EXPECT_EQ(structDef->name, "Point");
     ASSERT_EQ(structDef->fields.size(), 2);
@@ -225,7 +241,7 @@ TEST_F(InterpreterTest, struct_var_def) {
         "Point p = {1, 2.0};");
     interpretAndGetOutput();
 
-    auto valueRef = interpreter_.getVariable("p");
+    auto valueRef = interpreter_.getVariable("p").value();
     ASSERT_TRUE(std::holds_alternative<NamedStructObj>(valueRef->value));
     auto structObj = std::get<NamedStructObj>(valueRef->value);
 
@@ -250,7 +266,7 @@ TEST_F(InterpreterTest, struct_assignment) {
         "p = {4, 5.0};");
     interpretAndGetOutput();
 
-    auto valueRef = interpreter_.getVariable("p");
+    auto valueRef = interpreter_.getVariable("p").value();
     ASSERT_TRUE(std::holds_alternative<NamedStructObj>(valueRef->value));
     auto structObj = std::get<NamedStructObj>(valueRef->value);
 
@@ -267,7 +283,7 @@ TEST_F(InterpreterTest, struct_assignment) {
 
 TEST_F(InterpreterTest, struct_not_found) {
     SetUp("MyStruct x = {1, 2};");
-    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
+    interpretAndExpectThrowAt<SymbolNotFound>({1, 1});
 }
 
 TEST_F(InterpreterTest, struct_field_access) {
@@ -288,7 +304,7 @@ TEST_F(InterpreterTest, field_access_of_non_struct) {
 }
 
 TEST_F(InterpreterTest, field_access_of_anonymous_struct) {
-    SetUp("print {1, 2}.field;");
+    SetUp("print ({1, 2}).field;");
     EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
 }
 

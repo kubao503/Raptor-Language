@@ -21,6 +21,7 @@ struct FieldAccess {
 struct Assignment {
     LValue lhs;
     PExpression rhs;
+    Position position;
 };
 
 struct VarDef {

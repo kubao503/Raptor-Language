@@ -279,18 +279,20 @@ using Arguments = std::vector<Argument>;
 struct FuncCall : public Expression {
     std::string name;
     Arguments arguments;
+    Position position;
 
-    FuncCall(std::string name, Arguments arguments)
-        : name{std::move(name)}, arguments{std::move(arguments)} {}
+    FuncCall(std::string name, Arguments arguments, const Position& position)
+        : name{std::move(name)}, arguments{std::move(arguments)}, position{position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
 
 struct VariableAccess : public Expression {
     std::string name;
+    Position position;
 
-    VariableAccess(std::string name)
-        : name{std::move(name)} {}
+    VariableAccess(std::string name, const Position& position)
+        : name{std::move(name)}, position{position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };

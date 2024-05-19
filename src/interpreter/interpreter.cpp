@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "expr_interpreter.hpp"
+#include "interpreter_errors.hpp"
 
 struct TypeComparer {
     bool operator()(Integral, BuiltInType variableType) {
@@ -46,22 +47,17 @@ void Interpreter::addStruct(const StructDef* structDef) {
     callStack_.top().addStruct(structDef);
 }
 
-ValueRef Interpreter::getVariable(std::string_view name) const {
-    if (auto varRef = callStack_.top().getVariable(name))
-        return *varRef;
-    throw std::runtime_error("Variable " + std::string(name) + " not found");
+std::optional<ValueRef> Interpreter::getVariable(std::string_view name) const {
+    return callStack_.top().getVariable(name);
 }
 
-CallContext::FuncWithCtx Interpreter::getFunctionWithCtx(std::string_view name) const {
-    if (auto funcWithCtx = callStack_.top().getFunctionWithCtx(name))
-        return *funcWithCtx;
-    throw std::runtime_error("Function " + std::string(name) + " not found");
+std::optional<CallContext::FuncWithCtx> Interpreter::getFunctionWithCtx(
+    std::string_view name) const {
+    return callStack_.top().getFunctionWithCtx(name);
 }
 
-const StructDef* Interpreter::getStructDef(std::string_view name) const {
-    if (auto structDef = callStack_.top().getStructDef(name))
-        return *structDef;
-    throw std::runtime_error("Struct definition " + std::string(name) + " not found");
+std::optional<const StructDef*> Interpreter::getStructDef(std::string_view name) const {
+    return callStack_.top().getStructDef(name);
 }
 
 ValueRef Interpreter::getValueFromExpr(const Expression& expr) const {
@@ -103,7 +99,9 @@ ValueRef Interpreter::makeNamed(const Type& type, ValueRef valueRef) const {
         if (!name)
             throw std::runtime_error("Expression type does not match with variable type");
         auto structDef = getStructDef(*name);
-        auto namedStructObj = NamedStructObj{structObj->values, structDef};
+        if (!structDef)
+            throw SymbolNotFound{{}, "Struct definition", *name};
+        auto namedStructObj = NamedStructObj{structObj->values, *structDef};
         return std::make_shared<ValueObj>(namedStructObj);
     }
     return valueRef;
@@ -134,14 +132,16 @@ void Interpreter::operator()(const VarDef& stmt) {
 void Interpreter::operator()(const Assignment& stmt) const {
     auto name = std::get<std::string>(stmt.lhs);
     auto oldValueRef = getVariable(name);
+    if (!oldValueRef)
+        throw SymbolNotFound(stmt.position, "Variable", name);
 
     auto newValueRef = getValueFromExpr(*stmt.rhs);
-    auto newNamedValue = makeNamed(oldValueRef, newValueRef);
+    auto newNamedValue = makeNamed(*oldValueRef, newValueRef);
 
-    if (oldValueRef->value.index() != newNamedValue->value.index())
+    if ((*oldValueRef)->value.index() != newNamedValue->value.index())
         throw std::runtime_error("Mismatched types at assignment");
 
-    oldValueRef->value = std::move(newNamedValue->value);
+    (*oldValueRef)->value = std::move(newNamedValue->value);
 }
 
 void Interpreter::operator()(const FuncDef& stmt) {
@@ -149,7 +149,10 @@ void Interpreter::operator()(const FuncDef& stmt) {
 }
 
 void Interpreter::operator()(const FuncCall& stmt) {
-    auto [func, ctx] = getFunctionWithCtx(stmt.name);
+    auto funcWithCtx = getFunctionWithCtx(stmt.name);
+    if (!funcWithCtx)
+        throw SymbolNotFound{stmt.position, "Function", stmt.name};
+    auto [func, ctx] = *funcWithCtx;
 
     callStack_.emplace(ctx);
     passArguments(stmt.arguments, func->getParameters());
