@@ -93,38 +93,42 @@ void Interpreter::operator()(const PrintStatement& stmt) const {
     out_ << '\n';
 }
 
-ValueRef Interpreter::makeNamed(const Type& type, ValueRef valueRef) const {
-    if (auto structObj = std::get_if<StructObj>(&valueRef->value)) {
-        auto name = std::get_if<std::string>(&type);
-        if (!name)
-            throw std::runtime_error("Expression type does not match with variable type");
+ValueRef Interpreter::checkTypeAndConvert(const Type& type, ValueRef valueRef) const {
+    auto name = std::get_if<std::string>(&type);
+    auto structObj = std::get_if<StructObj>(&valueRef->value);
+    if (structObj && name) {
         auto structDef = getStructDef(*name);
         if (!structDef)
             throw SymbolNotFound{{}, "Struct definition", *name};
         auto namedStructObj = NamedStructObj{structObj->values, *structDef};
-        return std::make_shared<ValueObj>(namedStructObj);
+        valueRef = std::make_shared<ValueObj>(namedStructObj);
     }
+
+    if (!std::visit(TypeComparer(), valueRef->value, type))
+        throw std::runtime_error("Expression type does not match with variable type");
+
     return valueRef;
 }
 
-ValueRef Interpreter::makeNamed(ValueRef oldValueRef, ValueRef newValueRef) const {
-    if (auto structObj = std::get_if<StructObj>(&newValueRef->value)) {
-        auto oldNamedStructObj = std::get_if<NamedStructObj>(&oldValueRef->value);
-        if (!oldNamedStructObj)
-            throw std::runtime_error("Expression type does not match with variable type");
+ValueRef Interpreter::checkTypeAndConvert(ValueRef oldValueRef,
+                                          ValueRef newValueRef) const {
+    auto structObj = std::get_if<StructObj>(&newValueRef->value);
+    auto oldNamedStructObj = std::get_if<NamedStructObj>(&oldValueRef->value);
+    if (structObj && oldNamedStructObj) {
         auto namedStructObj =
             NamedStructObj{std::move(structObj->values), oldNamedStructObj->structDef};
-        return std::make_shared<ValueObj>(std::move(namedStructObj));
+        newValueRef = std::make_shared<ValueObj>(std::move(namedStructObj));
     }
+
+    if (oldValueRef->value.index() != newValueRef->value.index())
+        throw std::runtime_error("Argument type does not match with parameter type");
+
     return newValueRef;
 }
 
 void Interpreter::operator()(const VarDef& stmt) {
     auto valueRef = getValueFromExpr(*stmt.expression);
-    auto namedValueRef = makeNamed(stmt.type, std::move(valueRef));
-
-    if (!std::visit(TypeComparer(), namedValueRef->value, stmt.type))
-        throw std::runtime_error("Expression type does not match with variable type");
+    auto namedValueRef = checkTypeAndConvert(stmt.type, std::move(valueRef));
 
     addVariable(stmt.name, std::move(namedValueRef));
 }
@@ -136,10 +140,7 @@ void Interpreter::operator()(const Assignment& stmt) const {
         throw SymbolNotFound(stmt.position, "Variable", name);
 
     auto newValueRef = getValueFromExpr(*stmt.rhs);
-    auto newNamedValue = makeNamed(*oldValueRef, newValueRef);
-
-    if ((*oldValueRef)->value.index() != newNamedValue->value.index())
-        throw std::runtime_error("Mismatched types at assignment");
+    auto newNamedValue = checkTypeAndConvert(*oldValueRef, std::move(newValueRef));
 
     (*oldValueRef)->value = std::move(newNamedValue->value);
 }
@@ -190,11 +191,7 @@ void Interpreter::passArgument(const Argument& arg, const Parameter& param) {
     if (!arg.ref)
         valueRef = std::make_shared<ValueObj>(*valueRef);
 
-    auto namedValueRef = makeNamed(param.type, valueRef);
-
-    if (!std::visit(TypeComparer(), namedValueRef->value, param.type))
-        throw std::runtime_error("Argument type does not match with parameter type");
-
+    auto namedValueRef = checkTypeAndConvert(param.type, std::move(valueRef));
     callStack_.top().addVariable(param.name, std::move(namedValueRef));
 }
 

@@ -30,8 +30,8 @@ class Interpreter {
     void addFunction(const FuncDef* func);
     void addStruct(const StructDef* structDef);
 
-    ValueRef makeNamed(const Type& varDefType, ValueRef valueRef) const;
-    ValueRef makeNamed(ValueRef oldValueRef, ValueRef newValueRef) const;
+    ValueRef checkTypeAndConvert(const Type& varDefType, ValueRef valueRef) const;
+    ValueRef checkTypeAndConvert(ValueRef oldValueRef, ValueRef newValueRef) const;
 
     void passArguments(const Arguments& args, const Parameters& params);
     void passArgument(const Argument& arg, const Parameter& param);
