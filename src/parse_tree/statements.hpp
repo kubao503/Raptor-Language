@@ -85,12 +85,12 @@ struct PrintStatement {
 class FuncDef {
    public:
     FuncDef(const ReturnType& returnType, const std::string& name,
-            const Parameters& parameters, Statements statements, const Position& position)
+            const Parameters& parameters, Statements statements, Position position)
         : returnType_{returnType},
           name_{name},
           parameters_{parameters},
           statements_{std::move(statements)},
-          position_{position} {}
+          position_{std::move(position)} {}
 
     const ReturnType& getReturnType() const { return returnType_; }
     const std::string& getName() const { return name_; }

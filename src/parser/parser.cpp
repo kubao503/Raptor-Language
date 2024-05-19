@@ -180,11 +180,12 @@ std::optional<Statement> Parser::parseDefOrAssignment() {
         return std::nullopt;
 
     auto name = std::get<std::string>(currentToken_.getValue());
+    const auto position = currentToken_.getPosition();
     consumeToken();
 
     if (auto def = parseDef(name))
         return def;
-    if (auto funcCall = parseFuncCall(name)) {
+    if (auto funcCall = parseFuncCall(name, position)) {
         expect(Token::Type::SEMI,
                SyntaxException(currentToken_.getPosition(),
                                "Missing semicolon after function call"));
@@ -213,7 +214,7 @@ Assignment Parser::parseFieldAssignment(const std::string& name) {
 
 /// ASGN = '=' EXPR ';'
 Assignment Parser::parseAssignment(LValue lvalue) {
-    const auto& position = currentToken_.getPosition();
+    auto position = currentToken_.getPosition();
 
     expect(Token::Type::ASGN_OP,
            SyntaxException(currentToken_.getPosition(), "Expected assignment operator"));
@@ -226,8 +227,9 @@ Assignment Parser::parseAssignment(LValue lvalue) {
     expect(Token::Type::SEMI,
            SyntaxException(currentToken_.getPosition(), "Missing semicolon"));
 
-    return Assignment{
-        .lhs = std::move(lvalue), .rhs = std::move(expression), .position = position};
+    return Assignment{.lhs = std::move(lvalue),
+                      .rhs = std::move(expression),
+                      .position = std::move(position)};
 }
 
 /// BUILT_IN_DEF = BUILT_IN_TYPE DEF
@@ -261,7 +263,7 @@ std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
                                             const std::string& name) {
     if (currentToken_.getType() != Token::Type::L_PAR)
         return std::nullopt;
-    const auto& position = currentToken_.getPosition();
+    auto position = currentToken_.getPosition();
     consumeToken();
 
     auto parameters = parseList<Parameter>(&Parser::parseParameter);
@@ -279,7 +281,7 @@ std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
            SyntaxException(currentToken_.getPosition(),
                            "Missing right curly brace after function body"));
     return FuncDef(returnType, name, std::move(parameters), std::move(statements),
-                   position);
+                   std::move(position));
 }
 
 /// PARAM = [ ref ] TYPE ID
@@ -305,9 +307,8 @@ std::optional<Parameter> Parser::parseParameter() {
 }
 
 /// FUNC_CALL = '(' ARGS ')'
-std::optional<FuncCall> Parser::parseFuncCall(const std::string& name) {
-    const auto& position = currentToken_.getPosition();
-
+std::optional<FuncCall> Parser::parseFuncCall(const std::string& name,
+                                              const Position& position) {
     if (currentToken_.getType() != Token::Type::L_PAR)
         return std::nullopt;
     consumeToken();
@@ -645,12 +646,12 @@ PExpression Parser::parseVariableAccessOrFuncCall() {
         return nullptr;
 
     const auto name = std::get<std::string>(currentToken_.getValue());
-    const auto& position = currentToken_.getPosition();
+    auto position = currentToken_.getPosition();
     consumeToken();
 
-    if (auto funcCall = parseFuncCall(name))
+    if (auto funcCall = parseFuncCall(name, position))
         return std::make_unique<FuncCall>(std::move(*funcCall));
-    return std::make_unique<VariableAccess>(name, position);
+    return std::make_unique<VariableAccess>(name, std::move(position));
 }
 
 /// ARG = [ ref ] EXPR
