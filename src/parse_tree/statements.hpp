@@ -29,6 +29,7 @@ struct VarDef {
     Type type{""};
     std::string name;
     PExpression expression;
+    Position position;
 };
 
 struct Parameter {

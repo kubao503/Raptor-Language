@@ -54,6 +54,8 @@ Statements Parser::parseStatements() {
 ///      | STRUCT_DEF
 ///      | VNT_DEF
 std::optional<Statement> Parser::parseStatement() {
+    statementPosition_ = currentToken_.getPosition();
+
     for (const auto& parser : statementParsers_) {
         if (auto statement = parser(*this))
             return statement;
@@ -138,6 +140,7 @@ std::optional<Statement> Parser::parsePrintStatement() {
 std::optional<VarDef> Parser::parseConstVarDef() {
     if (currentToken_.getType() != Token::Type::CONST_KW)
         return std::nullopt;
+    const auto position = currentToken_.getPosition();
     consumeToken();
 
     const auto type = getCurrentTokenType();
@@ -151,12 +154,11 @@ std::optional<VarDef> Parser::parseConstVarDef() {
 
     auto assignment = parseAssignment(name);
 
-    return VarDef{
-        .isConst = true,
-        .type = *type,
-        .name = std::move(name),
-        .expression = std::move(assignment.rhs),
-    };
+    return VarDef{.isConst = true,
+                  .type = *type,
+                  .name = std::move(name),
+                  .expression = std::move(assignment.rhs),
+                  .position = std::move(position)};
 }
 
 /// VOID_FUNC = void ID FUNC_DEF
@@ -180,12 +182,11 @@ std::optional<Statement> Parser::parseDefOrAssignment() {
         return std::nullopt;
 
     auto name = std::get<std::string>(currentToken_.getValue());
-    const auto position = currentToken_.getPosition();
     consumeToken();
 
     if (auto def = parseDef(name))
         return def;
-    if (auto funcCall = parseFuncCall(name, position)) {
+    if (auto funcCall = parseFuncCall(name)) {
         expect(Token::Type::SEMI,
                SyntaxException(currentToken_.getPosition(),
                                "Missing semicolon after function call"));
@@ -214,8 +215,6 @@ Assignment Parser::parseFieldAssignment(const std::string& name) {
 
 /// ASGN = '=' EXPR ';'
 Assignment Parser::parseAssignment(LValue lvalue) {
-    auto position = currentToken_.getPosition();
-
     expect(Token::Type::ASGN_OP,
            SyntaxException(currentToken_.getPosition(), "Expected assignment operator"));
 
@@ -229,7 +228,7 @@ Assignment Parser::parseAssignment(LValue lvalue) {
 
     return Assignment{.lhs = std::move(lvalue),
                       .rhs = std::move(expression),
-                      .position = std::move(position)};
+                      .position = statementPosition_};
 }
 
 /// BUILT_IN_DEF = BUILT_IN_TYPE DEF
@@ -255,7 +254,8 @@ std::optional<Statement> Parser::parseDef(const Type& type) {
     auto assignment = parseAssignment(name);
     return VarDef{.type = type,
                   .name = std::get<std::string>(assignment.lhs),
-                  .expression = std::move(assignment.rhs)};
+                  .expression = std::move(assignment.rhs),
+                  .position = statementPosition_};
 }
 
 /// FUNC_DEF = '(' PARAMS ')' '{' STMTS '}'
@@ -307,8 +307,7 @@ std::optional<Parameter> Parser::parseParameter() {
 }
 
 /// FUNC_CALL = '(' ARGS ')'
-std::optional<FuncCall> Parser::parseFuncCall(const std::string& name,
-                                              const Position& position) {
+std::optional<FuncCall> Parser::parseFuncCall(const std::string& name) {
     if (currentToken_.getType() != Token::Type::L_PAR)
         return std::nullopt;
     consumeToken();
@@ -318,7 +317,7 @@ std::optional<FuncCall> Parser::parseFuncCall(const std::string& name,
     expect(Token::Type::R_PAR,
            SyntaxException(currentToken_.getPosition(),
                            "Missing right parenthesis after function call arguments"));
-    return FuncCall{name, std::move(arguments), position};
+    return FuncCall{name, std::move(arguments), statementPosition_};
 }
 
 /// STRUCT_DEF = struct ID '{' FIELDS '}'
@@ -649,7 +648,7 @@ PExpression Parser::parseVariableAccessOrFuncCall() {
     auto position = currentToken_.getPosition();
     consumeToken();
 
-    if (auto funcCall = parseFuncCall(name, position))
+    if (auto funcCall = parseFuncCall(name))
         return std::make_unique<FuncCall>(std::move(*funcCall));
     return std::make_unique<VariableAccess>(name, std::move(position));
 }
@@ -660,6 +659,8 @@ std::optional<Argument> Parser::parseArgument() {
     if (ref)
         consumeToken();
 
+    auto argPosition = currentToken_.getPosition();
+
     auto expr = parseExpression();
     if (!expr) {
         if (ref)
@@ -668,7 +669,8 @@ std::optional<Argument> Parser::parseArgument() {
         return std::nullopt;
     }
 
-    return Argument{.value = std::move(expr), .ref = ref};
+    return Argument{
+        .value = std::move(expr), .ref = ref, .position = std::move(argPosition)};
 }
 
 Parser::StatementParsers Parser::statementParsers_{

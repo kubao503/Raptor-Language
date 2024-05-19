@@ -1,6 +1,8 @@
 #include <limits>
 
+#include "interpreter_errors.hpp"
 #include "lexer_errors.hpp"
+#include "magic_enum/magic_enum.hpp"
 
 BaseException::BaseException(const Position& position, const std::string& message)
     : std::runtime_error(" at " + std::to_string(position.line) + ':'
@@ -37,3 +39,19 @@ NumericOverflow::NumericOverflow(const Position& position, Integral value, Integ
 
 InvalidFloat::InvalidFloat(const Position& position)
     : BaseException(position, "Expected digit after '.' in float literal") {}
+
+struct TypeToString {
+    std::string operator()(BuiltInType type) {
+        return std::string(magic_enum::enum_name(type));
+    }
+    std::string operator()(const std::string& type) { return type; }
+};
+
+TypeMismatch::TypeMismatch(const Position& position, Type expected, Type actual)
+    : BaseException{position, "Expected: " + std::visit(TypeToString(), expected)
+                                  + "\nActual:" + std::visit(TypeToString(), actual)},
+      expected_{expected},
+      actual_{actual} {}
+
+TypeMismatch::TypeMismatch(const Position& position, TypeMismatch e)
+    : TypeMismatch{position, e.expected_, e.actual_} {}

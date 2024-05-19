@@ -25,6 +25,15 @@ struct TypeComparer {
     bool operator()(auto, auto) { return false; }
 };
 
+struct ValueToType {
+    Type operator()(Integral) { return BuiltInType::INT; }
+    Type operator()(Floating) { return BuiltInType::FLOAT; }
+    Type operator()(bool) { return BuiltInType::BOOL; }
+    Type operator()(const std::string&) { return BuiltInType::STR; }
+    Type operator()(const NamedStructObj& structObj) { return structObj.structDef->name; }
+    Type operator()(const StructObj&) { return "Anonymous struct"; }
+};
+
 Interpreter::Interpreter(std::ostream& out)
     : out_{out} {
     callStack_.emplace(nullptr);
@@ -105,7 +114,7 @@ ValueRef Interpreter::checkTypeAndConvert(const Type& type, ValueRef valueRef) c
     }
 
     if (!std::visit(TypeComparer(), valueRef->value, type))
-        throw std::runtime_error("Expression type does not match with variable type");
+        throw TypeMismatch{{}, type, std::visit(ValueToType(), valueRef->value)};
 
     return valueRef;
 }
@@ -121,16 +130,22 @@ ValueRef Interpreter::checkTypeAndConvert(ValueRef oldValueRef,
     }
 
     if (oldValueRef->value.index() != newValueRef->value.index())
-        throw std::runtime_error("Argument type does not match with parameter type");
+        throw TypeMismatch{{},
+                           std::visit(ValueToType(), oldValueRef->value),
+                           std::visit(ValueToType(), newValueRef->value)};
 
     return newValueRef;
 }
 
 void Interpreter::operator()(const VarDef& stmt) {
     auto valueRef = getValueFromExpr(*stmt.expression);
-    auto namedValueRef = checkTypeAndConvert(stmt.type, std::move(valueRef));
+    try {
+        valueRef = checkTypeAndConvert(stmt.type, std::move(valueRef));
+    } catch (const TypeMismatch& e) {
+        throw TypeMismatch{stmt.position, e};
+    }
 
-    addVariable(stmt.name, std::move(namedValueRef));
+    addVariable(stmt.name, std::move(valueRef));
 }
 
 void Interpreter::operator()(const Assignment& stmt) const {
@@ -140,9 +155,14 @@ void Interpreter::operator()(const Assignment& stmt) const {
         throw SymbolNotFound(stmt.position, "Variable", name);
 
     auto newValueRef = getValueFromExpr(*stmt.rhs);
-    auto newNamedValue = checkTypeAndConvert(*oldValueRef, std::move(newValueRef));
 
-    (*oldValueRef)->value = std::move(newNamedValue->value);
+    try {
+        newValueRef = checkTypeAndConvert(*oldValueRef, std::move(newValueRef));
+    } catch (const TypeMismatch& e) {
+        throw TypeMismatch{stmt.position, e};
+    }
+
+    (*oldValueRef)->value = std::move(newValueRef->value);
 }
 
 void Interpreter::operator()(const FuncDef& stmt) {
@@ -191,8 +211,12 @@ void Interpreter::passArgument(const Argument& arg, const Parameter& param) {
     if (!arg.ref)
         valueRef = std::make_shared<ValueObj>(*valueRef);
 
-    auto namedValueRef = checkTypeAndConvert(param.type, std::move(valueRef));
-    callStack_.top().addVariable(param.name, std::move(namedValueRef));
+    try {
+        valueRef = checkTypeAndConvert(param.type, std::move(valueRef));
+    } catch (const TypeMismatch& e) {
+        throw TypeMismatch{arg.position, e};
+    }
+    callStack_.top().addVariable(param.name, std::move(valueRef));
 }
 
 void Interpreter::operator()(const StructDef& stmt) {

@@ -11,18 +11,6 @@
 #include "token.hpp"
 #include "types.hpp"
 
-enum class BuiltInType {
-    INT,
-    FLOAT,
-    BOOL,
-    STR,
-};
-
-struct VoidType {};
-
-using Type = std::variant<std::string, BuiltInType>;
-using ReturnType = std::variant<std::string, BuiltInType, VoidType>;
-
 struct StructInitExpression;
 
 struct DisjunctionExpression;
@@ -272,6 +260,7 @@ struct Constant : public Expression {
 struct Argument {
     PExpression value;
     bool ref{false};
+    Position position;
 };
 
 using Arguments = std::vector<Argument>;

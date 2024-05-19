@@ -99,7 +99,7 @@ TEST_F(InterpreterTest, var_redefinition) {
 
 TEST_F(InterpreterTest, var_def_mismatched_types) {
     SetUp("int x = true;");
-    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
+    interpretAndExpectThrowAt<TypeMismatch>({1, 1});
 }
 
 TEST_F(InterpreterTest, assignment) {
@@ -112,9 +112,9 @@ TEST_F(InterpreterTest, assignment) {
 
 TEST_F(InterpreterTest, assignment_mismatched_types) {
     SetUp(
-        "int x = 5;"
+        "int x = 5;\n"
         "x = true;");
-    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
+    interpretAndExpectThrowAt<TypeMismatch>({2, 1});
 }
 
 TEST_F(InterpreterTest, func_call) {
@@ -188,7 +188,7 @@ TEST_F(InterpreterTest, function_pass_by_ref) {
     EXPECT_EQ(interpretAndGetOutput(), "27\n27\n");
 }
 
-TEST_F(InterpreterTest, function_invalid_arg_count) {
+TEST_F(InterpreterTest, function_call_invalid_arg_count) {
     SetUp(
         "void foo(int a, int b) {"
         "}"
@@ -196,12 +196,12 @@ TEST_F(InterpreterTest, function_invalid_arg_count) {
     EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
 }
 
-TEST_F(InterpreterTest, function_invalid_arg_type) {
+TEST_F(InterpreterTest, function_call_mismatched_arg_type) {
     SetUp(
-        "void foo(str name) {"
-        "}"
+        "void foo(str name) {\n"
+        "}\n"
         "foo(5);");
-    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
+    interpretAndExpectThrowAt<TypeMismatch>({3, 5});
 }
 
 TEST_F(InterpreterTest, function_not_found) {

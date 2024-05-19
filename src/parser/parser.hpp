@@ -52,8 +52,7 @@ class Parser {
     std::optional<FuncDef> parseFuncDef(const ReturnType& returnType,
                                         const std::string& name);
     std::optional<Parameter> parseParameter();
-    std::optional<FuncCall> parseFuncCall(const std::string& name,
-                                          const Position& position);
+    std::optional<FuncCall> parseFuncCall(const std::string& name);
     std::optional<StructDef> parseStructDef();
     std::optional<Field> parseField();
     std::optional<VariantDef> parseVariantDef();
@@ -85,6 +84,7 @@ class Parser {
 
     ILexer& lexer_;
     Token currentToken_;
+    Position statementPosition_;
 };
 
 #include "parser.tpp"
