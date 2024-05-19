@@ -14,7 +14,7 @@ class Source {
     /// @param stream from which characters will be read
     explicit Source(std::istream& stream)
         : stream_(stream) {
-        nextChar();
+        currentChar_ = stream_.get();
     }
 
     /// @brief Returns current character
@@ -39,7 +39,7 @@ class Source {
    private:
     std::istream& stream_;
     char currentChar_{};
-    Position currentPosition_;
+    Position currentPosition_{1, 1};
 };
 
 #endif
