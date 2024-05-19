@@ -61,13 +61,13 @@ std::optional<Statement> Parser::parseStatement() {
     return std::nullopt;
 }
 
-/// IF_STMT = if EXPR '{' STMTS '}'
+/// IF_STMT = if DISJ '{' STMTS '}'
 std::optional<Statement> Parser::parseIfStatement() {
     if (currentToken_.getType() != Token::Type::IF_KW)
         return std::nullopt;
     consumeToken();
 
-    auto expression = parseExpression();
+    auto expression = parseDisjunctionExpression();
     if (!expression)
         throw SyntaxException(currentToken_.getPosition(),
                               "Expected if-statement condition");
@@ -83,13 +83,13 @@ std::optional<Statement> Parser::parseIfStatement() {
     return IfStatement{std::move(expression), std::move(statements)};
 }
 
-/// WHILE_STMT = while EXPR '{' STMTS '}'
+/// WHILE_STMT = while DISJ '{' STMTS '}'
 std::optional<Statement> Parser::parseWhileStatement() {
     if (currentToken_.getType() != Token::Type::WHILE_KW)
         return std::nullopt;
     consumeToken();
 
-    auto expression = parseExpression();
+    auto expression = parseDisjunctionExpression();
     if (!expression)
         throw SyntaxException(currentToken_.getPosition(),
                               "Expected while-statement condition");
@@ -352,6 +352,8 @@ std::optional<VariantDef> Parser::parseVariantDef() {
                            "Missing left curly brace in variant difinition"));
 
     auto types = parseList<Type>(&Parser::parseType);
+    if (types.empty())
+        throw NoTypesInVariant{currentToken_.getPosition()};
 
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(),

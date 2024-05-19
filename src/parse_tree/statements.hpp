@@ -51,18 +51,11 @@ struct StructDef {
 };
 
 struct VariantDef {
-    class NoTypesException : public std::runtime_error {
-        using std::runtime_error::runtime_error;
-    };
-
     std::string name;
     std::vector<Type> types;
 
     VariantDef(std::string name, std::vector<Type> types)
-        : name{std::move(name)}, types{std::move(types)} {
-        if (this->types.empty())
-            throw NoTypesException("Expected at least one type in variant definition");
-    }
+        : name{std::move(name)}, types{std::move(types)} {}
 };
 
 using Statement =

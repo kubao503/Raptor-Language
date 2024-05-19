@@ -1,18 +1,36 @@
 #ifndef PARSER_FIXTURE_H
 #define PARSER_FIXTURE_H
 
-#include "fixtures.hpp"
+#include "lexer.hpp"
 #include "parser.hpp"
 
 class ParserTest : public testing::Test {
    protected:
-    template <typename T>
-    void SetUp(std::initializer_list<T> seq) {
-        lexer_ = std::make_unique<FakeLexer>(seq);
+    void SetUp(std::string input) {
+        stream_ = std::istringstream(input);
+        source_ = std::make_unique<Source>(stream_);
+        lexer_ = std::make_unique<Lexer>(*source_);
         parser_ = std::make_unique<Parser>(*lexer_);
     }
 
-    std::unique_ptr<FakeLexer> lexer_;
+    template <typename Exception>
+    void parseAndExpectThrowAt(Position position) {
+        EXPECT_THROW(
+            {
+                try {
+                    parser_->parseProgram();
+                } catch (const Exception& e) {
+                    EXPECT_EQ(e.getPosition().line, position.line);
+                    EXPECT_EQ(e.getPosition().column, position.column);
+                    throw;
+                }
+            },
+            Exception);
+    }
+
+    std::istringstream stream_;
+    std::unique_ptr<Source> source_;
+    std::unique_ptr<Lexer> lexer_;
     std::unique_ptr<Parser> parser_;
 };
 

@@ -3,18 +3,8 @@
 #include "parser_errors.hpp"
 #include "parser_test.hpp"
 
-using namespace std::string_literals;
-
 TEST_F(FullyParsedTest, parse_disjuction_expression) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::OR_KW, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = true or false;");
 
     const auto prog = parser_->parseProgram();
 
@@ -42,17 +32,7 @@ TEST_F(FullyParsedTest, parse_disjuction_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_nested_disjuction_expressions) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::OR_KW, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::OR_KW, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = true or false or false;");
 
     const auto prog = parser_->parseProgram();
 
@@ -82,15 +62,7 @@ TEST_F(FullyParsedTest, parse_nested_disjuction_expressions) {
 }
 
 TEST_F(FullyParsedTest, parse_conjunction_expression) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::AND_KW, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = true and false;");
 
     const auto prog = parser_->parseProgram();
 
@@ -114,17 +86,7 @@ TEST_F(FullyParsedTest, parse_conjunction_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_nested_conjunction_expressions) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::AND_KW, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::AND_KW, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = true and false and false;");
 
     const auto prog = parser_->parseProgram();
 
@@ -154,15 +116,7 @@ TEST_F(FullyParsedTest, parse_nested_conjunction_expressions) {
 }
 
 TEST_F(FullyParsedTest, parse_equal_expression) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::EQ_OP, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = true == false;");
 
     const auto prog = parser_->parseProgram();
 
@@ -186,31 +140,12 @@ TEST_F(FullyParsedTest, parse_equal_expression) {
 }
 
 TEST_F(ParserTest, parse_invalid_adjacent_equal_expressions) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::EQ_OP, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::EQ_OP, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
-
-    ASSERT_THROW(parser_->parseProgram(), SyntaxException);
+    SetUp("bool var = true == false == false;");
+    parseAndExpectThrowAt<SyntaxException>({1, 26});
 }
 
 TEST_F(FullyParsedTest, parse_not_equal_expression) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::NEQ_OP, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = true != false;");
 
     const auto prog = parser_->parseProgram();
 
@@ -234,15 +169,7 @@ TEST_F(FullyParsedTest, parse_not_equal_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_rel_expression) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::LT_OP, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = true < false;");
 
     const auto prog = parser_->parseProgram();
 
@@ -266,15 +193,7 @@ TEST_F(FullyParsedTest, parse_rel_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_additive_expression) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(4), {}},
-        {Token::Type::ADD_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(2), {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("int var = 4 + 2;");
 
     const auto prog = parser_->parseProgram();
 
@@ -299,15 +218,7 @@ TEST_F(FullyParsedTest, parse_additive_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_multiplicative_expression) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(4), {}},
-        {Token::Type::MULT_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(2), {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("int var = 4 * 2;");
 
     const auto prog = parser_->parseProgram();
 
@@ -333,14 +244,7 @@ TEST_F(FullyParsedTest, parse_multiplicative_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_sign_change_expression) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::MIN_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(4), {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("int var = -4;");
 
     const auto prog = parser_->parseProgram();
 
@@ -361,14 +265,7 @@ TEST_F(FullyParsedTest, parse_sign_change_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_negation_expression) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::NOT_KW, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = not true;");
 
     const auto prog = parser_->parseProgram();
 
@@ -390,15 +287,7 @@ TEST_F(FullyParsedTest, parse_negation_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_type_conversion_expression) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(4), {}},
-        {Token::Type::AS_KW, {}, {}},
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = 4 as bool;");
 
     const auto prog = parser_->parseProgram();
 
@@ -421,15 +310,7 @@ TEST_F(FullyParsedTest, parse_type_conversion_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_type_conversion_to_id_type) {
-    SetUp<Token>({
-        {Token::Type::ID, "MyStruct"s, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(4), {}},
-        {Token::Type::AS_KW, {}, {}},
-        {Token::Type::ID, "MyStruct"s, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("MyStruct var = 4 as MyStruct;");
 
     const auto prog = parser_->parseProgram();
 
@@ -452,15 +333,7 @@ TEST_F(FullyParsedTest, parse_type_conversion_to_id_type) {
 }
 
 TEST_F(FullyParsedTest, parse_type_check_expression) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::ID, "checked"s, {}},
-        {Token::Type::IS_KW, {}, {}},
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = checked is bool;");
 
     const auto prog = parser_->parseProgram();
 
@@ -482,17 +355,7 @@ TEST_F(FullyParsedTest, parse_type_check_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_field_access_expression) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::ID, "myStruct"s, {}},
-        {Token::Type::DOT, {}, {}},
-        {Token::Type::ID, "firstField"s, {}},
-        {Token::Type::DOT, {}, {}},
-        {Token::Type::ID, "secondField"s, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("int var = myStruct.firstField.secondField;");
 
     const auto prog = parser_->parseProgram();
 
@@ -509,13 +372,7 @@ TEST_F(FullyParsedTest, parse_field_access_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_variable_access) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::ID, "secondVar"s, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = secondVar;");
 
     const auto prog = parser_->parseProgram();
 
@@ -529,19 +386,7 @@ TEST_F(FullyParsedTest, parse_variable_access) {
 }
 
 TEST_F(FullyParsedTest, parse_expression_in_parenthesis) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(1), {}},
-        {Token::Type::ADD_OP, {}, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(1), {}},
-        {Token::Type::ADD_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(1), {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = 1 + (1 + 1);");
 
     const auto prog = parser_->parseProgram();
 
@@ -557,15 +402,7 @@ TEST_F(FullyParsedTest, parse_expression_in_parenthesis) {
 }
 
 TEST_F(FullyParsedTest, parse_func_call_expression_no_arguments) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = foo();");
 
     const auto prog = parser_->parseProgram();
 
@@ -582,18 +419,7 @@ TEST_F(FullyParsedTest, parse_func_call_expression_no_arguments) {
 }
 
 TEST_F(FullyParsedTest, parse_func_call_expression_with_arguments) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::CMA, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = foo(true, false);");
 
     const auto prog = parser_->parseProgram();
 
@@ -622,17 +448,7 @@ TEST_F(FullyParsedTest, parse_func_call_expression_with_arguments) {
 }
 
 TEST_F(FullyParsedTest, parse_func_call_expression_with_ref_argument) {
-    SetUp<Token>({
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::REF_KW, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("bool var = foo(ref true);");
 
     const auto prog = parser_->parseProgram();
 
@@ -655,14 +471,7 @@ TEST_F(FullyParsedTest, parse_func_call_expression_with_ref_argument) {
 }
 
 TEST_F(FullyParsedTest, parse_struct_init_expr_empty) {
-    SetUp<Token>({
-        {Token::Type::ID, "MyStruct"s, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("MyStruct var = {};");
 
     const auto prog = parser_->parseProgram();
 
@@ -679,17 +488,7 @@ TEST_F(FullyParsedTest, parse_struct_init_expr_empty) {
 }
 
 TEST_F(FullyParsedTest, parse_struct_init_expr) {
-    SetUp<Token>({
-        {Token::Type::ID, "MyStruct"s, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::CMA, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::R_C_BR, {}, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("MyStruct var = {true, false};");
 
     const auto prog = parser_->parseProgram();
 

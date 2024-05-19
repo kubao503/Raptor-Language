@@ -5,8 +5,15 @@
 
 class SyntaxException : public BaseException {
    public:
-    SyntaxException(const Position& position, const std::string& message)
-        : BaseException(position, message) {}
+    using BaseException::BaseException;
+};
+
+class NoTypesInVariant : public BaseException {
+   public:
+    explicit NoTypesInVariant(const Position& position)
+        : BaseException{
+              position,
+              "Variant record requires at least one type but none were specified"} {}
 };
 
 #endif

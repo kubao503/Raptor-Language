@@ -3,28 +3,23 @@
 #include "parser_errors.hpp"
 #include "parser_test.hpp"
 
-using namespace std::string_literals;
-
 TEST_F(FullyParsedTest, parse_empty_program) {
-    SetUp({Token::Type::ETX});
+    SetUp("");
 
     const auto prog = parser_->parseProgram();
     EXPECT_EQ(prog.statements.size(), 0);
 }
 
 TEST_F(ParserTest, unknown_statement) {
-    SetUp({Token::Type::IS_KW});
+    SetUp("unknown");
 
     EXPECT_THROW(parser_->parseProgram(), SyntaxException);
 }
 
 TEST_F(FullyParsedTest, parse_if_statement_empty) {
-    SetUp<Token>({
-        {Token::Type::IF_KW, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "if true {"
+        "}");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -38,17 +33,10 @@ TEST_F(FullyParsedTest, parse_if_statement_empty) {
 }
 
 TEST_F(FullyParsedTest, parse_if_statement_body) {
-    SetUp<Token>({
-        {Token::Type::IF_KW, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::SEMI, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "if true {"
+        "bool var = true;"
+        "}");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -62,23 +50,17 @@ TEST_F(FullyParsedTest, parse_if_statement_body) {
     ASSERT_TRUE(std::holds_alternative<VarDef>(ifStatement.statements.at(0)));
 }
 
-TEST_F(FullyParsedTest, parse_if_statement_missing_condition) {
-    SetUp<Token>({
-        {Token::Type::IF_KW, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
-
-    EXPECT_THROW(parser_->parseProgram(), SyntaxException);
+TEST_F(ParserTest, parse_if_statement_missing_condition) {
+    SetUp(
+        "if {\n"
+        "}");
+    parseAndExpectThrowAt<SyntaxException>({1, 4});
 }
 
 TEST_F(FullyParsedTest, parse_while_statement_empty) {
-    SetUp<Token>({
-        {Token::Type::WHILE_KW, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "while true {"
+        "}");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -92,17 +74,10 @@ TEST_F(FullyParsedTest, parse_while_statement_empty) {
 }
 
 TEST_F(FullyParsedTest, parse_while_statement_body) {
-    SetUp<Token>({
-        {Token::Type::WHILE_KW, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::SEMI, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "while true {"
+        "    bool var = true;"
+        "}");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -117,10 +92,7 @@ TEST_F(FullyParsedTest, parse_while_statement_body) {
 }
 
 TEST_F(FullyParsedTest, parse_print_statement_empty) {
-    SetUp<Token>({
-        {Token::Type::PRINT_KW, {}, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("print;");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -132,11 +104,7 @@ TEST_F(FullyParsedTest, parse_print_statement_empty) {
 }
 
 TEST_F(FullyParsedTest, parse_print_statement) {
-    SetUp<Token>({
-        {Token::Type::PRINT_KW, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("print true;");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -149,10 +117,7 @@ TEST_F(FullyParsedTest, parse_print_statement) {
 }
 
 TEST_F(FullyParsedTest, parse_return_statement_empty) {
-    SetUp<Token>({
-        {Token::Type::RETURN_KW, {}, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("return;");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -164,11 +129,7 @@ TEST_F(FullyParsedTest, parse_return_statement_empty) {
 }
 
 TEST_F(FullyParsedTest, parse_return_statement) {
-    SetUp<Token>({
-        {Token::Type::RETURN_KW, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("return true;");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -181,14 +142,9 @@ TEST_F(FullyParsedTest, parse_return_statement) {
 }
 
 TEST_F(FullyParsedTest, parse_func_def) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "int foo() {"
+        "}");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -201,14 +157,9 @@ TEST_F(FullyParsedTest, parse_func_def) {
 }
 
 TEST_F(FullyParsedTest, parse_func_def_id_ret_type) {
-    SetUp<Token>({
-        {Token::Type::ID, "MyStruct"s, {}},
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "MyStruct foo() {"
+        "}");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -220,16 +171,9 @@ TEST_F(FullyParsedTest, parse_func_def_id_ret_type) {
 }
 
 TEST_F(FullyParsedTest, parse_func_def_parameter) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "num"s, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "int foo(int num) {"
+        "}");
 
     const auto prog = parser_->parseProgram();
 
@@ -247,16 +191,9 @@ TEST_F(FullyParsedTest, parse_func_def_parameter) {
 }
 
 TEST_F(FullyParsedTest, parse_func_def_id_parameter) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::ID, "MyInt"s, {}},
-        {Token::Type::ID, "num"s, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "int foo(MyInt num) {"
+        "}");
 
     const auto prog = parser_->parseProgram();
 
@@ -273,19 +210,9 @@ TEST_F(FullyParsedTest, parse_func_def_id_parameter) {
 }
 
 TEST_F(FullyParsedTest, parse_func_def_two_parameters) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "num"s, {}},
-        {Token::Type::CMA, {}, {}},
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "truth"s, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "int foo(int num, bool truth) {"
+        "}");
 
     const auto prog = parser_->parseProgram();
 
@@ -311,33 +238,17 @@ TEST_F(FullyParsedTest, parse_func_def_two_parameters) {
 }
 
 TEST_F(ParserTest, parse_func_def_no_parameter_after_comma) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "num"s, {}},
-        {Token::Type::CMA, {}, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "int foo(int num, ) {\n"
+        "}");
 
-    EXPECT_THROW(parser_->parseProgram(), std::exception);
+    parseAndExpectThrowAt<SyntaxException>({1, 18});
 }
 
 TEST_F(FullyParsedTest, parse_func_def_ref_parameter) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::REF_KW, {}, {}},
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "num"s, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "int foo(ref int num) {"
+        "}");
 
     const auto prog = parser_->parseProgram();
 
@@ -355,32 +266,19 @@ TEST_F(FullyParsedTest, parse_func_def_ref_parameter) {
 }
 
 TEST_F(ParserTest, parse_func_def_no_parameter_after_ref) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::REF_KW, {}, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "int foo(ref) {\n"
+        "}");
 
-    EXPECT_THROW(parser_->parseProgram(), std::exception);
+    parseAndExpectThrowAt<SyntaxException>({1, 12});
 }
 
 TEST_F(FullyParsedTest, parse_func_def_statements) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::IF_KW, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "int foo() {"
+        "    if true {"
+        "    }"
+        "}");
 
     const auto prog = parser_->parseProgram();
 
@@ -396,14 +294,9 @@ TEST_F(FullyParsedTest, parse_func_def_statements) {
 }
 
 TEST_F(FullyParsedTest, parse_void_func_def) {
-    SetUp<Token>({
-        {Token::Type::VOID_KW, {}, {}},
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "void foo() {"
+        "}");
 
     const auto prog = parser_->parseProgram();
 
@@ -415,24 +308,15 @@ TEST_F(FullyParsedTest, parse_void_func_def) {
 }
 
 TEST_F(ParserTest, parse_void_func_def_no_name_after_void_kw) {
-    SetUp<Token>({
-        {Token::Type::VOID_KW, {}, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "void () {\n"
+        "}");
 
-    EXPECT_THROW(parser_->parseProgram(), std::exception);
+    parseAndExpectThrowAt<SyntaxException>({1, 6});
 }
 
 TEST_F(FullyParsedTest, parse_assignment) {
-    SetUp<Token>({
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("var = 42;");
 
     const auto prog = parser_->parseProgram();
 
@@ -450,16 +334,7 @@ TEST_F(FullyParsedTest, parse_assignment) {
 }
 
 TEST_F(FullyParsedTest, parse_field_assignment) {
-    SetUp<Token>({
-        {Token::Type::ID, "myStruct"s, {}},
-        {Token::Type::DOT, {}, {}},
-        {Token::Type::ID, "firstField"s, {}},
-        {Token::Type::DOT, {}, {}},
-        {Token::Type::ID, "secondField"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("myStruct.firstField.secondField = true;");
 
     const auto prog = parser_->parseProgram();
 
@@ -485,23 +360,13 @@ TEST_F(FullyParsedTest, parse_field_assignment) {
 }
 
 TEST_F(FullyParsedTest, parse_assignment_missing_semicolon) {
-    SetUp<Token>({
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
-    });
+    SetUp("var = 42");
 
-    ASSERT_THROW(parser_->parseProgram(), std::exception);
+    parseAndExpectThrowAt<SyntaxException>({1, 9});
 }
 
 TEST_F(FullyParsedTest, parse_var_def) {
-    SetUp<Token>({
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("int var = 42;");
 
     const auto prog = parser_->parseProgram();
 
@@ -518,14 +383,7 @@ TEST_F(FullyParsedTest, parse_var_def) {
 }
 
 TEST_F(FullyParsedTest, parse_const_var_def) {
-    SetUp<Token>({
-        {Token::Type::CONST_KW, {}, {}},
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("const int var = 42;");
 
     const auto prog = parser_->parseProgram();
 
@@ -544,14 +402,7 @@ TEST_F(FullyParsedTest, parse_const_var_def) {
 }
 
 TEST_F(FullyParsedTest, parse_const_var_def_id_type) {
-    SetUp<Token>({
-        {Token::Type::CONST_KW, {}, {}},
-        {Token::Type::ID, "MyStruct"s, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("const MyStruct var = 42;");
 
     const auto prog = parser_->parseProgram();
 
@@ -565,25 +416,13 @@ TEST_F(FullyParsedTest, parse_const_var_def_id_type) {
 }
 
 TEST_F(ParserTest, parse_const_var_def_invalid_type) {
-    SetUp<Token>({
-        {Token::Type::CONST_KW, {}, {}},
-        {Token::Type::UNKNOWN, {}, {}},
-        {Token::Type::ID, "var"s, {}},
-        {Token::Type::ASGN_OP, {}, {}},
-        {Token::Type::INT_CONST, static_cast<Integral>(42), {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("const if var = 42;");
 
-    EXPECT_THROW(parser_->parseProgram(), std::exception);
+    parseAndExpectThrowAt<SyntaxException>({1, 7});
 }
 
 TEST_F(FullyParsedTest, parse_func_call_statement) {
-    SetUp<Token>({
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("foo();");
 
     const auto prog = parser_->parseProgram();
 
@@ -596,15 +435,7 @@ TEST_F(FullyParsedTest, parse_func_call_statement) {
 }
 
 TEST_F(FullyParsedTest, parse_func_call_statement_args) {
-    SetUp<Token>({
-        {Token::Type::ID, "foo"s, {}},
-        {Token::Type::L_PAR, {}, {}},
-        {Token::Type::TRUE_CONST, true, {}},
-        {Token::Type::CMA, {}, {}},
-        {Token::Type::FALSE_CONST, false, {}},
-        {Token::Type::R_PAR, {}, {}},
-        {Token::Type::SEMI, {}, {}},
-    });
+    SetUp("foo(true, false);");
 
     const auto prog = parser_->parseProgram();
 
@@ -617,12 +448,9 @@ TEST_F(FullyParsedTest, parse_func_call_statement_args) {
 }
 
 TEST_F(FullyParsedTest, parse_empty_struct_def) {
-    SetUp<Token>({
-        {Token::Type::STRUCT_KW, {}, {}},
-        {Token::Type::ID, "MyStruct"s, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "struct MyStruct {"
+        "}");
 
     const auto prog = parser_->parseProgram();
 
@@ -635,17 +463,11 @@ TEST_F(FullyParsedTest, parse_empty_struct_def) {
 }
 
 TEST_F(FullyParsedTest, parse_struct_def) {
-    SetUp<Token>({
-        {Token::Type::STRUCT_KW, {}, {}},
-        {Token::Type::ID, "Point"s, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::ID, "x"s, {}},
-        {Token::Type::CMA, {}, {}},
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::ID, "y"s, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "struct Point {"
+        "    int x,"
+        "    bool y"
+        "}");
 
     const auto prog = parser_->parseProgram();
 
@@ -668,15 +490,11 @@ TEST_F(FullyParsedTest, parse_struct_def) {
 }
 
 TEST_F(FullyParsedTest, parse_variant_def) {
-    SetUp<Token>({
-        {Token::Type::VARIANT_KW, {}, {}},
-        {Token::Type::ID, "IntOrBool"s, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::INT_KW, {}, {}},
-        {Token::Type::CMA, {}, {}},
-        {Token::Type::BOOL_KW, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+    SetUp(
+        "variant IntOrBool {"
+        "    int,"
+        "    bool"
+        "}");
 
     const auto prog = parser_->parseProgram();
 
@@ -696,13 +514,10 @@ TEST_F(FullyParsedTest, parse_variant_def) {
     EXPECT_EQ(std::get<BuiltInType>(secondType), BuiltInType::BOOL);
 }
 
-TEST_F(FullyParsedTest, parse_invalid_variant_with_no_types) {
-    SetUp<Token>({
-        {Token::Type::VARIANT_KW, {}, {}},
-        {Token::Type::ID, "IntOrBool"s, {}},
-        {Token::Type::L_C_BR, {}, {}},
-        {Token::Type::R_C_BR, {}, {}},
-    });
+TEST_F(ParserTest, parse_invalid_variant_with_no_types) {
+    SetUp(
+        "variant IntOrBool {\n"
+        "}");
 
-    EXPECT_THROW(parser_->parseProgram(), VariantDef::NoTypesException);
+    parseAndExpectThrowAt<NoTypesInVariant>({2, 1});
 }

@@ -14,6 +14,7 @@ class BaseException : public std::runtime_error {
     /// @brief Provides std::string representation of exception
     /// @return std::string representation of exception
     std::string describe() const;
+    const Position& getPosition() const { return position_; }
 
    private:
     Position position_;
