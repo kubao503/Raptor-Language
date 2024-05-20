@@ -65,7 +65,7 @@ std::optional<CallContext::FuncWithCtx> Interpreter::getFunctionWithCtx(
     return callStack_.top().getFunctionWithCtx(name);
 }
 
-std::optional<const StructDef*> Interpreter::getStructDef(std::string_view name) const {
+const StructDef* Interpreter::getStructDef(std::string_view name) const {
     return callStack_.top().getStructDef(name);
 }
 
@@ -151,17 +151,17 @@ ValueRef Interpreter::checkTypeAndConvert(const Type& type, ValueRef valueRef) c
         if (!structDef)
             throw SymbolNotFound{{}, "Struct definition", *name};
 
-        if ((*structDef)->fields.size() != structObj->values.size())
+        if (structDef->fields.size() != structObj->values.size())
             throw InvalidFieldCount{
-                {}, (*structDef)->fields.size(), structObj->values.size()};
+                {}, structDef->fields.size(), structObj->values.size()};
 
         auto binaryOp = [this](const Field& field, ValueRef value) {
             return checkTypeAndConvert(field.type, value);
         };
-        std::ranges::transform((*structDef)->fields, structObj->values,
+        std::ranges::transform(structDef->fields, structObj->values,
                                structObj->values.begin(), binaryOp);
 
-        auto namedStructObj = NamedStructObj{structObj->values, *structDef};
+        auto namedStructObj = NamedStructObj{structObj->values, structDef};
         valueRef = std::make_shared<ValueObj>(namedStructObj);
     }
 

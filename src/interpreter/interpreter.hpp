@@ -15,7 +15,7 @@ class Interpreter {
     std::optional<ValueRef> getVariable(std::string_view name) const;
     std::optional<CallContext::FuncWithCtx> getFunctionWithCtx(
         std::string_view name) const;
-    std::optional<const StructDef*> getStructDef(std::string_view name) const;
+    const StructDef* getStructDef(std::string_view name) const;
 
     void operator()(const PrintStatement& stmt) const;
     void operator()(const VarDef& stmt);

@@ -24,7 +24,7 @@ std::optional<CallContext::FuncWithCtx> CallContext::getFunctionWithCtx(
     return std::nullopt;
 }
 
-std::optional<const StructDef*> CallContext::getStructDef(std::string_view name) const {
+const StructDef* CallContext::getStructDef(std::string_view name) const {
     for (auto iter = scopes_.crbegin(); iter != scopes_.crend(); ++iter) {
         if (auto structDef = iter->getStructDef(name))
             return structDef;
@@ -33,5 +33,6 @@ std::optional<const StructDef*> CallContext::getStructDef(std::string_view name)
     if (parentContext_)
         if (auto structDef = parentContext_->getStructDef(name))
             return structDef;
-    return std::nullopt;
+
+    return nullptr;
 }

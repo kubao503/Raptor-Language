@@ -234,7 +234,7 @@ TEST_F(InterpreterTest, struct_definition) {
         "    Point y"
         "}");
     interpretAndGetOutput();
-    const StructDef* structDef = interpreter_.getStructDef("Point").value();
+    const StructDef* structDef = interpreter_.getStructDef("Point");
 
     EXPECT_EQ(structDef->name, "Point");
     ASSERT_EQ(structDef->fields.size(), 2);

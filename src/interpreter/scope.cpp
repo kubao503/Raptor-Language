@@ -32,9 +32,9 @@ std::optional<const FuncDef*> Scope::getFunction(std::string_view name) const {
     return std::nullopt;
 }
 
-std::optional<Scope::StructDefEntry> Scope::getStructDef(std::string_view name) const {
+Scope::StructDefEntry Scope::getStructDef(std::string_view name) const {
     auto res = std::ranges::find(structs_, name, &StructDef::name);
     if (res != structs_.end())
         return *res;
-    return std::nullopt;
+    return nullptr;
 }
