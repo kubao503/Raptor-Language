@@ -18,11 +18,16 @@ class CallContext {
 
     void addStruct(const StructDef* structDef) { scopes_.back().addStruct(structDef); }
 
+    void addVariant(const VariantDef* variantDef) {
+        scopes_.back().addVariant(variantDef);
+    }
+
     std::optional<ValueRef> getVariable(std::string_view name) const;
 
     using FuncWithCtx = std::pair<const FuncDef*, const CallContext*>;
     std::optional<FuncWithCtx> getFunctionWithCtx(std::string_view name) const;
     const StructDef* getStructDef(std::string_view name) const;
+    const VariantDef* getVariantDef(std::string_view name) const;
 
    private:
     const CallContext* parentContext_{nullptr};

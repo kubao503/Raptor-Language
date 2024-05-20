@@ -19,8 +19,11 @@ struct TypeComparer {
     bool operator()(BuiltInType variableType, const std::string&) {
         return variableType == BuiltInType::STR;
     }
-    bool operator()(const std::string& variableType, const NamedStructObj& value) {
-        return value.structDef->name == variableType;
+    bool operator()(const std::string& variableType, const NamedStructObj& structObj) {
+        return structObj.structDef->name == variableType;
+    }
+    bool operator()(const std::string& variableType, const VariantObj& variantObj) {
+        return variantObj.variantDef->name == variableType;
     }
     bool operator()(auto, auto) { return false; }
 };
@@ -31,6 +34,7 @@ struct ValueToType {
     Type operator()(bool) { return BuiltInType::BOOL; }
     Type operator()(const std::string&) { return BuiltInType::STR; }
     Type operator()(const NamedStructObj& structObj) { return structObj.structDef->name; }
+    Type operator()(const VariantObj& variantObj) { return variantObj.variantDef->name; }
     Type operator()(const StructObj&) { return "Anonymous struct"; }
 };
 
@@ -56,6 +60,10 @@ void Interpreter::addStruct(const StructDef* structDef) {
     callStack_.top().addStruct(structDef);
 }
 
+void Interpreter::addVariant(const VariantDef* variantDef) {
+    callStack_.top().addVariant(variantDef);
+}
+
 std::optional<ValueRef> Interpreter::getVariable(std::string_view name) const {
     return callStack_.top().getVariable(name);
 }
@@ -69,6 +77,10 @@ const StructDef* Interpreter::getStructDef(std::string_view name) const {
     return callStack_.top().getStructDef(name);
 }
 
+const VariantDef* Interpreter::getVariantDef(std::string_view name) const {
+    return callStack_.top().getVariantDef(name);
+}
+
 ValueRef Interpreter::getValueFromExpr(const Expression& expr) const {
     auto exprInterpreter = ExpressionInterpreter(*this);
     expr.accept(exprInterpreter);
@@ -79,8 +91,9 @@ struct ValuePrinter {
     explicit ValuePrinter(std::ostream& out)
         : out_{out} {}
 
-    void operator()(const NamedStructObj& s) const { printStruct(s.values); }
     void operator()(const StructObj& s) const { printStruct(s.values); }
+    void operator()(const NamedStructObj& s) const { printStruct(s.values); }
+    void operator()(const VariantObj& v) const { std::visit(*this, v.valueRef->value); }
     void operator()(const auto& v) const { out_ << std::boolalpha << v; }
 
    private:
@@ -143,10 +156,10 @@ ValueRef Interpreter::checkTypeAndConvert(ValueRef oldValueRef,
 }
 
 ValueRef Interpreter::checkTypeAndConvert(const Type& type, ValueRef valueRef) const {
-    auto structObj = std::get_if<StructObj>(&valueRef->value);
     auto name = std::get_if<std::string>(&type);
+    auto structObj = std::get_if<StructObj>(&valueRef->value);
 
-    if (structObj && name) {
+    if (name && structObj) {
         auto structDef = getStructDef(*name);
         if (!structDef)
             throw SymbolNotFound{{}, "Struct definition", *name};
@@ -162,7 +175,17 @@ ValueRef Interpreter::checkTypeAndConvert(const Type& type, ValueRef valueRef) c
                                structObj->values.begin(), binaryOp);
 
         auto namedStructObj = NamedStructObj{structObj->values, structDef};
-        valueRef = std::make_shared<ValueObj>(namedStructObj);
+        valueRef = std::make_shared<ValueObj>(std::move(namedStructObj));
+    }
+
+    if (name) {
+        auto variantDef = getVariantDef(*name);
+        if (variantDef && std::ranges::any_of(variantDef->types, [=](const Type& type) {
+                return std::visit(TypeComparer(), type, valueRef->value);
+            })) {
+            auto variantObj = VariantObj{std::move(valueRef), variantDef};
+            valueRef = std::make_shared<ValueObj>(std::move(variantObj));
+        }
     }
 
     compareTypes(type, valueRef);
@@ -269,4 +292,8 @@ void Interpreter::passArgument(const Argument& arg, const Parameter& param) {
 
 void Interpreter::operator()(const StructDef& stmt) {
     addStruct(&stmt);
+}
+
+void Interpreter::operator()(const VariantDef& stmt) {
+    addVariant(&stmt);
 }

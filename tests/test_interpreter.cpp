@@ -472,3 +472,52 @@ TEST_F(InterpreterTest, nested_struct_assignment) {
     ASSERT_TRUE(std::holds_alternative<Integral>(structA.values.at(0)->value));
     EXPECT_EQ(std::get<Integral>(structA.values.at(0)->value), 7);
 }
+
+TEST_F(InterpreterTest, variant_definition) {
+    SetUp("variant IntOrBool { int, bool }");
+    interpretAndGetOutput();
+
+    const VariantDef* variantDef = interpreter_.getVariantDef("IntOrBool");
+    ASSERT_TRUE(variantDef);
+    EXPECT_EQ(variantDef->name, "IntOrBool");
+    EXPECT_EQ(variantDef->types.size(), 2);
+
+    auto firstType = variantDef->types.at(0);
+    ASSERT_TRUE(std::holds_alternative<BuiltInType>(firstType));
+    EXPECT_EQ(std::get<BuiltInType>(firstType), BuiltInType::INT);
+
+    auto secondType = variantDef->types.at(1);
+    ASSERT_TRUE(std::holds_alternative<BuiltInType>(secondType));
+    EXPECT_EQ(std::get<BuiltInType>(secondType), BuiltInType::BOOL);
+}
+
+TEST_F(InterpreterTest, variant_var_def) {
+    SetUp(
+        "variant IntOrBool { int, bool }"
+        "IntOrBool i = 5;");
+    interpretAndGetOutput();
+
+    auto var = interpreter_.getVariable("i");
+    ASSERT_TRUE(var);
+    ASSERT_TRUE(std::holds_alternative<VariantObj>((*var)->value));
+    auto variantObj = std::get<VariantObj>((*var)->value);
+
+    EXPECT_EQ(variantObj.variantDef->name, "IntOrBool");
+    ASSERT_TRUE(std::holds_alternative<Integral>(variantObj.valueRef->value));
+    EXPECT_EQ(std::get<Integral>(variantObj.valueRef->value), 5);
+}
+
+TEST_F(InterpreterTest, variant_invalid_type) {
+    SetUp(
+        "variant IntOrBool { int, bool }\n"
+        "IntOrBool i = 2.0;");
+    interpretAndExpectThrowAt<TypeMismatch>({2, 1});
+}
+
+TEST_F(InterpreterTest, variant_printing) {
+    SetUp(
+        "variant IntOrBool { int, bool }"
+        "IntOrBool i = 5;"
+        "print i;");
+    EXPECT_EQ(interpretAndGetOutput(), "5\n");
+}

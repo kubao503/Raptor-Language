@@ -36,3 +36,16 @@ const StructDef* CallContext::getStructDef(std::string_view name) const {
 
     return nullptr;
 }
+
+const VariantDef* CallContext::getVariantDef(std::string_view name) const {
+    for (auto iter = scopes_.crbegin(); iter != scopes_.crend(); ++iter) {
+        if (auto variantDef = iter->getVariantDef(name))
+            return variantDef;
+    }
+
+    if (parentContext_)
+        if (auto variantDef = parentContext_->getVariantDef(name))
+            return variantDef;
+
+    return nullptr;
+}

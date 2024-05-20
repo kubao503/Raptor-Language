@@ -16,6 +16,7 @@ class Interpreter {
     std::optional<CallContext::FuncWithCtx> getFunctionWithCtx(
         std::string_view name) const;
     const StructDef* getStructDef(std::string_view name) const;
+    const VariantDef* getVariantDef(std::string_view name) const;
 
     void operator()(const PrintStatement& stmt) const;
     void operator()(const VarDef& stmt);
@@ -23,12 +24,14 @@ class Interpreter {
     void operator()(const FuncDef& stmt);
     void operator()(const FuncCall& stmt);
     void operator()(const StructDef& stmt);
+    void operator()(const VariantDef& stmt);
     void operator()(const auto&) const { throw std::runtime_error("unknown statement"); }
 
    private:
     void addVariable(const std::string& name, ValueRef valueRef);
     void addFunction(const FuncDef* func);
     void addStruct(const StructDef* structDef);
+    void addVariant(const VariantDef* variantDef);
 
     ValueRef checkTypeAndConvert(const Type& varDefType, ValueRef valueRef) const;
     ValueRef checkTypeAndConvert(ValueRef oldValueRef, ValueRef newValueRef) const;

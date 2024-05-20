@@ -27,9 +27,14 @@ struct NamedStructObj : public StructObj {
     const StructDef* structDef;
 };
 
+struct VariantObj {
+    ValueRef valueRef;
+    const VariantDef* variantDef;
+};
+
 struct ValueObj {
-    using Value =
-        std::variant<Integral, Floating, bool, std::string, StructObj, NamedStructObj>;
+    using Value = std::variant<Integral, Floating, bool, std::string, StructObj,
+                               NamedStructObj, VariantObj>;
     Value value;
 };
 

@@ -18,6 +18,10 @@ void Scope::addStruct(const StructDef* structDef) {
     structs_.emplace_back(structDef);
 }
 
+void Scope::addVariant(const VariantDef* variantDef) {
+    variants_.emplace_back(variantDef);
+}
+
 std::optional<ValueRef> Scope::getVariable(std::string_view name) const {
     auto res = std::ranges::find(variables_, name, &VarEntry::first);
     if (res != variables_.end())
@@ -35,6 +39,13 @@ std::optional<const FuncDef*> Scope::getFunction(std::string_view name) const {
 Scope::StructDefEntry Scope::getStructDef(std::string_view name) const {
     auto res = std::ranges::find(structs_, name, &StructDef::name);
     if (res != structs_.end())
+        return *res;
+    return nullptr;
+}
+
+Scope::VariantDefEntry Scope::getVariantDef(std::string_view name) const {
+    auto res = std::ranges::find(variants_, name, &VariantDef::name);
+    if (res != variants_.end())
         return *res;
     return nullptr;
 }
