@@ -65,5 +65,15 @@ TypeMismatch::TypeMismatch(const Position& position, Type expected, Type actual)
 TypeMismatch::TypeMismatch(const Position& position, const TypeMismatch& e)
     : TypeMismatch{position, e.expected_, e.actual_} {}
 
+InvalidFieldCount::InvalidFieldCount(const Position& position, std::size_t expected,
+                                     std::size_t actual)
+    : BaseException{position, "Expected " + std::to_string(expected) + " fields but "
+                                  + std::to_string(actual) + " were given"},
+      expected_{expected},
+      actual_{actual} {}
+
+InvalidFieldCount::InvalidFieldCount(const Position& position, const InvalidFieldCount& e)
+    : InvalidFieldCount{position, e.expected_, e.actual_} {}
+
 Redefinition::Redefinition(const Position& position, std::string type, std::string name)
     : BaseException{position, "Redefinition of " + name + " " + type}, name_{name} {}

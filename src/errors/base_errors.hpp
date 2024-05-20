@@ -9,7 +9,7 @@
 /// @brief Abstract class for exceptions
 class BaseException : public std::runtime_error {
    public:
-    explicit BaseException(const Position& position, const std::string& message);
+    BaseException(const Position& position, const std::string& message);
 
     /// @brief Provides std::string representation of exception
     /// @return std::string representation of exception

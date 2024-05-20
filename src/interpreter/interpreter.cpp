@@ -105,39 +105,68 @@ void Interpreter::operator()(const PrintStatement& stmt) const {
     out_ << '\n';
 }
 
-ValueRef Interpreter::checkTypeAndConvert(const Type& type, ValueRef valueRef) const {
-    auto name = std::get_if<std::string>(&type);
-    auto structObj = std::get_if<StructObj>(&valueRef->value);
-    if (structObj && name) {
-        auto structDef = getStructDef(*name);
-        if (!structDef)
-            throw SymbolNotFound{{}, "Struct definition", *name};
-        auto namedStructObj = NamedStructObj{structObj->values, *structDef};
-        valueRef = std::make_shared<ValueObj>(namedStructObj);
-    }
+void compareTypes(ValueRef oldValueRef, ValueRef newValueRef) {
+    if (oldValueRef->value.index() != newValueRef->value.index())
+        throw TypeMismatch{{},
+                           std::visit(ValueToType(), oldValueRef->value),
+                           std::visit(ValueToType(), newValueRef->value)};
+}
 
+void compareTypes(const Type& type, ValueRef valueRef) {
     if (!std::visit(TypeComparer(), type, valueRef->value))
         throw TypeMismatch{{}, type, std::visit(ValueToType(), valueRef->value)};
-
-    return valueRef;
 }
 
 ValueRef Interpreter::checkTypeAndConvert(ValueRef oldValueRef,
                                           ValueRef newValueRef) const {
     auto structObj = std::get_if<StructObj>(&newValueRef->value);
     auto oldNamedStructObj = std::get_if<NamedStructObj>(&oldValueRef->value);
+
     if (structObj && oldNamedStructObj) {
+        if (oldNamedStructObj->values.size() != structObj->values.size())
+            throw InvalidFieldCount{
+                {}, oldNamedStructObj->values.size(), structObj->values.size()};
+
+        auto binaryOp = [this](ValueRef oldValue, ValueRef newValue) {
+            return checkTypeAndConvert(oldValue, newValue);
+        };
+        std::ranges::transform(oldNamedStructObj->values, structObj->values,
+                               structObj->values.begin(), binaryOp);
+
         auto namedStructObj =
             NamedStructObj{std::move(structObj->values), oldNamedStructObj->structDef};
         newValueRef = std::make_shared<ValueObj>(std::move(namedStructObj));
     }
 
-    if (oldValueRef->value.index() != newValueRef->value.index())
-        throw TypeMismatch{{},
-                           std::visit(ValueToType(), oldValueRef->value),
-                           std::visit(ValueToType(), newValueRef->value)};
-
+    compareTypes(oldValueRef, newValueRef);
     return newValueRef;
+}
+
+ValueRef Interpreter::checkTypeAndConvert(const Type& type, ValueRef valueRef) const {
+    auto structObj = std::get_if<StructObj>(&valueRef->value);
+    auto name = std::get_if<std::string>(&type);
+
+    if (structObj && name) {
+        auto structDef = getStructDef(*name);
+        if (!structDef)
+            throw SymbolNotFound{{}, "Struct definition", *name};
+
+        if ((*structDef)->fields.size() != structObj->values.size())
+            throw InvalidFieldCount{
+                {}, (*structDef)->fields.size(), structObj->values.size()};
+
+        auto binaryOp = [this](const Field& field, ValueRef value) {
+            return checkTypeAndConvert(field.type, value);
+        };
+        std::ranges::transform((*structDef)->fields, structObj->values,
+                               structObj->values.begin(), binaryOp);
+
+        auto namedStructObj = NamedStructObj{structObj->values, *structDef};
+        valueRef = std::make_shared<ValueObj>(namedStructObj);
+    }
+
+    compareTypes(type, valueRef);
+    return valueRef;
 }
 
 void Interpreter::operator()(const VarDef& stmt) {
@@ -148,6 +177,8 @@ void Interpreter::operator()(const VarDef& stmt) {
         throw TypeMismatch{stmt.position, e};
     } catch (const SymbolNotFound& e) {
         throw SymbolNotFound{stmt.position, e};
+    } catch (const InvalidFieldCount& e) {
+        throw InvalidFieldCount{stmt.position, e};
     }
 
     try {
@@ -169,6 +200,8 @@ void Interpreter::operator()(const Assignment& stmt) const {
         newValueRef = checkTypeAndConvert(*oldValueRef, std::move(newValueRef));
     } catch (const TypeMismatch& e) {
         throw TypeMismatch{stmt.position, e};
+    } catch (const InvalidFieldCount& e) {
+        throw InvalidFieldCount{stmt.position, e};
     }
 
     (*oldValueRef)->value = std::move(newValueRef->value);
@@ -207,7 +240,7 @@ void Interpreter::passArguments(const Arguments& args, const Parameters& params)
     checkArgsCount(args, params);
 
     for (std::size_t i{0}; i < args.size(); ++i)
-        passArgument(args.at(i), params.at(i));
+        passArgument(args[i], params[i]);
 }
 
 void checkArgRef(const Argument& arg, const Parameter& param) {
@@ -228,6 +261,8 @@ void Interpreter::passArgument(const Argument& arg, const Parameter& param) {
         valueRef = checkTypeAndConvert(param.type, std::move(valueRef));
     } catch (const TypeMismatch& e) {
         throw TypeMismatch{arg.position, e};
+    } catch (const InvalidFieldCount& e) {
+        throw InvalidFieldCount{arg.position, e};
     }
     callStack_.top().addVariable(param.name, std::move(valueRef));
 }

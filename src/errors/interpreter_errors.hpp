@@ -24,6 +24,16 @@ class TypeMismatch : public BaseException {
     Type actual_;
 };
 
+class InvalidFieldCount : public BaseException {
+   public:
+    InvalidFieldCount(const Position& position, std::size_t expected, std::size_t actual);
+    InvalidFieldCount(const Position& position, const InvalidFieldCount& e);
+
+   private:
+    std::size_t expected_;
+    std::size_t actual_;
+};
+
 class Redefinition : public BaseException {
    protected:
     Redefinition(const Position& position, std::string type, std::string name);

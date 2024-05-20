@@ -321,6 +321,44 @@ TEST_F(InterpreterTest, field_access_of_non_struct) {
     EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
 }
 
+TEST_F(InterpreterTest, struct_var_invalid_field_type) {
+    SetUp(
+        "struct MyInteger {\n"
+        "    int x\n"
+        "}\n"
+        "MyInteger i = {true};");
+    interpretAndExpectThrowAt<TypeMismatch>({4, 1});
+}
+
+TEST_F(InterpreterTest, struct_var_invalid_field_count) {
+    SetUp(
+        "struct MyInteger {\n"
+        "    int x\n"
+        "}\n"
+        "MyInteger i = {5, 4};");
+    interpretAndExpectThrowAt<InvalidFieldCount>({4, 1});
+}
+
+TEST_F(InterpreterTest, struct_assignment_invalid_field_count) {
+    SetUp(
+        "struct MyInteger {\n"
+        "    int x\n"
+        "}\n"
+        "MyInteger i = {7};\n"
+        "i = {5, 4};");
+    interpretAndExpectThrowAt<InvalidFieldCount>({5, 1});
+}
+
+TEST_F(InterpreterTest, struct_assignment_invalid_type) {
+    SetUp(
+        "struct MyInteger {\n"
+        "    int x\n"
+        "}\n"
+        "MyInteger i = {5};\n"
+        "i = {true};");
+    interpretAndExpectThrowAt<TypeMismatch>({5, 1});
+}
+
 TEST_F(InterpreterTest, field_access_of_anonymous_struct) {
     SetUp("print ({1, 2}).field;");
     EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
@@ -366,4 +404,71 @@ TEST_F(InterpreterTest, passing_struct_to_function_by_ref) {
         "foo(ref myInteger);"
         "print myInteger.x;");
     EXPECT_EQ(interpretAndGetOutput(), "9\n9\n");
+}
+
+TEST_F(InterpreterTest, passing_struct_to_function_mismatched_field_type) {
+    SetUp(
+        "struct MyInteger { int x }\n"
+        "void foo(MyInteger i) { }\n"
+        "foo({true});");
+    interpretAndExpectThrowAt<TypeMismatch>({3, 5});
+}
+
+TEST_F(InterpreterTest, passing_struct_to_function_invalid_field_count) {
+    SetUp(
+        "struct MyInteger { int x }\n"
+        "void foo(MyInteger i) { }\n"
+        "foo({2, 4});");
+    interpretAndExpectThrowAt<InvalidFieldCount>({3, 5});
+}
+
+TEST_F(InterpreterTest, nested_struct_initialization) {
+    SetUp(
+        "struct A { int num }"
+        "struct B { A a }"
+        "B b = {{5}};");
+    interpretAndGetOutput();
+
+    auto valueRefB = interpreter_.getVariable("b");
+    ASSERT_TRUE(valueRefB);
+
+    ASSERT_TRUE(std::holds_alternative<NamedStructObj>((*valueRefB)->value));
+    auto structB = std::get<NamedStructObj>((*valueRefB)->value);
+    EXPECT_EQ(structB.structDef->name, "B");
+    ASSERT_EQ(structB.values.size(), 1);
+
+    auto valueRefA = structB.values.at(0);
+    ASSERT_TRUE(std::holds_alternative<NamedStructObj>(valueRefA->value));
+    auto structA = std::get<NamedStructObj>(valueRefA->value);
+    EXPECT_EQ(structA.structDef->name, "A");
+    ASSERT_EQ(structA.values.size(), 1);
+
+    ASSERT_TRUE(std::holds_alternative<Integral>(structA.values.at(0)->value));
+    EXPECT_EQ(std::get<Integral>(structA.values.at(0)->value), 5);
+}
+
+TEST_F(InterpreterTest, nested_struct_assignment) {
+    SetUp(
+        "struct A { int num }"
+        "struct B { A a }"
+        "B b = {{5}};"
+        "b = {{7}};");
+    interpretAndGetOutput();
+
+    auto valueRefB = interpreter_.getVariable("b");
+    ASSERT_TRUE(valueRefB);
+
+    ASSERT_TRUE(std::holds_alternative<NamedStructObj>((*valueRefB)->value));
+    auto structB = std::get<NamedStructObj>((*valueRefB)->value);
+    EXPECT_EQ(structB.structDef->name, "B");
+    ASSERT_EQ(structB.values.size(), 1);
+
+    auto valueRefA = structB.values.at(0);
+    ASSERT_TRUE(std::holds_alternative<NamedStructObj>(valueRefA->value));
+    auto structA = std::get<NamedStructObj>(valueRefA->value);
+    EXPECT_EQ(structA.structDef->name, "A");
+    ASSERT_EQ(structA.values.size(), 1);
+
+    ASSERT_TRUE(std::holds_alternative<Integral>(structA.values.at(0)->value));
+    EXPECT_EQ(std::get<Integral>(structA.values.at(0)->value), 7);
 }
