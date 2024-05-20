@@ -33,8 +33,10 @@ class Interpreter {
     void addStruct(const StructDef* structDef);
     void addVariant(const VariantDef* variantDef);
 
-    ValueRef checkTypeAndConvert(const Type& varDefType, ValueRef valueRef) const;
-    ValueRef checkTypeAndConvert(ValueRef oldValueRef, ValueRef newValueRef) const;
+    ValueRef convertToNamedStruct(ValueRef valueRef, const StructDef* structDef) const;
+    ValueRef convertToVariant(ValueRef valueRef, const VariantDef* variantDef) const;
+
+    ValueRef convertAndCheckType(const Type& expected, ValueRef valueRef) const;
 
     void passArguments(const Arguments& args, const Parameters& params);
     void passArgument(const Argument& arg, const Parameter& param);

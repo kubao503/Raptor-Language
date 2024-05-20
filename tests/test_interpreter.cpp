@@ -514,10 +514,44 @@ TEST_F(InterpreterTest, variant_invalid_type) {
     interpretAndExpectThrowAt<TypeMismatch>({2, 1});
 }
 
+TEST_F(InterpreterTest, assignment_to_variant_invalid_type) {
+    SetUp(
+        "variant IntOrBool { int, bool }\n"
+        "IntOrBool i = 5;\n"
+        "i = 2.0;");
+    interpretAndExpectThrowAt<TypeMismatch>({3, 1});
+}
+
 TEST_F(InterpreterTest, variant_printing) {
     SetUp(
         "variant IntOrBool { int, bool }"
         "IntOrBool i = 5;"
         "print i;");
     EXPECT_EQ(interpretAndGetOutput(), "5\n");
+}
+
+TEST_F(InterpreterTest, variant_assignment) {
+    SetUp(
+        "variant IntOrBool { int, bool }"
+        "IntOrBool i = 5;"
+        "i = true;"
+        "print i;");
+    EXPECT_EQ(interpretAndGetOutput(), "true\n");
+}
+
+TEST_F(InterpreterTest, variant_initialization_with_anonymous_struct) {
+    SetUp(
+        "struct A { int num }\n"
+        "variant IntOrBool { A, str }\n"
+        "IntOrBool i = {9};");
+    interpretAndExpectThrowAt<TypeMismatch>({3, 1});
+}
+
+TEST_F(InterpreterTest, assignment_of_anonymous_struct_to_variant) {
+    SetUp(
+        "struct A { int num }\n"
+        "variant IntOrBool { A, bool }\n"
+        "IntOrBool i = true;\n"
+        "i = {9};");
+    interpretAndExpectThrowAt<TypeMismatch>({4, 1});
 }
