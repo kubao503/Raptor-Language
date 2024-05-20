@@ -216,10 +216,12 @@ struct LogicalNegationExpression : public NegationExpression {
 struct TypeExpression : public Expression {
     PExpression expr;
     Type type;
-    TypeExpression(PExpression expr, Type type)
-        : expr{std::move(expr)}, type{std::move(type)} {}
+    Position position;
 
-    using Ctor = std::function<PExpression(PExpression, Type)>;
+    TypeExpression(PExpression expr, Type type, const Position& position)
+        : expr{std::move(expr)}, type{std::move(type)}, position{position} {}
+
+    using Ctor = std::function<PExpression(PExpression, Type, const Position&)>;
 
     static std::optional<Ctor> getCtor(Token::Type type);
 };

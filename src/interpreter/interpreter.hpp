@@ -47,4 +47,26 @@ class Interpreter {
     std::ostream& out_;
 };
 
+struct TypeComparer {
+    bool operator()(BuiltInType variableType, Integral) {
+        return variableType == BuiltInType::INT;
+    }
+    bool operator()(BuiltInType variableType, Floating) {
+        return variableType == BuiltInType::FLOAT;
+    }
+    bool operator()(BuiltInType variableType, bool) {
+        return variableType == BuiltInType::BOOL;
+    }
+    bool operator()(BuiltInType variableType, const std::string&) {
+        return variableType == BuiltInType::STR;
+    }
+    bool operator()(const std::string& variableType, const NamedStructObj& structObj) {
+        return structObj.structDef->name == variableType;
+    }
+    bool operator()(const std::string& variableType, const VariantObj& variantObj) {
+        return variantObj.variantDef->name == variableType;
+    }
+    bool operator()(auto, auto) { return false; }
+};
+
 #endif

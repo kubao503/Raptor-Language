@@ -6,4 +6,5 @@ target_link_libraries(
     errors
     PUBLIC utils
     PUBLIC magic_enum::magic_enum
+    PUBLIC interpreter
 )

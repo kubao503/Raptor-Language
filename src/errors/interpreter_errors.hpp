@@ -3,6 +3,7 @@
 
 #include "base_errors.hpp"
 #include "types.hpp"
+#include "value_obj.hpp"
 
 class SymbolNotFound : public BaseException {
    public:
@@ -55,6 +56,16 @@ class FunctionRedefinition : public Redefinition {
         : Redefinition{position, "function", std::move(name)} {}
     FunctionRedefinition(const Position& position, const FunctionRedefinition& e)
         : FunctionRedefinition{position, e.name_} {}
+};
+
+class InvalidTypeConversion : public BaseException {
+   public:
+    InvalidTypeConversion(const Position& position, ValueObj::Value from, Type to);
+    InvalidTypeConversion(const Position& position, const InvalidTypeConversion& e);
+
+   private:
+    ValueObj::Value from_;
+    Type to_;
 };
 
 #endif

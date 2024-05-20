@@ -539,19 +539,75 @@ TEST_F(InterpreterTest, variant_assignment) {
     EXPECT_EQ(interpretAndGetOutput(), "true\n");
 }
 
+TEST_F(InterpreterTest, variant_holding_struct) {
+    SetUp(
+        "struct A { int num }"
+        "variant V { A, bool }"
+        "A a = {5};"
+        "V v = a;"
+        "print v;");
+    EXPECT_EQ(interpretAndGetOutput(), "{ 5 }\n");
+}
+
 TEST_F(InterpreterTest, variant_initialization_with_anonymous_struct) {
     SetUp(
         "struct A { int num }\n"
-        "variant IntOrBool { A, str }\n"
-        "IntOrBool i = {9};");
+        "variant V { A, str }\n"
+        "V v = {9};");
     interpretAndExpectThrowAt<TypeMismatch>({3, 1});
 }
 
 TEST_F(InterpreterTest, assignment_of_anonymous_struct_to_variant) {
     SetUp(
         "struct A { int num }\n"
-        "variant IntOrBool { A, bool }\n"
-        "IntOrBool i = true;\n"
-        "i = {9};");
+        "variant V { A, bool }\n"
+        "V v = true;\n"
+        "v = {9};");
     interpretAndExpectThrowAt<TypeMismatch>({4, 1});
+}
+
+TEST_F(InterpreterTest, variant_getting_packed_value) {
+    SetUp(
+        "variant V { int, bool }"
+        "V v = true;"
+        "bool a = v as bool;");
+    interpretAndGetOutput();
+}
+
+TEST_F(InterpreterTest, variant_getting_invalid_type) {
+    SetUp(
+        "variant V { int, bool }\n"
+        "V v = true;\n"
+        "bool a = v as int;");
+    interpretAndExpectThrowAt<InvalidTypeConversion>({3, 12});
+}
+
+class TypeConversionTest : public InterpreterTest,
+                           public testing::WithParamInterface<
+                               std::tuple<std::string, std::string, std::string>> {};
+
+TEST_P(TypeConversionTest, built_in_type_conversions) {
+    auto& [value, type, expected] = GetParam();
+
+    SetUp("print " + value + " as " + type + ";");
+    EXPECT_EQ(interpretAndGetOutput(), expected + '\n');
+}
+
+auto conversionTuples = testing::Values(
+    std::make_tuple("5", "float", "5"), std::make_tuple("7.8", "int", "7"),
+    std::make_tuple("0", "bool", "false"), std::make_tuple("1", "bool", "true"),
+    std::make_tuple("5", "bool", "true"), std::make_tuple("0.4", "bool", "true"),
+    std::make_tuple("0.0", "bool", "false"), std::make_tuple("true", "int", "1"),
+    std::make_tuple("true", "float", "1"), std::make_tuple("false", "int", "0"),
+    std::make_tuple("false", "float", "0"), std::make_tuple(R"("text")", "str", "text"));
+
+INSTANTIATE_TEST_SUITE_P(TypeConversions, TypeConversionTest, conversionTuples);
+
+TEST_F(InterpreterTest, same_struct_conversion) {
+    SetUp(
+        "struct A { int num }"
+        "A a = { 5 };"
+        "A b = a as A;"
+        "print b;");
+    EXPECT_EQ(interpretAndGetOutput(), "{ 5 }\n");
 }

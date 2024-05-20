@@ -572,6 +572,7 @@ PExpression Parser::parseTypeExpression() {
         return nullptr;
 
     if (const auto& ctor = TypeExpression::getCtor(currentToken_.getType())) {
+        const auto position = currentToken_.getPosition();
         consumeToken();
 
         auto type = getCurrentTokenType();
@@ -580,7 +581,7 @@ PExpression Parser::parseTypeExpression() {
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected type after is/as keyword");
 
-        expr = (*ctor)(std::move(expr), *type);
+        expr = (*ctor)(std::move(expr), *type, position);
     }
     return expr;
 }

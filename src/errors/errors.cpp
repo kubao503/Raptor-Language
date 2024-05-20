@@ -77,3 +77,28 @@ InvalidFieldCount::InvalidFieldCount(const Position& position, const InvalidFiel
 
 Redefinition::Redefinition(const Position& position, std::string type, std::string name)
     : BaseException{position, "Redefinition of " + name + " " + type}, name_{name} {}
+
+struct ValueToString {
+    std::string operator()(Integral) const { return "INT"; }
+    std::string operator()(Floating) const { return "FLOAT"; }
+    std::string operator()(bool) const { return "BOOL"; }
+    std::string operator()(const std::string&) const { return "STR"; }
+    std::string operator()(const StructObj&) const { return "Anonymous struct"; }
+    std::string operator()(const NamedStructObj& s) const {
+        return "Struct " + s.structDef->name;
+    }
+    std::string operator()(const VariantObj& v) const {
+        return "Variant " + v.variantDef->name;
+    }
+};
+
+InvalidTypeConversion::InvalidTypeConversion(const Position& position,
+                                             ValueObj::Value from, Type to)
+    : BaseException{position, "Cannot convert from " + std::visit(ValueToString(), from)
+                                  + " to " + std::visit(TypeToString(), to)},
+      from_{from},
+      to_{to} {}
+
+InvalidTypeConversion::InvalidTypeConversion(const Position& position,
+                                             const InvalidTypeConversion& e)
+    : InvalidTypeConversion{position, e.from_, e.to_} {}

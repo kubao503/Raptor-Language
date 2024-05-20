@@ -73,8 +73,59 @@ void ExpressionInterpreter::operator()(const LogicalNegationExpression&) const {
     lastResult_ = nullptr;
 }
 
-void ExpressionInterpreter::operator()(const ConversionExpression&) const {
-    lastResult_ = nullptr;
+struct TypeConverter {
+    ValueObj::Value operator()(const VariantObj& from, const auto& to) const {
+        if (std::visit(TypeComparer(), static_cast<Type>(to), from.valueRef->value))
+            return from.valueRef->value;
+        throw InvalidTypeConversion{{}, from, to};
+    }
+    ValueObj::Value operator()(Integral from, BuiltInType to) const {
+        return fromBuiltInValue(from, to);
+    }
+    ValueObj::Value operator()(Floating from, BuiltInType to) const {
+        return fromBuiltInValue(from, to);
+    }
+    ValueObj::Value operator()(bool from, BuiltInType to) const {
+        return fromBuiltInValue(from, to);
+    }
+    ValueObj::Value operator()(const std::string& from, BuiltInType to) const {
+        if (to == BuiltInType::STR)
+            return from;
+        throw InvalidTypeConversion{{}, from, to};
+    }
+    ValueObj::Value operator()(const NamedStructObj& from, const std::string& to) const {
+        if (from.structDef->name == to)
+            return from;
+        throw InvalidTypeConversion{{}, from, to};
+    }
+    ValueObj::Value operator()(auto from, auto to) const {
+        throw InvalidTypeConversion{{}, from, to};
+    }
+
+   private:
+    ValueObj::Value fromBuiltInValue(auto builtInValue, BuiltInType to) const {
+        switch (to) {
+            case BuiltInType::INT:
+                return static_cast<Integral>(builtInValue);
+            case BuiltInType::FLOAT:
+                return static_cast<Floating>(builtInValue);
+            case BuiltInType::BOOL:
+                return static_cast<bool>(builtInValue);
+            default:
+                throw InvalidTypeConversion{{}, builtInValue, to};
+        }
+    }
+};
+
+void ExpressionInterpreter::operator()(const ConversionExpression& conversionExpr) const {
+    conversionExpr.expr->accept(*this);
+
+    try {
+        auto value = std::visit(TypeConverter(), lastResult_->value, conversionExpr.type);
+        lastResult_ = std::make_shared<ValueObj>(value);
+    } catch (const InvalidTypeConversion& e) {
+        throw InvalidTypeConversion{conversionExpr.position, e};
+    }
 }
 
 void ExpressionInterpreter::operator()(const TypeCheckExpression&) const {
