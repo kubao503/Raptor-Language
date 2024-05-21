@@ -251,9 +251,21 @@ void Interpreter::passArgumentToCtx(CallContext& ctx, const Argument& arg,
 }
 
 void Interpreter::operator()(const StructDef& stmt) {
-    addStruct(&stmt);
+    try {
+        addStruct(&stmt);
+    } catch (const StructRedefinition& e) {
+        throw StructRedefinition{stmt.position, e};
+    } catch (const VariantRedefinition& e) {
+        throw VariantRedefinition{stmt.position, e};
+    }
 }
 
 void Interpreter::operator()(const VariantDef& stmt) {
-    addVariant(&stmt);
+    try {
+        addVariant(&stmt);
+    } catch (const VariantRedefinition& e) {
+        throw VariantRedefinition{stmt.position, e};
+    } catch (const StructRedefinition& e) {
+        throw StructRedefinition{stmt.position, e};
+    }
 }

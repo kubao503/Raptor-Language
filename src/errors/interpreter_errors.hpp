@@ -58,6 +58,22 @@ class FunctionRedefinition : public Redefinition {
         : FunctionRedefinition{position, e.name_} {}
 };
 
+class StructRedefinition : public Redefinition {
+   public:
+    StructRedefinition(const Position& position, std::string name)
+        : Redefinition{position, "struct", std::move(name)} {}
+    StructRedefinition(const Position& position, const StructRedefinition& e)
+        : StructRedefinition{position, e.name_} {}
+};
+
+class VariantRedefinition : public Redefinition {
+   public:
+    VariantRedefinition(const Position& position, std::string name)
+        : Redefinition{position, "variant", std::move(name)} {}
+    VariantRedefinition(const Position& position, const VariantRedefinition& e)
+        : VariantRedefinition{position, e.name_} {}
+};
+
 class InvalidTypeConversion : public BaseException {
    public:
     InvalidTypeConversion(const Position& position, ValueObj::Value from, Type to);

@@ -502,6 +502,25 @@ TEST_F(InterpreterTest, nested_struct_assignment) {
     EXPECT_EQ(std::get<Integral>(structA.values.at(0)->value), 7);
 }
 
+TEST_F(InterpreterTest, struct_redefinition) {
+    SetUp(
+        "struct A { int num }\n"
+        "struct A { bool truth }");
+    interpretAndExpectThrowAt<StructRedefinition>({2, 1});
+}
+
+TEST_F(InterpreterTest, struct_shadowing) {
+    SetUp(
+        "struct A { int num }"
+        "void foo() {"
+        "    struct A { bool truth }"
+        "    A a = {true};"
+        "    print a;"
+        "}"
+        "foo();");
+    EXPECT_EQ(interpretAndGetOutput(), "{ true }\n");
+}
+
 TEST_F(InterpreterTest, variant_definition) {
     SetUp("variant IntOrBool { int, bool }");
     interpretAndGetOutput();
@@ -611,6 +630,25 @@ TEST_F(InterpreterTest, variant_getting_invalid_type) {
     interpretAndExpectThrowAt<InvalidTypeConversion>({3, 12});
 }
 
+TEST_F(InterpreterTest, variant_redefinition) {
+    SetUp(
+        "variant V { int, bool }\n"
+        "variant V { float, str }");
+    interpretAndExpectThrowAt<VariantRedefinition>({2, 1});
+}
+
+TEST_F(InterpreterTest, variant_shadowing) {
+    SetUp(
+        "variant V { int, bool }"
+        "void foo() {"
+        "    variant V { float, str }"
+        "    V v = 2.0;"
+        "    print v;"
+        "}"
+        "foo();");
+    EXPECT_EQ(interpretAndGetOutput(), "2\n");
+}
+
 class TypeConversionTest : public InterpreterTest,
                            public testing::WithParamInterface<
                                std::tuple<std::string, std::string, std::string>> {};
@@ -639,4 +677,18 @@ TEST_F(InterpreterTest, same_struct_conversion) {
         "A b = a as A;"
         "print b;");
     EXPECT_EQ(interpretAndGetOutput(), "{ 5 }\n");
+}
+
+TEST_F(InterpreterTest, redefining_struct_with_variant) {
+    SetUp(
+        "struct A { int num }\n"
+        "variant A { int, bool }");
+    interpretAndExpectThrowAt<StructRedefinition>({2, 1});
+}
+
+TEST_F(InterpreterTest, redefining_variant_with_struct) {
+    SetUp(
+        "variant A { int, bool }\n"
+        "struct A { int num }");
+    interpretAndExpectThrowAt<VariantRedefinition>({2, 1});
 }

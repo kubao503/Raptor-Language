@@ -50,14 +50,13 @@ struct Field {
 struct StructDef {
     std::string name;
     std::vector<Field> fields;
+    Position position;
 };
 
 struct VariantDef {
     std::string name;
     std::vector<Type> types;
-
-    VariantDef(std::string name, std::vector<Type> types)
-        : name{std::move(name)}, types{std::move(types)} {}
+    Position position;
 };
 
 using Statement =

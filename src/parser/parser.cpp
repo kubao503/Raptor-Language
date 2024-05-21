@@ -329,7 +329,7 @@ std::optional<StructDef> Parser::parseStructDef() {
         return std::nullopt;
     consumeToken();
 
-    const auto name = expectAndReturnValue<std::string>(
+    auto name = expectAndReturnValue<std::string>(
         Token::Type::ID,
         SyntaxException(currentToken_.getPosition(), "Expected struct name"));
 
@@ -342,7 +342,9 @@ std::optional<StructDef> Parser::parseStructDef() {
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(),
                            "Missing right curly brace in struct difinition"));
-    return StructDef{.name = name, .fields = std::move(fields)};
+    return StructDef{.name = std::move(name),
+                     .fields = std::move(fields),
+                     .position = statementPosition_};
 }
 
 /// VNT_DEF = variant ID '{' TYPES '}'
@@ -367,7 +369,9 @@ std::optional<VariantDef> Parser::parseVariantDef() {
            SyntaxException(currentToken_.getPosition(),
                            "Missing right curly brace in variant difinition"));
 
-    return VariantDef{std::move(name), std::move(types)};
+    return VariantDef{.name = std::move(name),
+                      .types = std::move(types),
+                      .position = statementPosition_};
 }
 
 std::optional<Type> Parser::parseType() {
