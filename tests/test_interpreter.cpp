@@ -156,7 +156,7 @@ TEST_F(InterpreterTest, function_shadowing) {
     SetUp(
         "void fun() { print 1; }"
         "void main() {"
-        "    int fun() { print 2; }"
+        "    void fun() { print 2; }"
         "    fun();"
         "}"
         "main();");
@@ -743,4 +743,11 @@ TEST_F(InterpreterTest, function_call_in_expression) {
         "int x = return_one();"
         "print x;");
     EXPECT_EQ(interpretAndGetOutput(), "1\n");
+}
+
+TEST_F(InterpreterTest, missing_return_statement) {
+    SetUp(
+        "int foo() { }"
+        "foo();");
+    interpretAndExpectThrowAt<ReturnTypeMismatch>({1, 1});
 }

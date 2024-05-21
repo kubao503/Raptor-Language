@@ -214,29 +214,30 @@ std::optional<ValueObj::Value> Interpreter::handleFunctionCall(const FuncCall& f
     passArgumentsToCtx(ctx, funcCall.arguments, funcDef->getParameters());
 
     callStack_.push(std::move(ctx));
+
+    returnValue_ = std::nullopt;
     for (const auto& stmt : funcDef->getStatements()) {
         std::visit(*this, stmt);
         if (std::holds_alternative<ReturnStatement>(stmt)) {
-            try {
-                checkReturnType(funcDef->getReturnType());
-            } catch (const ReturnTypeMismatch& e) {
-                throw ReturnTypeMismatch{funcDef->getPosition(), e};
-            }
             break;
         }
     }
+
+    try {
+        checkReturnType(funcDef->getReturnType());
+    } catch (const ReturnTypeMismatch& e) {
+        throw ReturnTypeMismatch{funcDef->getPosition(), e};
+    }
+
     callStack_.pop();
     return returnValue_;
 }
 
 void Interpreter::checkReturnType(ReturnType expected) const {
-    if (std::holds_alternative<VoidType>(expected)) {
+    if (std::holds_alternative<VoidType>(expected))
         expectVoidReturnValue();
-    } else if (!std::visit(TypeComparer(), expected, *returnValue_)) {
-        auto actualType = std::visit(ValueToType(), *returnValue_);
-        throw ReturnTypeMismatch{
-            {}, expected, std::visit([](auto t) -> ReturnType { return t; }, actualType)};
-    }
+    else
+        expectNonVoidReturnValue(expected);
 }
 
 void Interpreter::expectVoidReturnValue() const {
@@ -246,6 +247,17 @@ void Interpreter::expectVoidReturnValue() const {
             {},
             VoidType(),
             std::visit([](auto t) -> ReturnType { return t; }, actualType)};
+    }
+}
+
+void Interpreter::expectNonVoidReturnValue(ReturnType expected) const {
+    if (!returnValue_)
+        throw ReturnTypeMismatch{{}, expected, VoidType{}};
+
+    if (!std::visit(TypeComparer(), expected, *returnValue_)) {
+        auto actualType = std::visit(ValueToType(), *returnValue_);
+        throw ReturnTypeMismatch{
+            {}, expected, std::visit([](auto t) -> ReturnType { return t; }, actualType)};
     }
 }
 

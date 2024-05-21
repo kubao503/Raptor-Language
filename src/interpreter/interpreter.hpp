@@ -38,6 +38,7 @@ class Interpreter {
 
     void checkReturnType(ReturnType expected) const;
     void expectVoidReturnValue() const;
+    void expectNonVoidReturnValue(ReturnType expected) const;
 
     ValueRef convertToNamedStruct(ValueRef valueRef, const StructDef* structDef) const;
     ValueRef convertToVariant(ValueRef valueRef, const VariantDef* variantDef) const;
