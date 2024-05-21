@@ -38,8 +38,9 @@ class Interpreter {
 
     ValueRef convertAndCheckType(const Type& expected, ValueRef valueRef) const;
 
-    void passArguments(const Arguments& args, const Parameters& params);
-    void passArgument(const Argument& arg, const Parameter& param);
+    void passArgumentsToCtx(CallContext& ctx, const Arguments& args,
+                            const Parameters& params);
+    void passArgumentToCtx(CallContext& ctx, const Argument& arg, const Parameter& param);
 
     ValueRef getValueFromExpr(const Expression& expr) const;
 

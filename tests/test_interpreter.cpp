@@ -222,6 +222,16 @@ TEST_F(InterpreterTest, function_call_mismatched_arg_type) {
     interpretAndExpectThrowAt<TypeMismatch>({3, 5});
 }
 
+TEST_F(InterpreterTest, function_call_inside_a_function) {
+    SetUp(
+        "void foo(int a) { print a; }"
+        "void bar(int b) {"
+        "    foo(b);"
+        "}"
+        "bar(2);");
+    EXPECT_EQ(interpretAndGetOutput(), "2\n");
+}
+
 TEST_F(InterpreterTest, function_not_found) {
     SetUp("foo(5);");
     interpretAndExpectThrowAt<SymbolNotFound>({1, 1});

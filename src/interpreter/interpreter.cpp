@@ -196,11 +196,12 @@ void Interpreter::operator()(const FuncCall& stmt) {
     auto funcWithCtx = getFunctionWithCtx(stmt.name);
     if (!funcWithCtx)
         throw SymbolNotFound{stmt.position, "Function", stmt.name};
-    auto [func, ctx] = *funcWithCtx;
+    auto [func, parentCtx] = *funcWithCtx;
 
-    callStack_.emplace(ctx);
-    passArguments(stmt.arguments, func->getParameters());
+    CallContext ctx{parentCtx};
+    passArgumentsToCtx(ctx, stmt.arguments, func->getParameters());
 
+    callStack_.push(std::move(ctx));
     for (const auto& stmt : func->getStatements())
         std::visit(*this, stmt);
     callStack_.pop();
@@ -213,11 +214,12 @@ void checkArgsCount(const Arguments& args, const Parameters& params) {
                                  + " were provided");
 }
 
-void Interpreter::passArguments(const Arguments& args, const Parameters& params) {
+void Interpreter::passArgumentsToCtx(CallContext& ctx, const Arguments& args,
+                                     const Parameters& params) {
     checkArgsCount(args, params);
 
     for (std::size_t i{0}; i < args.size(); ++i)
-        passArgument(args[i], params[i]);
+        passArgumentToCtx(ctx, args[i], params[i]);
 }
 
 void checkArgRef(const Argument& arg, const Parameter& param) {
@@ -227,7 +229,8 @@ void checkArgRef(const Argument& arg, const Parameter& param) {
         throw std::runtime_error("Expected value argument");
 }
 
-void Interpreter::passArgument(const Argument& arg, const Parameter& param) {
+void Interpreter::passArgumentToCtx(CallContext& ctx, const Argument& arg,
+                                    const Parameter& param) {
     checkArgRef(arg, param);
     auto valueRef = getValueFromExpr(*arg.value);
 
@@ -241,7 +244,7 @@ void Interpreter::passArgument(const Argument& arg, const Parameter& param) {
     } catch (const InvalidFieldCount& e) {
         throw InvalidFieldCount{arg.position, e};
     }
-    callStack_.top().addVariable(param.name, std::move(valueRef));
+    ctx.addVariable(param.name, std::move(valueRef));
 }
 
 void Interpreter::operator()(const StructDef& stmt) {
