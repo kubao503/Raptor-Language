@@ -66,11 +66,9 @@ ValueRef Interpreter::getValueFromExpr(const Expression& expr) {
 }
 
 void Interpreter::operator()(const ReturnStatement& stmt) {
-    if (auto expr = stmt.expression.get()) {
-        returnValue_ = getValueFromExpr(*expr);
-        return;
-    }
-    returnValue_ = nullptr;
+    returnValue_ = std::nullopt;
+    if (auto expr = stmt.expression.get())
+        returnValue_ = getValueFromExpr(*expr)->value;
 }
 
 struct ValuePrinter {
@@ -215,43 +213,35 @@ std::optional<ValueObj::Value> Interpreter::handleFunctionCall(const FuncCall& f
     CallContext ctx{parentCtx};
     passArgumentsToCtx(ctx, funcCall.arguments, funcDef->getParameters());
 
-    std::optional<ValueObj::Value> returnValue;
-
     callStack_.push(std::move(ctx));
     for (const auto& stmt : funcDef->getStatements()) {
-        returnValue_ = std::nullopt;
         std::visit(*this, stmt);
-        if (returnValue_) {
+        if (std::holds_alternative<ReturnStatement>(stmt)) {
             try {
                 checkReturnType(funcDef->getReturnType());
             } catch (const ReturnTypeMismatch& e) {
                 throw ReturnTypeMismatch{funcDef->getPosition(), e};
             }
-            if (*returnValue_)
-                returnValue = (*returnValue_)->value;
-            else
-                returnValue = std::nullopt;
             break;
         }
     }
-    returnValue_ = std::nullopt;
     callStack_.pop();
-    return returnValue;
+    return returnValue_;
 }
 
 void Interpreter::checkReturnType(ReturnType expected) const {
     if (std::holds_alternative<VoidType>(expected)) {
         expectVoidReturnValue();
-    } else if (!std::visit(TypeComparer(), expected, (*returnValue_)->value)) {
-        auto actualType = std::visit(ValueToType(), (*returnValue_)->value);
+    } else if (!std::visit(TypeComparer(), expected, *returnValue_)) {
+        auto actualType = std::visit(ValueToType(), *returnValue_);
         throw ReturnTypeMismatch{
             {}, expected, std::visit([](auto t) -> ReturnType { return t; }, actualType)};
     }
 }
 
 void Interpreter::expectVoidReturnValue() const {
-    if (returnValue_ != nullptr) {
-        auto actualType = std::visit(ValueToType(), (*returnValue_)->value);
+    if (returnValue_) {
+        auto actualType = std::visit(ValueToType(), *returnValue_);
         throw ReturnTypeMismatch{
             {},
             VoidType(),

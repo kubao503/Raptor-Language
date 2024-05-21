@@ -52,7 +52,7 @@ class Interpreter {
 
     std::stack<CallContext> callStack_;
     std::ostream& out_;
-    std::optional<ValueRef> returnValue_;
+    std::optional<ValueObj::Value> returnValue_;
 };
 
 struct TypeComparer {
