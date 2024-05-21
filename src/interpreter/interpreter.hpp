@@ -19,14 +19,16 @@ class Interpreter {
     const VariantDef* getVariantDef(std::string_view name) const;
 
     void operator()(const ReturnStatement& stmt);
-    void operator()(const PrintStatement& stmt) const;
+    void operator()(const PrintStatement& stmt);
     void operator()(const VarDef& stmt);
-    void operator()(const Assignment& stmt) const;
+    void operator()(const Assignment& stmt);
     void operator()(const FuncDef& stmt);
     void operator()(const FuncCall& funcCall);
     void operator()(const StructDef& stmt);
     void operator()(const VariantDef& stmt);
     void operator()(const auto&) const { throw std::runtime_error("unknown statement"); }
+
+    std::optional<ValueObj::Value> handleFunctionCall(const FuncCall& funcCall);
 
    private:
     void addVariable(const std::string& name, ValueRef valueRef);
@@ -34,7 +36,8 @@ class Interpreter {
     void addStruct(const StructDef* structDef);
     void addVariant(const VariantDef* variantDef);
 
-    void expectVoidReturnType() const;
+    void checkReturnType(ReturnType expected) const;
+    void expectVoidReturnValue() const;
 
     ValueRef convertToNamedStruct(ValueRef valueRef, const StructDef* structDef) const;
     ValueRef convertToVariant(ValueRef valueRef, const VariantDef* variantDef) const;
@@ -45,7 +48,7 @@ class Interpreter {
                             const Parameters& params);
     void passArgumentToCtx(CallContext& ctx, const Argument& arg, const Parameter& param);
 
-    ValueRef getValueFromExpr(const Expression& expr) const;
+    ValueRef getValueFromExpr(const Expression& expr);
 
     std::stack<CallContext> callStack_;
     std::ostream& out_;

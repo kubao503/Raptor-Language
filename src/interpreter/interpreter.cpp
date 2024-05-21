@@ -59,7 +59,7 @@ const VariantDef* Interpreter::getVariantDef(std::string_view name) const {
     return callStack_.top().getVariantDef(name);
 }
 
-ValueRef Interpreter::getValueFromExpr(const Expression& expr) const {
+ValueRef Interpreter::getValueFromExpr(const Expression& expr) {
     auto exprInterpreter = ExpressionInterpreter(*this);
     expr.accept(exprInterpreter);
     return exprInterpreter.getValue();
@@ -95,7 +95,7 @@ struct ValuePrinter {
     std::ostream& out_;
 };
 
-void Interpreter::operator()(const PrintStatement& stmt) const {
+void Interpreter::operator()(const PrintStatement& stmt) {
     if (auto expr = stmt.expression.get()) {
         auto valueRef = getValueFromExpr(*expr);
         std::visit(ValuePrinter(out_), std::move(valueRef->value));
@@ -174,7 +174,7 @@ void Interpreter::operator()(const VarDef& stmt) {
     }
 }
 
-void Interpreter::operator()(const Assignment& stmt) const {
+void Interpreter::operator()(const Assignment& stmt) {
     auto name = std::get<std::string>(stmt.lhs);
     auto oldValueRef = getVariable(name);
     if (!oldValueRef)
@@ -203,32 +203,53 @@ void Interpreter::operator()(const FuncDef& stmt) {
 }
 
 void Interpreter::operator()(const FuncCall& funcCall) {
+    handleFunctionCall(funcCall);
+}
+
+std::optional<ValueObj::Value> Interpreter::handleFunctionCall(const FuncCall& funcCall) {
     auto funcWithCtx = getFunctionWithCtx(funcCall.name);
     if (!funcWithCtx)
         throw SymbolNotFound{funcCall.position, "Function", funcCall.name};
-    auto [func, parentCtx] = *funcWithCtx;
+    auto [funcDef, parentCtx] = *funcWithCtx;
 
     CallContext ctx{parentCtx};
-    passArgumentsToCtx(ctx, funcCall.arguments, func->getParameters());
+    passArgumentsToCtx(ctx, funcCall.arguments, funcDef->getParameters());
+
+    std::optional<ValueObj::Value> returnValue;
 
     callStack_.push(std::move(ctx));
-    for (const auto& stmt : func->getStatements()) {
+    for (const auto& stmt : funcDef->getStatements()) {
         returnValue_ = std::nullopt;
         std::visit(*this, stmt);
         if (returnValue_) {
             try {
-                expectVoidReturnType();
+                checkReturnType(funcDef->getReturnType());
             } catch (const ReturnTypeMismatch& e) {
-                throw ReturnTypeMismatch{func->getPosition(), e};
+                throw ReturnTypeMismatch{funcDef->getPosition(), e};
             }
+            if (*returnValue_)
+                returnValue = (*returnValue_)->value;
+            else
+                returnValue = std::nullopt;
             break;
         }
     }
     returnValue_ = std::nullopt;
     callStack_.pop();
+    return returnValue;
 }
 
-void Interpreter::expectVoidReturnType() const {
+void Interpreter::checkReturnType(ReturnType expected) const {
+    if (std::holds_alternative<VoidType>(expected)) {
+        expectVoidReturnValue();
+    } else if (!std::visit(TypeComparer(), expected, (*returnValue_)->value)) {
+        auto actualType = std::visit(ValueToType(), (*returnValue_)->value);
+        throw ReturnTypeMismatch{
+            {}, expected, std::visit([](auto t) -> ReturnType { return t; }, actualType)};
+    }
+}
+
+void Interpreter::expectVoidReturnValue() const {
     if (returnValue_ != nullptr) {
         auto actualType = std::visit(ValueToType(), (*returnValue_)->value);
         throw ReturnTypeMismatch{

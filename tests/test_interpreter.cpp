@@ -736,3 +736,11 @@ TEST_F(InterpreterTest, returning_value_in_void_func) {
         "foo();");
     interpretAndExpectThrowAt<ReturnTypeMismatch>({1, 1});
 }
+
+TEST_F(InterpreterTest, function_call_in_expression) {
+    SetUp(
+        "int return_one() { return 1; }"
+        "int x = return_one();"
+        "print x;");
+    EXPECT_EQ(interpretAndGetOutput(), "1\n");
+}

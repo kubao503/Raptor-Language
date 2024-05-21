@@ -3,7 +3,7 @@
 #include "interpreter.hpp"
 #include "interpreter_errors.hpp"
 
-ExpressionInterpreter::ExpressionInterpreter(const Interpreter& interpreter)
+ExpressionInterpreter::ExpressionInterpreter(Interpreter& interpreter)
     : interpreter_{interpreter} {}
 
 void ExpressionInterpreter::operator()(const StructInitExpression& expr) const {
@@ -150,8 +150,10 @@ void ExpressionInterpreter::operator()(const Constant& expr) const {
     lastResult_ = std::make_shared<ValueObj>(std::move(value));
 }
 
-void ExpressionInterpreter::operator()(const FuncCall&) const {
-    lastResult_ = nullptr;
+void ExpressionInterpreter::operator()(const FuncCall& funcCall) const {
+    interpreter_(funcCall);
+    auto value = interpreter_.handleFunctionCall(funcCall);
+    lastResult_ = std::make_shared<ValueObj>(*value);
 }
 
 void ExpressionInterpreter::operator()(const VariableAccess& expr) const {

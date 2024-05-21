@@ -8,7 +8,7 @@ class Interpreter;
 
 class ExpressionInterpreter : public ExpressionVisitor {
    public:
-    ExpressionInterpreter(const Interpreter& interpreter);
+    ExpressionInterpreter(Interpreter& interpreter);
 
     ValueRef getValue() const { return lastResult_; }
 
@@ -31,11 +31,11 @@ class ExpressionInterpreter : public ExpressionVisitor {
     void operator()(const TypeCheckExpression&) const override;
     void operator()(const FieldAccessExpression& expr) const override;
     void operator()(const Constant& expr) const override;
-    void operator()(const FuncCall&) const override;
+    void operator()(const FuncCall& funcCall) const override;
     void operator()(const VariableAccess& expr) const override;
 
    private:
-    const Interpreter& interpreter_;
+    Interpreter& interpreter_;
     mutable ValueRef lastResult_;
 };
 
