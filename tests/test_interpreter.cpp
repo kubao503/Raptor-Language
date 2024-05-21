@@ -692,3 +692,47 @@ TEST_F(InterpreterTest, redefining_variant_with_struct) {
         "struct A { int num }");
     interpretAndExpectThrowAt<VariantRedefinition>({2, 1});
 }
+
+TEST_F(InterpreterTest, return_statement) {
+    SetUp(
+        "void foo() {"
+        "    print 5;"
+        "    return;"
+        "    print 10;"
+        "}"
+        "foo();");
+    EXPECT_EQ(interpretAndGetOutput(), "5\n");
+}
+
+TEST_F(InterpreterTest, return_statement_two_calls) {
+    SetUp(
+        "void foo() {"
+        "    print 2;"
+        "    print 5;"
+        "    return;"
+        "    print 10;"
+        "}"
+        "foo();"
+        "foo();");
+    EXPECT_EQ(interpretAndGetOutput(), "2\n5\n2\n5\n");
+}
+
+TEST_F(InterpreterTest, return_statement_nested_call) {
+    SetUp(
+        "void foo() { return; }"
+        "void bar() {"
+        "    foo();"
+        "    print 6;"
+        "}"
+        "bar();");
+    EXPECT_EQ(interpretAndGetOutput(), "6\n");
+}
+
+TEST_F(InterpreterTest, returning_value_in_void_func) {
+    SetUp(
+        "void foo() {\n"
+        "    return 5;\n"
+        "}\n"
+        "foo();");
+    interpretAndExpectThrowAt<ReturnTypeMismatch>({1, 1});
+}

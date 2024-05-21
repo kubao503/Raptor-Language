@@ -45,6 +45,7 @@ struct TypeToString {
         return std::string(magic_enum::enum_name(type));
     }
     std::string operator()(const std::string& type) { return type; }
+    std::string operator()(const VoidType&) { return "VOID"; }
 };
 
 SymbolNotFound::SymbolNotFound(const Position& position, std::string type,
@@ -64,6 +65,17 @@ TypeMismatch::TypeMismatch(const Position& position, Type expected, Type actual)
 
 TypeMismatch::TypeMismatch(const Position& position, const TypeMismatch& e)
     : TypeMismatch{position, e.expected_, e.actual_} {}
+
+ReturnTypeMismatch::ReturnTypeMismatch(const Position& position, ReturnType expected,
+                                       ReturnType actual)
+    : BaseException{position, "Expected: " + std::visit(TypeToString(), expected)
+                                  + "\nActual: " + std::visit(TypeToString(), actual)},
+      expected_{expected},
+      actual_{actual} {}
+
+ReturnTypeMismatch::ReturnTypeMismatch(const Position& position,
+                                       const ReturnTypeMismatch& e)
+    : ReturnTypeMismatch{position, e.expected_, e.actual_} {}
 
 InvalidFieldCount::InvalidFieldCount(const Position& position, std::size_t expected,
                                      std::size_t actual)

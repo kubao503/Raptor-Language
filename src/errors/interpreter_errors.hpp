@@ -25,6 +25,16 @@ class TypeMismatch : public BaseException {
     Type actual_;
 };
 
+class ReturnTypeMismatch : public BaseException {
+   public:
+    ReturnTypeMismatch(const Position& position, ReturnType expected, ReturnType actual);
+    ReturnTypeMismatch(const Position& position, const ReturnTypeMismatch& e);
+
+   private:
+    ReturnType expected_;
+    ReturnType actual_;
+};
+
 class InvalidFieldCount : public BaseException {
    public:
     InvalidFieldCount(const Position& position, std::size_t expected, std::size_t actual);

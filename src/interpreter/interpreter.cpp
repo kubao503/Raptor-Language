@@ -65,6 +65,14 @@ ValueRef Interpreter::getValueFromExpr(const Expression& expr) const {
     return exprInterpreter.getValue();
 }
 
+void Interpreter::operator()(const ReturnStatement& stmt) {
+    if (auto expr = stmt.expression.get()) {
+        returnValue_ = getValueFromExpr(*expr);
+        return;
+    }
+    returnValue_ = nullptr;
+}
+
 struct ValuePrinter {
     explicit ValuePrinter(std::ostream& out)
         : out_{out} {}
@@ -88,8 +96,7 @@ struct ValuePrinter {
 };
 
 void Interpreter::operator()(const PrintStatement& stmt) const {
-    auto expr = stmt.expression.get();
-    if (expr) {
+    if (auto expr = stmt.expression.get()) {
         auto valueRef = getValueFromExpr(*expr);
         std::visit(ValuePrinter(out_), std::move(valueRef->value));
     }
@@ -195,19 +202,40 @@ void Interpreter::operator()(const FuncDef& stmt) {
     }
 }
 
-void Interpreter::operator()(const FuncCall& stmt) {
-    auto funcWithCtx = getFunctionWithCtx(stmt.name);
+void Interpreter::operator()(const FuncCall& funcCall) {
+    auto funcWithCtx = getFunctionWithCtx(funcCall.name);
     if (!funcWithCtx)
-        throw SymbolNotFound{stmt.position, "Function", stmt.name};
+        throw SymbolNotFound{funcCall.position, "Function", funcCall.name};
     auto [func, parentCtx] = *funcWithCtx;
 
     CallContext ctx{parentCtx};
-    passArgumentsToCtx(ctx, stmt.arguments, func->getParameters());
+    passArgumentsToCtx(ctx, funcCall.arguments, func->getParameters());
 
     callStack_.push(std::move(ctx));
-    for (const auto& stmt : func->getStatements())
+    for (const auto& stmt : func->getStatements()) {
+        returnValue_ = std::nullopt;
         std::visit(*this, stmt);
+        if (returnValue_) {
+            try {
+                expectVoidReturnType();
+            } catch (const ReturnTypeMismatch& e) {
+                throw ReturnTypeMismatch{func->getPosition(), e};
+            }
+            break;
+        }
+    }
+    returnValue_ = std::nullopt;
     callStack_.pop();
+}
+
+void Interpreter::expectVoidReturnType() const {
+    if (returnValue_ != nullptr) {
+        auto actualType = std::visit(ValueToType(), (*returnValue_)->value);
+        throw ReturnTypeMismatch{
+            {},
+            VoidType(),
+            std::visit([](auto t) -> ReturnType { return t; }, actualType)};
+    }
 }
 
 void checkArgsCount(const Arguments& args, const Parameters& params) {
