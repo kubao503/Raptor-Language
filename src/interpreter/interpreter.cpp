@@ -157,6 +157,9 @@ void Interpreter::operator()(const VarDef& stmt) {
         throw InvalidFieldCount{stmt.position, e};
     }
 
+    // Deliberate copy of the value
+    valueRef = std::make_shared<ValueObj>(*valueRef);
+
     try {
         addVariable(stmt.name, std::move(valueRef));
     } catch (const VariableRedefinition& e) {

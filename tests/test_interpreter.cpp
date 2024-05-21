@@ -117,6 +117,25 @@ TEST_F(InterpreterTest, assignment_mismatched_types) {
     interpretAndExpectThrowAt<TypeMismatch>({2, 1});
 }
 
+TEST_F(InterpreterTest, var_def_makes_a_copy) {
+    SetUp(
+        "int x = 20;"
+        "int y = x;"
+        "y = 5;"
+        "print x;");
+    EXPECT_EQ(interpretAndGetOutput(), "20\n");
+}
+
+TEST_F(InterpreterTest, assignment_makes_a_copy) {
+    SetUp(
+        "int x = 20;"
+        "int y = 0;"
+        "y = x;"
+        "y = 5;"
+        "print x;");
+    EXPECT_EQ(interpretAndGetOutput(), "20\n");
+}
+
 TEST_F(InterpreterTest, func_call) {
     SetUp(
         "void fun() {"
