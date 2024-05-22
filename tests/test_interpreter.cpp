@@ -751,3 +751,57 @@ TEST_F(InterpreterTest, missing_return_statement) {
         "foo();");
     interpretAndExpectThrowAt<ReturnTypeMismatch>({1, 1});
 }
+
+TEST_F(InterpreterTest, returning_struct) {
+    SetUp(
+        "struct A { int num }"
+        "A foo() {"
+        "    A a = {5};"
+        "    return a;"
+        "}"
+        "print foo();");
+    EXPECT_EQ(interpretAndGetOutput(), "{ 5 }\n");
+}
+
+TEST_F(InterpreterTest, returning_anonymous_struct) {
+    SetUp(
+        "struct A { int num }"
+        "A foo() { return {5}; }"
+        "print foo();");
+    EXPECT_EQ(interpretAndGetOutput(), "{ 5 }\n");
+}
+
+TEST_F(InterpreterTest, returning_wrong_struct) {
+    SetUp(
+        "struct A { int x, int y }\n"
+        "A foo() { return {5}; }\n"
+        "foo();");
+    interpretAndExpectThrowAt<InvalidFieldCount>({2, 1});
+}
+
+TEST_F(InterpreterTest, returning_variant) {
+    SetUp(
+        "variant V { int, bool }"
+        "V foo() { return 5; }"
+        "print foo();");
+    EXPECT_EQ(interpretAndGetOutput(), "5\n");
+}
+
+TEST_F(InterpreterTest, returning_wrong_variant) {
+    SetUp(
+        "variant V { int, float }\n"
+        "V foo() { return true; }\n"
+        "print foo();");
+    interpretAndExpectThrowAt<ReturnTypeMismatch>({2, 1});
+}
+
+TEST_F(InterpreterTest, return_makes_a_copy) {
+    SetUp(
+        "int x = 5;"
+        "int foo(ref int i) { return i; }"
+        "int y = foo(ref x);"
+        "y = 9;"
+        "print x;"
+        "print y;");
+    EXPECT_EQ(interpretAndGetOutput(), "5\n9\n");
+}

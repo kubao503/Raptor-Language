@@ -28,7 +28,7 @@ class Interpreter {
     void operator()(const VariantDef& stmt);
     void operator()(const auto&) const { throw std::runtime_error("unknown statement"); }
 
-    std::optional<ValueObj::Value> handleFunctionCall(const FuncCall& funcCall);
+    std::optional<ValueObj> handleFunctionCall(const FuncCall& funcCall);
 
    private:
     void addVariable(const std::string& name, ValueRef valueRef);
@@ -40,10 +40,10 @@ class Interpreter {
     void expectVoidReturnValue() const;
     void expectNonVoidReturnValue(ReturnType expected) const;
 
-    ValueRef convertToNamedStruct(ValueRef valueRef, const StructDef* structDef) const;
-    ValueRef convertToVariant(ValueRef valueRef, const VariantDef* variantDef) const;
-
     ValueRef convertAndCheckType(const Type& expected, ValueRef valueRef) const;
+    void convertToUserDefinedType(ValueObj& valueObj, std::string_view typeName) const;
+    void convertToNamedStruct(ValueObj& valueObj, const StructDef* structDef) const;
+    void convertToVariant(ValueObj& valueObj, const VariantDef* variantDef) const;
 
     void passArgumentsToCtx(CallContext& ctx, const Arguments& args,
                             const Parameters& params);
@@ -53,7 +53,7 @@ class Interpreter {
 
     std::stack<CallContext> callStack_;
     std::ostream& out_;
-    std::optional<ValueObj::Value> returnValue_;
+    std::optional<ValueObj> returnValue_;
 };
 
 struct TypeComparer {

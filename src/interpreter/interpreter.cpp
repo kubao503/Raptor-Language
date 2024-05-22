@@ -68,7 +68,7 @@ ValueRef Interpreter::getValueFromExpr(const Expression& expr) {
 void Interpreter::operator()(const ReturnStatement& stmt) {
     returnValue_ = std::nullopt;
     if (auto expr = stmt.expression.get())
-        returnValue_ = getValueFromExpr(*expr)->value;
+        returnValue_ = *getValueFromExpr(*expr);
 }
 
 struct ValuePrinter {
@@ -108,23 +108,28 @@ void compareTypes(const Type& type, ValueRef valueRef) {
 
 ValueRef Interpreter::convertAndCheckType(const Type& expected, ValueRef valueRef) const {
     if (auto typeName = std::get_if<std::string>(&expected)) {
-        if (auto structDef = getStructDef(*typeName))
-            valueRef = convertToNamedStruct(std::move(valueRef), structDef);
-        else if (auto variantDef = getVariantDef(*typeName))
-            valueRef = convertToVariant(std::move(valueRef), variantDef);
-        else
-            throw SymbolNotFound{{}, "User defined type", *typeName};
+        convertToUserDefinedType(*valueRef, *typeName);
     }
 
     compareTypes(expected, valueRef);
     return valueRef;
 }
 
-ValueRef Interpreter::convertToNamedStruct(ValueRef valueRef,
-                                           const StructDef* structDef) const {
-    auto structObj = std::get_if<StructObj>(&valueRef->value);
+void Interpreter::convertToUserDefinedType(ValueObj& valueObj,
+                                           std::string_view typeName) const {
+    if (auto structDef = getStructDef(typeName))
+        convertToNamedStruct(valueObj, structDef);
+    else if (auto variantDef = getVariantDef(typeName))
+        convertToVariant(valueObj, variantDef);
+    else
+        throw SymbolNotFound{{}, "User defined type", std::string(typeName)};
+}
+
+void Interpreter::convertToNamedStruct(ValueObj& valueObj,
+                                       const StructDef* structDef) const {
+    auto structObj = std::get_if<StructObj>(&valueObj.value);
     if (!structObj)
-        return valueRef;
+        return;
 
     if (structDef->fields.size() != structObj->values.size())
         throw InvalidFieldCount{{}, structDef->fields.size(), structObj->values.size()};
@@ -135,19 +140,18 @@ ValueRef Interpreter::convertToNamedStruct(ValueRef valueRef,
     std::ranges::transform(structDef->fields, structObj->values,
                            structObj->values.begin(), binaryOp);
 
-    auto namedStructObj = NamedStructObj{structObj->values, structDef};
-    return std::make_shared<ValueObj>(std::move(namedStructObj));
+    valueObj.value = NamedStructObj{structObj->values, structDef};
 }
 
-ValueRef Interpreter::convertToVariant(ValueRef valueRef,
-                                       const VariantDef* variantDef) const {
-    if (std::ranges::any_of(variantDef->types, [=](const Type& type) {
-            return std::visit(TypeComparer(), type, valueRef->value);
-        })) {
-        auto variantObj = VariantObj{std::move(valueRef), variantDef};
-        valueRef = std::make_shared<ValueObj>(std::move(variantObj));
+void Interpreter::convertToVariant(ValueObj& valueObj,
+                                   const VariantDef* variantDef) const {
+    auto compareTypeWithValue = [&](const Type& type) {
+        return std::visit(TypeComparer(), type, valueObj.value);
+    };
+    if (std::ranges::any_of(variantDef->types, compareTypeWithValue)) {
+        auto valueRef = std::make_shared<ValueObj>(valueObj);
+        valueObj.value = VariantObj{std::move(valueRef), variantDef};
     }
-    return valueRef;
 }
 
 void Interpreter::operator()(const VarDef& stmt) {
@@ -204,7 +208,7 @@ void Interpreter::operator()(const FuncCall& funcCall) {
     handleFunctionCall(funcCall);
 }
 
-std::optional<ValueObj::Value> Interpreter::handleFunctionCall(const FuncCall& funcCall) {
+std::optional<ValueObj> Interpreter::handleFunctionCall(const FuncCall& funcCall) {
     auto funcWithCtx = getFunctionWithCtx(funcCall.name);
     if (!funcWithCtx)
         throw SymbolNotFound{funcCall.position, "Function", funcCall.name};
@@ -218,10 +222,20 @@ std::optional<ValueObj::Value> Interpreter::handleFunctionCall(const FuncCall& f
     returnValue_ = std::nullopt;
     for (const auto& stmt : funcDef->getStatements()) {
         std::visit(*this, stmt);
-        if (std::holds_alternative<ReturnStatement>(stmt)) {
+        if (std::holds_alternative<ReturnStatement>(stmt))
             break;
-        }
     }
+
+    if (auto typeName = std::get_if<std::string>(&funcDef->getReturnType()))
+        try {
+            convertToUserDefinedType(*returnValue_, *typeName);
+        } catch (const InvalidFieldCount& e) {
+            throw InvalidFieldCount{funcDef->getPosition(), e};
+        } catch (const TypeMismatch& e) {
+            throw TypeMismatch{funcDef->getPosition(), e};
+        } catch (const SymbolNotFound& e) {
+            throw SymbolNotFound{funcDef->getPosition(), e};
+        }
 
     try {
         checkReturnType(funcDef->getReturnType());
@@ -242,7 +256,7 @@ void Interpreter::checkReturnType(ReturnType expected) const {
 
 void Interpreter::expectVoidReturnValue() const {
     if (returnValue_) {
-        auto actualType = std::visit(ValueToType(), *returnValue_);
+        auto actualType = std::visit(ValueToType(), returnValue_->value);
         throw ReturnTypeMismatch{
             {},
             VoidType(),
@@ -254,8 +268,8 @@ void Interpreter::expectNonVoidReturnValue(ReturnType expected) const {
     if (!returnValue_)
         throw ReturnTypeMismatch{{}, expected, VoidType{}};
 
-    if (!std::visit(TypeComparer(), expected, *returnValue_)) {
-        auto actualType = std::visit(ValueToType(), *returnValue_);
+    if (!std::visit(TypeComparer(), expected, returnValue_->value)) {
+        auto actualType = std::visit(ValueToType(), returnValue_->value);
         throw ReturnTypeMismatch{
             {}, expected, std::visit([](auto t) -> ReturnType { return t; }, actualType)};
     }
