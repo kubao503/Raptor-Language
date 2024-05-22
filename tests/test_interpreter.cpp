@@ -505,20 +505,11 @@ TEST_F(InterpreterTest, nested_struct_assignment) {
 TEST_F(InterpreterTest, struct_redefinition) {
     SetUp(
         "struct A { int num }\n"
-        "struct A { bool truth }");
-    interpretAndExpectThrowAt<StructRedefinition>({2, 1});
-}
-
-TEST_F(InterpreterTest, struct_shadowing) {
-    SetUp(
-        "struct A { int num }"
-        "void foo() {"
-        "    struct A { bool truth }"
-        "    A a = {true};"
-        "    print a;"
-        "}"
+        "void foo() {\n"
+        "    struct A { bool truth }\n"
+        "}\n"
         "foo();");
-    EXPECT_EQ(interpretAndGetOutput(), "{ true }\n");
+    interpretAndExpectThrowAt<StructRedefinition>({3, 5});
 }
 
 TEST_F(InterpreterTest, variant_definition) {
@@ -633,20 +624,11 @@ TEST_F(InterpreterTest, variant_getting_invalid_type) {
 TEST_F(InterpreterTest, variant_redefinition) {
     SetUp(
         "variant V { int, bool }\n"
-        "variant V { float, str }");
-    interpretAndExpectThrowAt<VariantRedefinition>({2, 1});
-}
-
-TEST_F(InterpreterTest, variant_shadowing) {
-    SetUp(
-        "variant V { int, bool }"
-        "void foo() {"
-        "    variant V { float, str }"
-        "    V v = 2.0;"
-        "    print v;"
-        "}"
+        "void foo() {\n"
+        "    variant V { float, str }\n"
+        "}\n"
         "foo();");
-    EXPECT_EQ(interpretAndGetOutput(), "2\n");
+    interpretAndExpectThrowAt<VariantRedefinition>({3, 5});
 }
 
 class TypeConversionTest : public InterpreterTest,
@@ -682,15 +664,21 @@ TEST_F(InterpreterTest, same_struct_conversion) {
 TEST_F(InterpreterTest, redefining_struct_with_variant) {
     SetUp(
         "struct A { int num }\n"
-        "variant A { int, bool }");
-    interpretAndExpectThrowAt<StructRedefinition>({2, 1});
+        "void foo() {\n"
+        "    variant A { int, bool }\n"
+        "}"
+        "foo();");
+    interpretAndExpectThrowAt<StructRedefinition>({3, 5});
 }
 
 TEST_F(InterpreterTest, redefining_variant_with_struct) {
     SetUp(
         "variant A { int, bool }\n"
-        "struct A { int num }");
-    interpretAndExpectThrowAt<VariantRedefinition>({2, 1});
+        "void foo() {\n"
+        "    struct A { int num }\n"
+        "}\n"
+        "foo();");
+    interpretAndExpectThrowAt<VariantRedefinition>({3, 5});
 }
 
 TEST_F(InterpreterTest, return_statement) {

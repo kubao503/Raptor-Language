@@ -35,10 +35,18 @@ void Interpreter::addFunction(const FuncDef* funcDef) {
 }
 
 void Interpreter::addStruct(const StructDef* structDef) {
+    if (getStructDef(structDef->name))
+        throw StructRedefinition{{}, structDef->name};
+    if (getVariantDef(structDef->name))
+        throw VariantRedefinition{{}, structDef->name};
     callStack_.top().addStruct(structDef);
 }
 
 void Interpreter::addVariant(const VariantDef* variantDef) {
+    if (getVariantDef(variantDef->name))
+        throw VariantRedefinition{{}, variantDef->name};
+    if (getStructDef(variantDef->name))
+        throw StructRedefinition{{}, variantDef->name};
     callStack_.top().addVariant(variantDef);
 }
 

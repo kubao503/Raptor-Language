@@ -15,18 +15,10 @@ void Scope::addFunction(const FuncDef* func) {
 }
 
 void Scope::addStruct(const StructDef* structDef) {
-    if (getStructDef(structDef->name))
-        throw StructRedefinition{{}, structDef->name};
-    if (getVariantDef(structDef->name))
-        throw VariantRedefinition{{}, structDef->name};
     structs_.emplace_back(structDef);
 }
 
 void Scope::addVariant(const VariantDef* variantDef) {
-    if (getVariantDef(variantDef->name))
-        throw VariantRedefinition{{}, variantDef->name};
-    if (getStructDef(variantDef->name))
-        throw StructRedefinition{{}, variantDef->name};
     variants_.emplace_back(variantDef);
 }
 
