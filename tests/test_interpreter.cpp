@@ -817,6 +817,9 @@ TEST_P(BinaryExpressionTest, binary_expressions) {
 
 auto binaryExpressions = testing::Values(
     std::make_pair("true or true", "true"), std::make_pair("false or true", "true"),
-    std::make_pair("true or false", "true"), std::make_pair("false or false", "false"));
+    std::make_pair("true or false", "true"), std::make_pair("false or false", "false"),
+    std::make_pair("true and true", "true"), std::make_pair("false and true", "false"),
+    std::make_pair("true and false", "false"),
+    std::make_pair("false and false", "false"));
 
 INSTANTIATE_TEST_SUITE_P(BinaryExpressions, BinaryExpressionTest, binaryExpressions);

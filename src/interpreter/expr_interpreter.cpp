@@ -17,25 +17,32 @@ void ExpressionInterpreter::operator()(const StructInitExpression& expr) const {
     lastResult_ = std::make_shared<ValueObj>(std::move(structObj));
 }
 
-void ExpressionInterpreter::operator()(const DisjunctionExpression& expr) const {
-    expr.lhs->accept(*this);
+std::pair<bool, bool> ExpressionInterpreter::getBoolExpression(Expression* lhs,
+                                                               Expression* rhs) const {
+    lhs->accept(*this);
     auto leftValue = std::get_if<bool>(&lastResult_->value);
     if (!leftValue)
-        throw TypeMismatch{expr.lhs->position, BuiltInType::BOOL,
+        throw TypeMismatch{lhs->position, BuiltInType::BOOL,
                            std::visit(ValueToType(), lastResult_->value)};
 
-    expr.rhs->accept(*this);
+    rhs->accept(*this);
     auto rightValue = std::get_if<bool>(&lastResult_->value);
     if (!rightValue)
-        throw TypeMismatch{expr.rhs->position, BuiltInType::BOOL,
+        throw TypeMismatch{rhs->position, BuiltInType::BOOL,
                            std::visit(ValueToType(), lastResult_->value)};
+    return {*leftValue, *rightValue};
+}
 
-    auto result = *leftValue || *rightValue;
+void ExpressionInterpreter::operator()(const DisjunctionExpression& expr) const {
+    auto boolPair = getBoolExpression(expr.lhs.get(), expr.rhs.get());
+    auto result = boolPair.first || boolPair.second;
     lastResult_ = std::make_shared<ValueObj>(result);
 }
 
-void ExpressionInterpreter::operator()(const ConjunctionExpression&) const {
-    lastResult_ = nullptr;
+void ExpressionInterpreter::operator()(const ConjunctionExpression& expr) const {
+    auto boolPair = getBoolExpression(expr.lhs.get(), expr.rhs.get());
+    auto result = boolPair.first && boolPair.second;
+    lastResult_ = std::make_shared<ValueObj>(result);
 }
 
 void ExpressionInterpreter::operator()(const EqualExpression&) const {
