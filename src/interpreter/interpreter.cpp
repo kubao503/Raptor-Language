@@ -6,16 +6,6 @@
 #include "expr_interpreter.hpp"
 #include "interpreter_errors.hpp"
 
-struct ValueToType {
-    Type operator()(Integral) { return BuiltInType::INT; }
-    Type operator()(Floating) { return BuiltInType::FLOAT; }
-    Type operator()(bool) { return BuiltInType::BOOL; }
-    Type operator()(const std::string&) { return BuiltInType::STR; }
-    Type operator()(const NamedStructObj& structObj) { return structObj.structDef->name; }
-    Type operator()(const VariantObj& variantObj) { return variantObj.variantDef->name; }
-    Type operator()(const StructObj&) { return "Anonymous struct"; }
-};
-
 Interpreter::Interpreter(std::ostream& out)
     : out_{out} {
     callStack_.emplace(nullptr);

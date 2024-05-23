@@ -2,13 +2,6 @@
 
 template <typename T>
 auto getBinaryExprCtor() {
-    return [](auto lhs, auto rhs) {
-        return std::make_unique<T>(std::move(lhs), std::move(rhs));
-    };
-}
-
-template <typename T>
-auto getBinaryExprCtorWithPosition() {
     return [](auto lhs, auto rhs, const Position& position) {
         return std::make_unique<T>(std::move(lhs), std::move(rhs), position);
     };
@@ -16,7 +9,9 @@ auto getBinaryExprCtorWithPosition() {
 
 template <typename T>
 auto getUnaryExprCtor() {
-    return [](auto expr) { return std::make_unique<T>(std::move(expr)); };
+    return [](auto expr, const Position& position) {
+        return std::make_unique<T>(std::move(expr), position);
+    };
 }
 
 std::optional<ComparisonExpression::Ctor> ComparisonExpression::getCtor(
@@ -83,9 +78,9 @@ std::optional<NegationExpression::Ctor> NegationExpression::getCtor(Token::Type 
 std::optional<TypeExpression::Ctor> TypeExpression::getCtor(Token::Type type) {
     switch (type) {
         case Token::Type::AS_KW:
-            return getBinaryExprCtorWithPosition<ConversionExpression>();
+            return getBinaryExprCtor<ConversionExpression>();
         case Token::Type::IS_KW:
-            return getBinaryExprCtorWithPosition<TypeCheckExpression>();
+            return getBinaryExprCtor<TypeCheckExpression>();
         default:
             return std::nullopt;
     }

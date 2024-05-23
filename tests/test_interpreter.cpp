@@ -793,3 +793,30 @@ TEST_F(InterpreterTest, return_makes_a_copy) {
         "print y;");
     EXPECT_EQ(interpretAndGetOutput(), "5\n9\n");
 }
+
+TEST_F(InterpreterTest, disjunction_invalid_type_of_first_operand) {
+    SetUp("print 2 or true;");
+    interpretAndExpectThrowAt<TypeMismatch>({1, 7});
+}
+
+TEST_F(InterpreterTest, disjunction_invalid_type_of_second_operand) {
+    SetUp("print false or 2;");
+    interpretAndExpectThrowAt<TypeMismatch>({1, 16});
+}
+
+class BinaryExpressionTest
+    : public InterpreterTest,
+      public testing::WithParamInterface<std::pair<std::string, std::string>> {};
+
+TEST_P(BinaryExpressionTest, binary_expressions) {
+    auto& [expr, output] = GetParam();
+
+    SetUp("print " + expr + ';');
+    EXPECT_EQ(interpretAndGetOutput(), output + '\n');
+}
+
+auto binaryExpressions = testing::Values(
+    std::make_pair("true or true", "true"), std::make_pair("false or true", "true"),
+    std::make_pair("true or false", "true"), std::make_pair("false or false", "false"));
+
+INSTANTIATE_TEST_SUITE_P(BinaryExpressions, BinaryExpressionTest, binaryExpressions);

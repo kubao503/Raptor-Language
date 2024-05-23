@@ -66,10 +66,14 @@ class ExpressionVisitor {
     virtual void operator()(const VariableAccess& expr) const = 0;
 };
 
-class Expression {
-   public:
+struct Expression {
     virtual ~Expression() = default;
     virtual void accept(const ExpressionVisitor& vis) const = 0;
+
+    Expression(const Position& position)
+        : position{position} {}
+
+    Position position;
 };
 
 using PExpression = std::unique_ptr<Expression>;
@@ -77,8 +81,8 @@ using PExpression = std::unique_ptr<Expression>;
 struct StructInitExpression : public Expression {
     std::vector<PExpression> exprs;
 
-    StructInitExpression(std::vector<PExpression> exprs)
-        : exprs{std::move(exprs)} {}
+    StructInitExpression(std::vector<PExpression> exprs, const Position& position)
+        : Expression{position}, exprs{std::move(exprs)} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
@@ -87,8 +91,8 @@ struct BinaryExpression : public Expression {
     PExpression lhs;
     PExpression rhs;
 
-    BinaryExpression(PExpression lhs, PExpression rhs)
-        : lhs{std::move(lhs)}, rhs{std::move(rhs)} {}
+    BinaryExpression(PExpression lhs, PExpression rhs, const Position& position)
+        : Expression{position}, lhs{std::move(lhs)}, rhs{std::move(rhs)} {}
 };
 
 struct DisjunctionExpression : public BinaryExpression {
@@ -105,7 +109,7 @@ struct ConjunctionExpression : public BinaryExpression {
 
 struct ComparisonExpression : public BinaryExpression {
     using BinaryExpression::BinaryExpression;
-    using Ctor = std::function<PExpression(PExpression, PExpression)>;
+    using Ctor = std::function<PExpression(PExpression, PExpression, const Position&)>;
 
     static std::optional<Ctor> getCtor(Token::Type type);
 };
@@ -124,7 +128,7 @@ struct NotEqualExpression : public ComparisonExpression {
 
 struct RelationExpression : public BinaryExpression {
     using BinaryExpression::BinaryExpression;
-    using Ctor = std::function<PExpression(PExpression, PExpression)>;
+    using Ctor = std::function<PExpression(PExpression, PExpression, const Position&)>;
 
     static std::optional<Ctor> getCtor(Token::Type type);
 };
@@ -155,7 +159,7 @@ struct GreaterThanOrEqualExpression : public RelationExpression {
 
 struct AdditiveExpression : public BinaryExpression {
     using BinaryExpression::BinaryExpression;
-    using Ctor = std::function<PExpression(PExpression, PExpression)>;
+    using Ctor = std::function<PExpression(PExpression, PExpression, const Position&)>;
 
     static std::optional<Ctor> getCtor(Token::Type type);
 };
@@ -174,7 +178,7 @@ struct SubtractionExpression : public AdditiveExpression {
 
 struct MultiplicativeExpression : public BinaryExpression {
     using BinaryExpression::BinaryExpression;
-    using Ctor = std::function<PExpression(PExpression, PExpression)>;
+    using Ctor = std::function<PExpression(PExpression, PExpression, const Position&)>;
 
     static std::optional<Ctor> getCtor(Token::Type type);
 };
@@ -193,10 +197,10 @@ struct DivisionExpression : public MultiplicativeExpression {
 
 struct NegationExpression : public Expression {
     PExpression expr;
-    NegationExpression(PExpression expr)
-        : expr{std::move(expr)} {}
+    NegationExpression(PExpression expr, const Position& position)
+        : Expression{position}, expr{std::move(expr)} {}
 
-    using Ctor = std::function<PExpression(PExpression)>;
+    using Ctor = std::function<PExpression(PExpression, const Position&)>;
 
     static std::optional<Ctor> getCtor(Token::Type type);
 };
@@ -216,10 +220,9 @@ struct LogicalNegationExpression : public NegationExpression {
 struct TypeExpression : public Expression {
     PExpression expr;
     Type type;
-    Position position;
 
     TypeExpression(PExpression expr, Type type, const Position& position)
-        : expr{std::move(expr)}, type{std::move(type)}, position{position} {}
+        : Expression{position}, expr{std::move(expr)}, type{std::move(type)} {}
 
     using Ctor = std::function<PExpression(PExpression, Type, const Position&)>;
 
@@ -242,8 +245,8 @@ struct FieldAccessExpression : public Expression {
     PExpression expr;
     std::string field;
 
-    FieldAccessExpression(PExpression expr, std::string field)
-        : expr{std::move(expr)}, field{std::move(field)} {}
+    FieldAccessExpression(PExpression expr, std::string field, const Position& position)
+        : Expression{position}, expr{std::move(expr)}, field{std::move(field)} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
@@ -253,8 +256,8 @@ struct Constant : public Expression {
 
     Value value;
 
-    Constant(Value value)
-        : value{std::move(value)} {}
+    Constant(Value value, const Position& position)
+        : Expression{position}, value{std::move(value)} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
@@ -270,20 +273,18 @@ using Arguments = std::vector<Argument>;
 struct FuncCall : public Expression {
     std::string name;
     Arguments arguments;
-    Position position;
 
     FuncCall(std::string name, Arguments arguments, const Position& position)
-        : name{std::move(name)}, arguments{std::move(arguments)}, position{position} {}
+        : Expression{position}, name{std::move(name)}, arguments{std::move(arguments)} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
 
 struct VariableAccess : public Expression {
     std::string name;
-    Position position;
 
     VariableAccess(std::string name, const Position& position)
-        : name{std::move(name)}, position{position} {}
+        : Expression{position}, name{std::move(name)} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };

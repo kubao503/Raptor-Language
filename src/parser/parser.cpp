@@ -407,6 +407,7 @@ PExpression Parser::parseExpression() {
 PExpression Parser::parseStructInitExpression() {
     if (currentToken_.getType() != Token::Type::L_C_BR)
         return nullptr;
+    const auto position = currentToken_.getPosition();
     consumeToken();
 
     auto exprs = parseExpressionList();
@@ -415,7 +416,7 @@ PExpression Parser::parseStructInitExpression() {
         Token::Type::R_C_BR,
         SyntaxException(currentToken_.getPosition(),
                         "Missing right curly brace at the end of struct initialization"));
-    return std::make_unique<StructInitExpression>(std::move(exprs));
+    return std::make_unique<StructInitExpression>(std::move(exprs), position);
 }
 
 /// EXPRS = [ EXPR { ',' EXPR } ]
@@ -441,6 +442,7 @@ std::vector<PExpression> Parser::parseExpressionList() {
 
 /// DISJ = CONJ { or CONJ }
 PExpression Parser::parseDisjunctionExpression() {
+    const auto position = currentToken_.getPosition();
     PExpression leftLogicFactor = parseConjunctionExpression();
     if (!leftLogicFactor)
         return nullptr;
@@ -452,7 +454,7 @@ PExpression Parser::parseDisjunctionExpression() {
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after 'or' keyword");
         leftLogicFactor = std::make_unique<DisjunctionExpression>(
-            std::move(leftLogicFactor), std::move(rightLogicFactor));
+            std::move(leftLogicFactor), std::move(rightLogicFactor), position);
     }
 
     return leftLogicFactor;
@@ -460,6 +462,7 @@ PExpression Parser::parseDisjunctionExpression() {
 
 /// CONJ = EQ { and EQ }
 PExpression Parser::parseConjunctionExpression() {
+    const auto position = currentToken_.getPosition();
     auto leftLogicFactor = parseEqualExpression();
     if (!leftLogicFactor)
         return nullptr;
@@ -471,7 +474,7 @@ PExpression Parser::parseConjunctionExpression() {
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after 'and' keyword");
         leftLogicFactor = std::make_unique<ConjunctionExpression>(
-            std::move(leftLogicFactor), std::move(rightLogicFactor));
+            std::move(leftLogicFactor), std::move(rightLogicFactor), position);
     }
 
     return leftLogicFactor;
@@ -480,6 +483,7 @@ PExpression Parser::parseConjunctionExpression() {
 /// EQ = REL [ '==' REL ]
 ///    | REL [ '!=' REL ]
 PExpression Parser::parseEqualExpression() {
+    const auto position = currentToken_.getPosition();
     auto leftEqFactor = parseRelExpression();
     if (!leftEqFactor)
         return nullptr;
@@ -490,7 +494,8 @@ PExpression Parser::parseEqualExpression() {
         if (!rightEqFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after (not)equal operator");
-        leftEqFactor = (*ctor)(std::move(leftEqFactor), std::move(rightEqFactor));
+        leftEqFactor =
+            (*ctor)(std::move(leftEqFactor), std::move(rightEqFactor), position);
     }
 
     return leftEqFactor;
@@ -501,6 +506,7 @@ PExpression Parser::parseEqualExpression() {
 ///     | ADD [ '<=' ADD ]
 ///     | ADD [ '>=' ADD ]
 PExpression Parser::parseRelExpression() {
+    const auto position = currentToken_.getPosition();
     auto leftRelFactor = parseAdditiveExpression();
     if (!leftRelFactor)
         return nullptr;
@@ -511,7 +517,8 @@ PExpression Parser::parseRelExpression() {
         if (!rightRelFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after relation operator");
-        leftRelFactor = (*ctor)(std::move(leftRelFactor), std::move(rightRelFactor));
+        leftRelFactor =
+            (*ctor)(std::move(leftRelFactor), std::move(rightRelFactor), position);
     }
 
     return leftRelFactor;
@@ -520,6 +527,7 @@ PExpression Parser::parseRelExpression() {
 /// ADD = TERM { '+' TERM }
 ///     | TERM { '-' TERM }
 PExpression Parser::parseAdditiveExpression() {
+    const auto position = currentToken_.getPosition();
     auto leftTerm = parseMultiplicativeExpression();
     if (!leftTerm)
         return nullptr;
@@ -530,7 +538,7 @@ PExpression Parser::parseAdditiveExpression() {
         if (!rightTerm)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after additive operator");
-        leftTerm = (*ctor)(std::move(leftTerm), std::move(rightTerm));
+        leftTerm = (*ctor)(std::move(leftTerm), std::move(rightTerm), position);
     }
 
     return leftTerm;
@@ -539,6 +547,7 @@ PExpression Parser::parseAdditiveExpression() {
 /// TERM = FACTOR { '*' FACTOR }
 ///      | FACTOR { '/' FACTOR }
 PExpression Parser::parseMultiplicativeExpression() {
+    const auto position = currentToken_.getPosition();
     auto leftFactor = parseNegationExpression();
     if (!leftFactor)
         return nullptr;
@@ -550,7 +559,7 @@ PExpression Parser::parseMultiplicativeExpression() {
         if (!rightFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after multiplicative operator");
-        leftFactor = (*ctor)(std::move(leftFactor), std::move(rightFactor));
+        leftFactor = (*ctor)(std::move(leftFactor), std::move(rightFactor), position);
     }
 
     return leftFactor;
@@ -558,13 +567,14 @@ PExpression Parser::parseMultiplicativeExpression() {
 
 /// FACTOR = [ '-' | not ] UNARY
 PExpression Parser::parseNegationExpression() {
+    const auto position = currentToken_.getPosition();
     const auto& ctor = NegationExpression::getCtor(currentToken_.getType());
     if (ctor)
         consumeToken();
 
     auto expr = parseTypeExpression();
     if (ctor)
-        return (*ctor)(std::move(expr));
+        return (*ctor)(std::move(expr), position);
     return expr;
 }
 
@@ -592,6 +602,7 @@ PExpression Parser::parseTypeExpression() {
 
 /// SRC = CNTNR { '.' ID }
 PExpression Parser::parseFieldAccessExpression() {
+    const auto position = currentToken_.getPosition();
     auto expr = parseContainerExpression();
     if (!expr)
         return nullptr;
@@ -601,7 +612,8 @@ PExpression Parser::parseFieldAccessExpression() {
         auto field = expectAndReturnValue<std::string>(
             Token::Type::ID, SyntaxException(currentToken_.getPosition(),
                                              "Expected field name after dot operator"));
-        expr = std::make_unique<FieldAccessExpression>(std::move(expr), std::move(field));
+        expr = std::make_unique<FieldAccessExpression>(std::move(expr), std::move(field),
+                                                       position);
     }
 
     return expr;
@@ -643,8 +655,9 @@ PExpression Parser::parseConstant() {
         return nullptr;
 
     const auto value = std::visit(TokenValueToConstantValue(), currentToken_.getValue());
+    const auto position = currentToken_.getPosition();
     consumeToken();
-    return std::make_unique<Constant>(value);
+    return std::make_unique<Constant>(value, position);
 }
 
 /// CALL_OR_VAR = ID [ '(' ARGS ')' ]
