@@ -79,13 +79,17 @@ struct TypeComparer {
 };
 
 struct ValueToType {
-    Type operator()(Integral) { return BuiltInType::INT; }
-    Type operator()(Floating) { return BuiltInType::FLOAT; }
-    Type operator()(bool) { return BuiltInType::BOOL; }
-    Type operator()(const std::string&) { return BuiltInType::STR; }
-    Type operator()(const NamedStructObj& structObj) { return structObj.structDef->name; }
-    Type operator()(const VariantObj& variantObj) { return variantObj.variantDef->name; }
-    Type operator()(const StructObj&) { return "Anonymous struct"; }
+    Type operator()(Integral) const { return BuiltInType::INT; }
+    Type operator()(Floating) const { return BuiltInType::FLOAT; }
+    Type operator()(bool) const { return BuiltInType::BOOL; }
+    Type operator()(const std::string&) const { return BuiltInType::STR; }
+    Type operator()(const NamedStructObj& structObj) const {
+        return structObj.structDef->name;
+    }
+    Type operator()(const VariantObj& variantObj) const {
+        return variantObj.variantDef->name;
+    }
+    Type operator()(const StructObj&) const { return "Anonymous struct"; }
 };
 
 #endif

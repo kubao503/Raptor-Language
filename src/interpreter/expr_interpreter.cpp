@@ -45,12 +45,38 @@ void ExpressionInterpreter::operator()(const ConjunctionExpression& expr) const 
     lastResult_ = std::make_shared<ValueObj>(result);
 }
 
-void ExpressionInterpreter::operator()(const EqualExpression&) const {
-    lastResult_ = nullptr;
+struct Comparator {
+    bool operator()(bool lhs, bool rhs) const { return lhs == rhs; }
+    bool operator()(Integral lhs, Integral rhs) const { return lhs == rhs; }
+    bool operator()(Floating lhs, Floating rhs) const { return lhs == rhs; }
+    bool operator()(const std::string& lhs, const std::string& rhs) const {
+        return lhs == rhs;
+    }
+    bool operator()(const auto& lhs, const auto& rhs) const {
+        throw TypeMismatch{{},
+                           std::visit(ValueToType(), static_cast<ValueObj::Value>(lhs)),
+                           std::visit(ValueToType(), static_cast<ValueObj::Value>(rhs))};
+    }
+};
+
+void ExpressionInterpreter::compare(const BinaryExpression& expr) const {
+    expr.lhs->accept(*this);
+    const auto leftValue = lastResult_->value;
+    expr.rhs->accept(*this);
+    const auto rightValue = lastResult_->value;
+
+    const auto result = std::visit(Comparator(), leftValue, rightValue);
+    lastResult_ = std::make_shared<ValueObj>(result);
 }
 
-void ExpressionInterpreter::operator()(const NotEqualExpression&) const {
-    lastResult_ = nullptr;
+void ExpressionInterpreter::operator()(const EqualExpression& expr) const {
+    compare(expr);
+}
+
+void ExpressionInterpreter::operator()(const NotEqualExpression& expr) const {
+    compare(expr);
+    const auto value = std::get<bool>(lastResult_->value);
+    lastResult_ = std::make_shared<ValueObj>(!value);
 }
 
 void ExpressionInterpreter::operator()(const LessThanExpression&) const {

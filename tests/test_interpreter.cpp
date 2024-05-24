@@ -819,7 +819,13 @@ auto binaryExpressions = testing::Values(
     std::make_pair("true or true", "true"), std::make_pair("false or true", "true"),
     std::make_pair("true or false", "true"), std::make_pair("false or false", "false"),
     std::make_pair("true and true", "true"), std::make_pair("false and true", "false"),
-    std::make_pair("true and false", "false"),
-    std::make_pair("false and false", "false"));
+    std::make_pair("true and false", "false"), std::make_pair("false and false", "false"),
+    std::make_pair("true == true", "true"), std::make_pair("true == false", "false"),
+    std::make_pair("false == false", "true"), std::make_pair("2 == 2", "true"),
+    std::make_pair("2 == 3", "false"), std::make_pair(R"("text" == "text")", "true"),
+    std::make_pair(R"("first" == "second")", "false"),
+    std::make_pair(R"("text" == "")", "false"), std::make_pair("true != true", "false"),
+    std::make_pair("true != false", "true"), std::make_pair("false != false", "false"),
+    std::make_pair("2 != 2", "false"), std::make_pair("2 != 3", "true"));
 
 INSTANTIATE_TEST_SUITE_P(BinaryExpressions, BinaryExpressionTest, binaryExpressions);
