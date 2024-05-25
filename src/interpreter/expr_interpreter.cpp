@@ -166,8 +166,29 @@ void ExpressionInterpreter::evalNumericExpr(const BinaryExpression& expr,
     }
 }
 
+struct AdditionEvaluator {
+    ValueObj::Value operator()(const std::string& lhs, const std::string& rhs) const {
+        return lhs + rhs;
+    }
+    ValueObj::Value operator()(const auto& lhs, const auto& rhs) const {
+        return std::visit(NumericEvaluator(std::plus()),
+                          static_cast<ValueObj::Value>(lhs),
+                          static_cast<ValueObj::Value>(rhs));
+    }
+};
+
 void ExpressionInterpreter::operator()(const AdditionExpression& expr) const {
-    evalNumericExpr(expr, std::plus());
+    expr.lhs->accept(*this);
+    const auto leftValue = lastResult_->value;
+    expr.rhs->accept(*this);
+    const auto rightValue = lastResult_->value;
+
+    try {
+        const auto value = std::visit(AdditionEvaluator(), leftValue, rightValue);
+        lastResult_ = std::make_shared<ValueObj>(value);
+    } catch (const TypeMismatch& e) {
+        throw TypeMismatch{expr.position, e};
+    }
 }
 
 void ExpressionInterpreter::operator()(const SubtractionExpression& expr) const {
