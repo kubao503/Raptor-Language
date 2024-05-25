@@ -317,8 +317,8 @@ void ExpressionInterpreter::operator()(const FuncCall& funcCall) const {
 }
 
 void ExpressionInterpreter::operator()(const VariableAccess& expr) const {
-    auto variable = interpreter_.getVariable(expr.name);
-    if (!variable)
+    auto varEntry = interpreter_.getVariable(expr.name);
+    if (!varEntry)
         throw SymbolNotFound{expr.position, "Variable", expr.name};
-    lastResult_ = *variable;
+    lastResult_ = varEntry->valueRef;
 }

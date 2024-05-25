@@ -136,6 +136,13 @@ TEST_F(InterpreterTest, assignment_makes_a_copy) {
     EXPECT_EQ(interpretAndGetOutput(), "20\n");
 }
 
+TEST_F(InterpreterTest, assigning_to_const_var) {
+    SetUp(
+        "const int x = 5;\n"
+        "x = 10;");
+    interpretAndExpectThrowAt<ConstViolation>({2, 1});
+}
+
 TEST_F(InterpreterTest, func_call) {
     SetUp(
         "void fun() {"
@@ -288,7 +295,8 @@ TEST_F(InterpreterTest, struct_var_def) {
         "Point p = {1, 2.0};");
     interpretAndGetOutput();
 
-    auto valueRef = interpreter_.getVariable("p").value();
+    const auto varEntry = interpreter_.getVariable("p").value();
+    const auto valueRef = varEntry.valueRef;
     ASSERT_TRUE(std::holds_alternative<NamedStructObj>(valueRef->value));
     auto structObj = std::get<NamedStructObj>(valueRef->value);
 
@@ -313,7 +321,8 @@ TEST_F(InterpreterTest, struct_assignment) {
         "p = {4, 5.0};");
     interpretAndGetOutput();
 
-    auto valueRef = interpreter_.getVariable("p").value();
+    const auto varEntry = interpreter_.getVariable("p").value();
+    const auto valueRef = varEntry.valueRef;
     ASSERT_TRUE(std::holds_alternative<NamedStructObj>(valueRef->value));
     auto structObj = std::get<NamedStructObj>(valueRef->value);
 
@@ -458,11 +467,12 @@ TEST_F(InterpreterTest, nested_struct_initialization) {
         "B b = {{5}};");
     interpretAndGetOutput();
 
-    auto valueRefB = interpreter_.getVariable("b");
-    ASSERT_TRUE(valueRefB);
+    const auto varEntryB = interpreter_.getVariable("b");
+    ASSERT_TRUE(varEntryB);
+    const auto valueRefB = varEntryB->valueRef;
 
-    ASSERT_TRUE(std::holds_alternative<NamedStructObj>((*valueRefB)->value));
-    auto structB = std::get<NamedStructObj>((*valueRefB)->value);
+    ASSERT_TRUE(std::holds_alternative<NamedStructObj>(valueRefB->value));
+    auto structB = std::get<NamedStructObj>(valueRefB->value);
     EXPECT_EQ(structB.structDef->name, "B");
     ASSERT_EQ(structB.values.size(), 1);
 
@@ -484,11 +494,12 @@ TEST_F(InterpreterTest, nested_struct_assignment) {
         "b = {{7}};");
     interpretAndGetOutput();
 
-    auto valueRefB = interpreter_.getVariable("b");
-    ASSERT_TRUE(valueRefB);
+    const auto varEntryB = interpreter_.getVariable("b");
+    ASSERT_TRUE(varEntryB);
+    const auto valueRefB = varEntryB->valueRef;
 
-    ASSERT_TRUE(std::holds_alternative<NamedStructObj>((*valueRefB)->value));
-    auto structB = std::get<NamedStructObj>((*valueRefB)->value);
+    ASSERT_TRUE(std::holds_alternative<NamedStructObj>(valueRefB->value));
+    auto structB = std::get<NamedStructObj>(valueRefB->value);
     EXPECT_EQ(structB.structDef->name, "B");
     ASSERT_EQ(structB.values.size(), 1);
 
@@ -536,10 +547,10 @@ TEST_F(InterpreterTest, variant_var_def) {
         "IntOrBool i = 5;");
     interpretAndGetOutput();
 
-    auto var = interpreter_.getVariable("i");
-    ASSERT_TRUE(var);
-    ASSERT_TRUE(std::holds_alternative<VariantObj>((*var)->value));
-    auto variantObj = std::get<VariantObj>((*var)->value);
+    const auto varEntry = interpreter_.getVariable("i");
+    ASSERT_TRUE(varEntry);
+    ASSERT_TRUE(std::holds_alternative<VariantObj>(varEntry->valueRef->value));
+    auto variantObj = std::get<VariantObj>(varEntry->valueRef->value);
 
     EXPECT_EQ(variantObj.variantDef->name, "IntOrBool");
     ASSERT_TRUE(std::holds_alternative<Integral>(variantObj.valueRef->value));

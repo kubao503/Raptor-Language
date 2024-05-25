@@ -2,10 +2,10 @@
 
 #include "interpreter_errors.hpp"
 
-void Scope::addVariable(const std::string& name, ValueRef ref) {
-    if (getVariable(name))
-        throw VariableRedefinition{{}, name};
-    variables_.emplace_back(name, std::move(ref));
+void Scope::addVariable(VarEntry entry) {
+    if (getVariable(entry.name))
+        throw VariableRedefinition{{}, entry.name};
+    variables_.push_back(std::move(entry));
 }
 
 void Scope::addFunction(const FuncDef* func) {
@@ -22,10 +22,10 @@ void Scope::addVariant(const VariantDef* variantDef) {
     variants_.emplace_back(variantDef);
 }
 
-std::optional<ValueRef> Scope::getVariable(std::string_view name) const {
-    auto res = std::ranges::find(variables_, name, &VarEntry::first);
+std::optional<VarEntry> Scope::getVariable(std::string_view name) const {
+    auto res = std::ranges::find(variables_, name, &VarEntry::name);
     if (res != variables_.end())
-        return res->second;
+        return *res;
     return std::nullopt;
 }
 

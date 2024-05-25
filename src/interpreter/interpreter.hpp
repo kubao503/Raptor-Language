@@ -12,7 +12,7 @@ class Interpreter {
     Interpreter(std::ostream& out);
     void interpret(const Program& program);
 
-    std::optional<ValueRef> getVariable(std::string_view name) const;
+    std::optional<VarEntry> getVariable(std::string_view name) const;
     std::optional<CallContext::FuncWithCtx> getFunctionWithCtx(
         std::string_view name) const;
     const StructDef* getStructDef(std::string_view name) const;
@@ -31,7 +31,7 @@ class Interpreter {
     std::optional<ValueObj> handleFunctionCall(const FuncCall& funcCall);
 
    private:
-    void addVariable(const std::string& name, ValueRef valueRef);
+    void addVariable(VarEntry entry);
     void addFunction(const FuncDef* func);
     void addStruct(const StructDef* structDef);
     void addVariant(const VariantDef* variantDef);

@@ -94,4 +94,10 @@ class InvalidTypeConversion : public BaseException {
     Type to_;
 };
 
+class ConstViolation : public BaseException {
+   public:
+    explicit ConstViolation(const Position& position)
+        : BaseException{position, "Violation of const constraint"} {}
+};
+
 #endif

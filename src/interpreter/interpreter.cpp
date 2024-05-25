@@ -16,8 +16,8 @@ void Interpreter::interpret(const Program& program) {
         std::visit(*this, stmt);
 }
 
-void Interpreter::addVariable(const std::string& name, ValueRef valueRef) {
-    callStack_.top().addVariable(name, std::move(valueRef));
+void Interpreter::addVariable(VarEntry entry) {
+    callStack_.top().addVariable(std::move(entry));
 }
 
 void Interpreter::addFunction(const FuncDef* funcDef) {
@@ -40,7 +40,7 @@ void Interpreter::addVariant(const VariantDef* variantDef) {
     callStack_.top().addVariant(variantDef);
 }
 
-std::optional<ValueRef> Interpreter::getVariable(std::string_view name) const {
+std::optional<VarEntry> Interpreter::getVariable(std::string_view name) const {
     return callStack_.top().getVariable(name);
 }
 
@@ -168,7 +168,9 @@ void Interpreter::operator()(const VarDef& stmt) {
     valueRef = std::make_shared<ValueObj>(*valueRef);
 
     try {
-        addVariable(stmt.name, std::move(valueRef));
+        addVariable({.name = std::move(stmt.name),
+                     .valueRef = std::move(valueRef),
+                     .isConst = stmt.isConst});
     } catch (const VariableRedefinition& e) {
         throw VariableRedefinition{stmt.position, e};
     }
@@ -176,10 +178,14 @@ void Interpreter::operator()(const VarDef& stmt) {
 
 void Interpreter::operator()(const Assignment& stmt) {
     auto name = std::get<std::string>(stmt.lhs);
-    auto oldValueRef = getVariable(name);
-    if (!oldValueRef)
+    auto oldVarEntry = getVariable(name);
+    if (!oldVarEntry)
         throw SymbolNotFound(stmt.position, "Variable", name);
-    const auto expectedType = std::visit(ValueToType(), (*oldValueRef)->value);
+
+    if (oldVarEntry->isConst)
+        throw ConstViolation(stmt.position);
+
+    const auto expectedType = std::visit(ValueToType(), oldVarEntry->valueRef->value);
 
     auto newValueRef = getValueFromExpr(*stmt.rhs);
 
@@ -191,7 +197,7 @@ void Interpreter::operator()(const Assignment& stmt) {
         throw InvalidFieldCount{stmt.position, e};
     }
 
-    (*oldValueRef)->value = std::move(newValueRef->value);
+    oldVarEntry->valueRef->value = std::move(newValueRef->value);
 }
 
 void Interpreter::operator()(const FuncDef& stmt) {
@@ -310,7 +316,17 @@ void Interpreter::passArgumentToCtx(CallContext& ctx, const Argument& arg,
     } catch (const InvalidFieldCount& e) {
         throw InvalidFieldCount{arg.position, e};
     }
-    ctx.addVariable(param.name, std::move(valueRef));
+
+    auto varAccess = dynamic_cast<VariableAccess*>(arg.value.get());
+    if (varAccess) {
+        auto varEntry = getVariable(varAccess->name);
+        if (varEntry->isConst)
+            throw ConstViolation{arg.position};
+    }
+
+    ctx.addVariable({.name = std::move(param.name),
+                     .valueRef = std::move(valueRef),
+                     .isConst = false});
 }
 
 void Interpreter::operator()(const StructDef& stmt) {
