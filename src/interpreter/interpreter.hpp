@@ -57,25 +57,26 @@ class Interpreter {
 };
 
 struct TypeComparer {
-    bool operator()(BuiltInType variableType, Integral) {
+    bool operator()(BuiltInType variableType, Integral) const {
         return variableType == BuiltInType::INT;
     }
-    bool operator()(BuiltInType variableType, Floating) {
+    bool operator()(BuiltInType variableType, Floating) const {
         return variableType == BuiltInType::FLOAT;
     }
-    bool operator()(BuiltInType variableType, bool) {
+    bool operator()(BuiltInType variableType, bool) const {
         return variableType == BuiltInType::BOOL;
     }
-    bool operator()(BuiltInType variableType, const std::string&) {
+    bool operator()(BuiltInType variableType, const std::string&) const {
         return variableType == BuiltInType::STR;
     }
-    bool operator()(const std::string& variableType, const NamedStructObj& structObj) {
+    bool operator()(const std::string& variableType,
+                    const NamedStructObj& structObj) const {
         return structObj.structDef->name == variableType;
     }
-    bool operator()(const std::string& variableType, const VariantObj& variantObj) {
+    bool operator()(const std::string& variableType, const VariantObj& variantObj) const {
         return variantObj.variantDef->name == variableType;
     }
-    bool operator()(auto, auto) { return false; }
+    bool operator()(auto, auto) const { return false; }
 };
 
 struct ValueToType {

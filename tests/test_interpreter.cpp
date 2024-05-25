@@ -783,6 +783,23 @@ TEST_F(InterpreterTest, returning_wrong_variant) {
     interpretAndExpectThrowAt<ReturnTypeMismatch>({2, 1});
 }
 
+TEST_F(InterpreterTest, checking_variant_type) {
+    SetUp(
+        "variant V { int, float }"
+        "V v = 5;"
+        "print v is int;"
+        "print v is float;");
+    EXPECT_EQ(interpretAndGetOutput(), "true\nfalse\n");
+}
+
+TEST_F(InterpreterTest, checking_variant_type_which_is_not_any_type_of_this_variant) {
+    SetUp(
+        "variant V { int, float }"
+        "V v = 5;"
+        "print v is str;");
+    EXPECT_EQ(interpretAndGetOutput(), "false\n");
+}
+
 TEST_F(InterpreterTest, return_makes_a_copy) {
     SetUp(
         "int x = 5;"

@@ -262,15 +262,34 @@ void ExpressionInterpreter::operator()(const ConversionExpression& conversionExp
     conversionExpr.expr->accept(*this);
 
     try {
-        auto value = std::visit(TypeConverter(), lastResult_->value, conversionExpr.type);
+        const auto value =
+            std::visit(TypeConverter(), lastResult_->value, conversionExpr.type);
         lastResult_ = std::make_shared<ValueObj>(value);
     } catch (const InvalidTypeConversion& e) {
         throw InvalidTypeConversion{conversionExpr.position, e};
     }
 }
 
-void ExpressionInterpreter::operator()(const TypeCheckExpression&) const {
-    lastResult_ = nullptr;
+struct TypeChecker {
+    TypeChecker(Type expected)
+        : expected_{expected} {}
+
+    bool operator()(const VariantObj& value) const {
+        return std::visit(TypeComparer(), expected_, value.valueRef->value);
+    }
+    bool operator()(const auto& value) const {
+        return std::visit(TypeComparer(), expected_, static_cast<ValueObj::Value>(value));
+    }
+
+    Type expected_;
+};
+
+void ExpressionInterpreter::operator()(const TypeCheckExpression& expr) const {
+    expr.expr->accept(*this);
+    const auto value = lastResult_->value;
+
+    const auto result = std::visit(TypeChecker(expr.type), value);
+    lastResult_ = std::make_shared<ValueObj>(result);
 }
 
 void ExpressionInterpreter::operator()(const FieldAccessExpression& expr) const {
