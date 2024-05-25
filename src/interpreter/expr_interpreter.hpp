@@ -17,10 +17,10 @@ class ExpressionInterpreter : public ExpressionVisitor {
     void operator()(const ConjunctionExpression& expr) const override;
     void operator()(const EqualExpression& expr) const override;
     void operator()(const NotEqualExpression& expr) const override;
-    void operator()(const LessThanExpression&) const override;
-    void operator()(const LessThanOrEqualExpression&) const override;
-    void operator()(const GreaterThanExpression&) const override;
-    void operator()(const GreaterThanOrEqualExpression&) const override;
+    void operator()(const LessThanExpression& expr) const override;
+    void operator()(const LessThanOrEqualExpression& expr) const override;
+    void operator()(const GreaterThanExpression& expr) const override;
+    void operator()(const GreaterThanOrEqualExpression& expr) const override;
     void operator()(const AdditionExpression& expr) const override;
     void operator()(const SubtractionExpression& expr) const override;
     void operator()(const MultiplicationExpression& expr) const override;
@@ -36,7 +36,10 @@ class ExpressionInterpreter : public ExpressionVisitor {
 
    private:
     std::pair<bool, bool> getBoolExpression(Expression* lhs, Expression* rhs) const;
-    void comparison(const BinaryExpression& expr) const;
+    void checkExprEquality(const BinaryExpression& expr) const;
+
+    template <typename Functor>
+    void compareExpr(const BinaryExpression& expr, Functor func) const;
 
     template <typename Functor>
     void evalNumericExpr(const BinaryExpression& expr, Functor func) const;

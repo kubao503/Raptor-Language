@@ -45,7 +45,7 @@ void ExpressionInterpreter::operator()(const ConjunctionExpression& expr) const 
     lastResult_ = std::make_shared<ValueObj>(result);
 }
 
-struct Comparator {
+struct EqualityEvaluator {
     bool operator()(bool lhs, bool rhs) const { return lhs == rhs; }
     bool operator()(Integral lhs, Integral rhs) const { return lhs == rhs; }
     bool operator()(Floating lhs, Floating rhs) const { return lhs == rhs; }
@@ -59,40 +59,75 @@ struct Comparator {
     }
 };
 
-void ExpressionInterpreter::comparison(const BinaryExpression& expr) const {
+void ExpressionInterpreter::checkExprEquality(const BinaryExpression& expr) const {
     expr.lhs->accept(*this);
     const auto leftValue = lastResult_->value;
     expr.rhs->accept(*this);
     const auto rightValue = lastResult_->value;
 
-    const auto result = std::visit(Comparator(), leftValue, rightValue);
+    const auto result = std::visit(EqualityEvaluator(), leftValue, rightValue);
     lastResult_ = std::make_shared<ValueObj>(result);
 }
 
 void ExpressionInterpreter::operator()(const EqualExpression& expr) const {
-    comparison(expr);
+    checkExprEquality(expr);
 }
 
 void ExpressionInterpreter::operator()(const NotEqualExpression& expr) const {
-    comparison(expr);
+    checkExprEquality(expr);
     const auto value = std::get<bool>(lastResult_->value);
     lastResult_ = std::make_shared<ValueObj>(!value);
 }
 
-void ExpressionInterpreter::operator()(const LessThanExpression&) const {
-    lastResult_ = nullptr;
+template <typename Functor>
+struct ComparisonEvaluator {
+    ComparisonEvaluator(Functor func)
+        : func_{func} {}
+
+    bool operator()(Integral lhs, Integral rhs) { return func_(lhs, rhs); }
+    bool operator()(Floating lhs, Floating rhs) { return func_(lhs, rhs); }
+    bool operator()(const std::string& lhs, const std::string& rhs) {
+        return func_(lhs, rhs);
+    }
+    bool operator()(const auto& lhs, const auto& rhs) {
+        throw TypeMismatch{{},
+                           std::visit(ValueToType(), static_cast<ValueObj::Value>(lhs)),
+                           std::visit(ValueToType(), static_cast<ValueObj::Value>(rhs))};
+    }
+
+    Functor func_;
+};
+
+template <typename Functor>
+void ExpressionInterpreter::compareExpr(const BinaryExpression& expr,
+                                        Functor func) const {
+    expr.lhs->accept(*this);
+    const auto leftValue = lastResult_->value;
+    expr.rhs->accept(*this);
+    const auto rightValue = lastResult_->value;
+
+    try {
+        const auto result = std::visit(ComparisonEvaluator(func), leftValue, rightValue);
+        lastResult_ = std::make_shared<ValueObj>(result);
+    } catch (const TypeMismatch& e) {
+        throw TypeMismatch{expr.position, e};
+    }
 }
 
-void ExpressionInterpreter::operator()(const LessThanOrEqualExpression&) const {
-    lastResult_ = nullptr;
+void ExpressionInterpreter::operator()(const LessThanExpression& expr) const {
+    compareExpr(expr, std::less());
 }
 
-void ExpressionInterpreter::operator()(const GreaterThanExpression&) const {
-    lastResult_ = nullptr;
+void ExpressionInterpreter::operator()(const LessThanOrEqualExpression& expr) const {
+    compareExpr(expr, std::less_equal());
 }
 
-void ExpressionInterpreter::operator()(const GreaterThanOrEqualExpression&) const {
-    lastResult_ = nullptr;
+void ExpressionInterpreter::operator()(const GreaterThanExpression& expr) const {
+    compareExpr(expr, std::greater());
+}
+
+void ExpressionInterpreter::operator()(const GreaterThanOrEqualExpression& expr) const {
+    compareExpr(expr, std::greater_equal());
 }
 
 template <typename Functor>

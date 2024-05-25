@@ -833,9 +833,21 @@ auto binaryExpressions = testing::Values(
     std::make_pair("7 / 2", "3"), std::make_pair("7.0 / 2.0", "3.5"),
     std::make_pair("-1", "-1"), std::make_pair("-1.0", "-1"),
     std::make_pair("-(-1)", "1"), std::make_pair("not true", "false"),
-    std::make_pair("not false", "true"));
+    std::make_pair("not false", "true"), std::make_pair("1 < 2", "true"),
+    std::make_pair("2 < 1", "false"), std::make_pair("2 <= 2", "true"),
+    std::make_pair("2 >= 2", "true"));
 
 INSTANTIATE_TEST_SUITE_P(BinaryExpressions, BinaryExpressionTest, binaryExpressions);
+
+TEST_F(InterpreterTest, comparison_different_types) {
+    SetUp("print 2 < 1.0;");
+    interpretAndExpectThrowAt<TypeMismatch>({1, 7});
+}
+
+TEST_F(InterpreterTest, comparison_invalid_types) {
+    SetUp("print false < true;");
+    interpretAndExpectThrowAt<TypeMismatch>({1, 7});
+}
 
 TEST_F(InterpreterTest, addition_type_mismatch) {
     SetUp("print 2 + 3.0 * 6;");
