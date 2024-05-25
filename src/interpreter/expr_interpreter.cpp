@@ -59,7 +59,7 @@ struct Comparator {
     }
 };
 
-void ExpressionInterpreter::compare(const BinaryExpression& expr) const {
+void ExpressionInterpreter::comparison(const BinaryExpression& expr) const {
     expr.lhs->accept(*this);
     const auto leftValue = lastResult_->value;
     expr.rhs->accept(*this);
@@ -70,11 +70,11 @@ void ExpressionInterpreter::compare(const BinaryExpression& expr) const {
 }
 
 void ExpressionInterpreter::operator()(const EqualExpression& expr) const {
-    compare(expr);
+    comparison(expr);
 }
 
 void ExpressionInterpreter::operator()(const NotEqualExpression& expr) const {
-    compare(expr);
+    comparison(expr);
     const auto value = std::get<bool>(lastResult_->value);
     lastResult_ = std::make_shared<ValueObj>(!value);
 }
@@ -95,20 +95,56 @@ void ExpressionInterpreter::operator()(const GreaterThanOrEqualExpression&) cons
     lastResult_ = nullptr;
 }
 
-void ExpressionInterpreter::operator()(const AdditionExpression&) const {
-    lastResult_ = nullptr;
+template <typename Functor>
+struct NumericEvaluator {
+    NumericEvaluator(Functor func)
+        : func_{func} {}
+
+    ValueObj::Value operator()(Integral lhs, Integral rhs) const {
+        return func_(lhs, rhs);
+    }
+    ValueObj::Value operator()(Floating lhs, Floating rhs) const {
+        return func_(lhs, rhs);
+    }
+    ValueObj::Value operator()(const auto& lhs, const auto& rhs) const {
+        throw TypeMismatch{{},
+                           std::visit(ValueToType(), static_cast<ValueObj::Value>(lhs)),
+                           std::visit(ValueToType(), static_cast<ValueObj::Value>(rhs))};
+    }
+
+    Functor func_;
+};
+
+template <typename Functor>
+void ExpressionInterpreter::evalNumericExpr(const BinaryExpression& expr,
+                                            Functor func) const {
+    expr.lhs->accept(*this);
+    const auto leftValue = lastResult_->value;
+    expr.rhs->accept(*this);
+    const auto rightValue = lastResult_->value;
+
+    try {
+        const auto value = std::visit(NumericEvaluator(func), leftValue, rightValue);
+        lastResult_ = std::make_shared<ValueObj>(value);
+    } catch (const TypeMismatch& e) {
+        throw TypeMismatch{expr.position, e};
+    }
 }
 
-void ExpressionInterpreter::operator()(const SubtractionExpression&) const {
-    lastResult_ = nullptr;
+void ExpressionInterpreter::operator()(const AdditionExpression& expr) const {
+    evalNumericExpr(expr, std::plus());
 }
 
-void ExpressionInterpreter::operator()(const MultiplicationExpression&) const {
-    lastResult_ = nullptr;
+void ExpressionInterpreter::operator()(const SubtractionExpression& expr) const {
+    evalNumericExpr(expr, std::minus());
 }
 
-void ExpressionInterpreter::operator()(const DivisionExpression&) const {
-    lastResult_ = nullptr;
+void ExpressionInterpreter::operator()(const MultiplicationExpression& expr) const {
+    evalNumericExpr(expr, std::multiplies());
+}
+
+void ExpressionInterpreter::operator()(const DivisionExpression& expr) const {
+    evalNumericExpr(expr, std::divides());
 }
 
 void ExpressionInterpreter::operator()(const SignChangeExpression&) const {

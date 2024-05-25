@@ -21,10 +21,10 @@ class ExpressionInterpreter : public ExpressionVisitor {
     void operator()(const LessThanOrEqualExpression&) const override;
     void operator()(const GreaterThanExpression&) const override;
     void operator()(const GreaterThanOrEqualExpression&) const override;
-    void operator()(const AdditionExpression&) const override;
-    void operator()(const SubtractionExpression&) const override;
-    void operator()(const MultiplicationExpression&) const override;
-    void operator()(const DivisionExpression&) const override;
+    void operator()(const AdditionExpression& expr) const override;
+    void operator()(const SubtractionExpression& expr) const override;
+    void operator()(const MultiplicationExpression& expr) const override;
+    void operator()(const DivisionExpression& expr) const override;
     void operator()(const SignChangeExpression&) const override;
     void operator()(const LogicalNegationExpression&) const override;
     void operator()(const ConversionExpression& conversionExpr) const override;
@@ -36,7 +36,10 @@ class ExpressionInterpreter : public ExpressionVisitor {
 
    private:
     std::pair<bool, bool> getBoolExpression(Expression* lhs, Expression* rhs) const;
-    void compare(const BinaryExpression& expr) const;
+    void comparison(const BinaryExpression& expr) const;
+
+    template <typename Functor>
+    void evalNumericExpr(const BinaryExpression& expr, Functor func) const;
 
     Interpreter& interpreter_;
     mutable ValueRef lastResult_;
