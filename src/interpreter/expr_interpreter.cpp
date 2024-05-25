@@ -169,8 +169,14 @@ void ExpressionInterpreter::operator()(const SignChangeExpression& expr) const {
     }
 }
 
-void ExpressionInterpreter::operator()(const LogicalNegationExpression&) const {
-    lastResult_ = nullptr;
+void ExpressionInterpreter::operator()(const LogicalNegationExpression& expr) const {
+    expr.expr->accept(*this);
+
+    const auto value = std::get_if<bool>(&lastResult_->value);
+    if (!value)
+        throw TypeMismatch{expr.position, BuiltInType::BOOL,
+                           std::visit(ValueToType(), lastResult_->value)};
+    lastResult_ = std::make_shared<ValueObj>(!(*value));
 }
 
 struct TypeConverter {

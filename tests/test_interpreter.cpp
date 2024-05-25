@@ -832,7 +832,8 @@ auto binaryExpressions = testing::Values(
     std::make_pair("2 * 3", "6"), std::make_pair("2.5 * 3.0", "7.5"),
     std::make_pair("7 / 2", "3"), std::make_pair("7.0 / 2.0", "3.5"),
     std::make_pair("-1", "-1"), std::make_pair("-1.0", "-1"),
-    std::make_pair("-(-1)", "1"));
+    std::make_pair("-(-1)", "1"), std::make_pair("not true", "false"),
+    std::make_pair("not false", "true"));
 
 INSTANTIATE_TEST_SUITE_P(BinaryExpressions, BinaryExpressionTest, binaryExpressions);
 
@@ -843,5 +844,10 @@ TEST_F(InterpreterTest, addition_type_mismatch) {
 
 TEST_F(InterpreterTest, sign_change_type_mismatch) {
     SetUp("print -true;");
+    interpretAndExpectThrowAt<TypeMismatch>({1, 7});
+}
+
+TEST_F(InterpreterTest, negation_type_mismatch) {
+    SetUp("print not 2;");
     interpretAndExpectThrowAt<TypeMismatch>({1, 7});
 }
