@@ -95,10 +95,10 @@ std::optional<Token> Lexer::buildIntConst() const {
     if (source_.getChar() == '0') {
         source_.nextChar();
 
-        if (auto token = buildFloatConst(0u))
+        if (auto token = buildFloatConst(0))
             return token;
 
-        return Token(Token::Type::INT_CONST, 0u, tokenPosition_);
+        return Token(Token::Type::INT_CONST, 0, tokenPosition_);
     }
 
     if (auto res = buildNumber()) {

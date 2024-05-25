@@ -4,7 +4,7 @@
 #include <string>
 #include <variant>
 
-using Integral = unsigned int;
+using Integral = int;
 using Floating = float;
 
 enum class BuiltInType {

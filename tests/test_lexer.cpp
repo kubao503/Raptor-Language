@@ -100,13 +100,13 @@ TEST_F(LexerTest, getToken_int_with_leading_zero) {
 }
 
 TEST_F(LexerTest, getToken_int_max) {
-    SetUp("4294967295");
+    SetUp("2147483647");
 
     EXPECT_NO_THROW(lexer_->getToken()) << "Just at the max";
 }
 
 TEST_F(LexerTest, getToken_int_overflow) {
-    SetUp("4294967296");
+    SetUp("2147483648");
 
     EXPECT_THROW(lexer_->getToken(), NumericOverflow) << "Max exceeded";
 }
@@ -134,13 +134,13 @@ TEST_P(LexerFloatTest, getToken_invalid_float) {
 INSTANTIATE_TEST_SUITE_P(InvalidFloat, LexerFloatTest, testing::Values("1..125", "1."));
 
 TEST_F(LexerTest, getToken_float_max) {
-    SetUp("0.4294967295");
+    SetUp("0.2147483647");
 
     EXPECT_NO_THROW(lexer_->getToken()) << "Just at the max";
 }
 
 TEST_F(LexerTest, getToken_float_overflow) {
-    SetUp("0.4294967296");
+    SetUp("0.2147483648");
 
     EXPECT_THROW(lexer_->getToken(), NumericOverflow) << "Max exceeded";
 }
@@ -337,5 +337,6 @@ TEST_F(LexerTest, getToken_multiple_tokens) {
         Token::Type::ETX,
     };
 
-    for (auto type : seq) EXPECT_EQ(lexer_->getToken().getType(), type) << "Invalid type";
+    for (auto type : seq)
+        EXPECT_EQ(lexer_->getToken().getType(), type) << "Invalid type";
 }

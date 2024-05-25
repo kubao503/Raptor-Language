@@ -147,8 +147,26 @@ void ExpressionInterpreter::operator()(const DivisionExpression& expr) const {
     evalNumericExpr(expr, std::divides());
 }
 
-void ExpressionInterpreter::operator()(const SignChangeExpression&) const {
-    lastResult_ = nullptr;
+struct SignChanger {
+    ValueObj::Value operator()(Integral i) { return -i; }
+    ValueObj::Value operator()(Floating i) { return -i; }
+    ValueObj::Value operator()(const auto& i) {
+        throw TypeMismatch{{},
+                           BuiltInType::INT,
+                           std::visit(ValueToType(), static_cast<ValueObj::Value>(i))};
+    }
+};
+
+void ExpressionInterpreter::operator()(const SignChangeExpression& expr) const {
+    expr.expr->accept(*this);
+    const auto value = lastResult_->value;
+
+    try {
+        auto result = std::visit(SignChanger(), value);
+        lastResult_ = std::make_shared<ValueObj>(result);
+    } catch (const TypeMismatch& e) {
+        throw TypeMismatch{expr.position, e};
+    }
 }
 
 void ExpressionInterpreter::operator()(const LogicalNegationExpression&) const {

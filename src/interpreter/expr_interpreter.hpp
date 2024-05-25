@@ -25,7 +25,7 @@ class ExpressionInterpreter : public ExpressionVisitor {
     void operator()(const SubtractionExpression& expr) const override;
     void operator()(const MultiplicationExpression& expr) const override;
     void operator()(const DivisionExpression& expr) const override;
-    void operator()(const SignChangeExpression&) const override;
+    void operator()(const SignChangeExpression& expr) const override;
     void operator()(const LogicalNegationExpression&) const override;
     void operator()(const ConversionExpression& conversionExpr) const override;
     void operator()(const TypeCheckExpression&) const override;
