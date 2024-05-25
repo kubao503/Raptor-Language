@@ -87,6 +87,13 @@ InvalidFieldCount::InvalidFieldCount(const Position& position, std::size_t expec
 InvalidFieldCount::InvalidFieldCount(const Position& position, const InvalidFieldCount& e)
     : InvalidFieldCount{position, e.expected_, e.actual_} {}
 
+InvalidField::InvalidField(const Position& position, std::string_view fieldName)
+    : BaseException{position, "Invalid struct's field name " + std::string(fieldName)},
+      fieldName_{fieldName} {}
+
+InvalidField::InvalidField(const Position& position, const InvalidField& e)
+    : InvalidField{position, e.fieldName_} {}
+
 Redefinition::Redefinition(const Position& position, std::string type, std::string name)
     : BaseException{position, "Redefinition of " + name + " " + type}, name_{name} {}
 

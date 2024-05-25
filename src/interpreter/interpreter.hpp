@@ -45,6 +45,8 @@ class Interpreter {
     void convertToNamedStruct(ValueObj& valueObj, const StructDef* structDef) const;
     void convertToVariant(ValueObj& valueObj, const VariantDef* variantDef) const;
 
+    VarEntry tryAccessField(const Assignment& stmt) const;
+
     void passArgumentsToCtx(CallContext& ctx, const Arguments& args,
                             const Parameters& params);
     void passArgumentToCtx(CallContext& ctx, const Argument& arg, const Parameter& param);

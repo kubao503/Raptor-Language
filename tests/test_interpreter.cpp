@@ -90,6 +90,11 @@ TEST_F(InterpreterTest, var_not_found) {
     interpretAndExpectThrowAt<SymbolNotFound>({2, 11});
 }
 
+TEST_F(InterpreterTest, assignment_var_not_found) {
+    SetUp("x = 2;");
+    interpretAndExpectThrowAt<SymbolNotFound>({1, 1});
+}
+
 TEST_F(InterpreterTest, var_redefinition) {
     SetUp(
         "int x = 5;\n"
@@ -354,9 +359,9 @@ TEST_F(InterpreterTest, struct_field_access) {
 
 TEST_F(InterpreterTest, field_access_of_non_struct) {
     SetUp(
-        "int x = 5;"
+        "int x = 5;\n"
         "print x.field;");
-    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
+    interpretAndExpectThrowAt<TypeMismatch>({2, 7});
 }
 
 TEST_F(InterpreterTest, struct_var_invalid_field_type) {
@@ -399,7 +404,15 @@ TEST_F(InterpreterTest, struct_assignment_invalid_type) {
 
 TEST_F(InterpreterTest, field_access_of_anonymous_struct) {
     SetUp("print ({1, 2}).field;");
-    EXPECT_THROW(interpretAndGetOutput(), std::runtime_error);
+    interpretAndExpectThrowAt<TypeMismatch>({1, 7});
+}
+
+TEST_F(InterpreterTest, field_access_of_invalid_field) {
+    SetUp(
+        "struct A { int x }\n"
+        "A a = { 5 };\n"
+        "print a.y;");
+    interpretAndExpectThrowAt<InvalidField>({3, 7});
 }
 
 TEST_F(InterpreterTest, passing_struct_to_function_by_value) {
@@ -530,6 +543,14 @@ TEST_F(InterpreterTest, struct_nested_field_assignment) {
         "b.a.num = 99;"
         "print b;");
     EXPECT_EQ(interpretAndGetOutput(), "{ 3 { 99 } }\n");
+}
+
+TEST_F(InterpreterTest, struct_invalid_field_assignment) {
+    SetUp(
+        "struct A { int x, int y }\n"
+        "A a = {2, 3};\n"
+        "a.z = 9;");
+    interpretAndExpectThrowAt<InvalidField>({3, 1});
 }
 
 TEST_F(InterpreterTest, struct_redefinition) {

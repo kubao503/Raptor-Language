@@ -317,10 +317,12 @@ void ExpressionInterpreter::operator()(const FieldAccessExpression& expr) const 
     expr.expr->accept(*this);
     auto namedStructObj = std::get_if<NamedStructObj>(&(lastResult_->value));
     if (!namedStructObj)
-        throw std::runtime_error(
-            "Cannot access a field of expression which is not a structure");
+        throw TypeMismatch{expr.position, "Named struct",
+                           std::visit(ValueToType(), lastResult_->value)};
     auto structDef = namedStructObj->structDef;
     auto res = std::ranges::find(structDef->fields, expr.field, &Field::name);
+    if (res == structDef->fields.end())
+        throw InvalidField{expr.position, expr.field};
     auto index = std::distance(structDef->fields.begin(), res);
     lastResult_ = namedStructObj->values.at(index);
 }

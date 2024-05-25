@@ -4,7 +4,6 @@
 #include <memory>
 #include <variant>
 #include <vector>
-#include <algorithm>
 
 #include "parse_tree.hpp"
 #include "types.hpp"
@@ -18,20 +17,8 @@ struct StructObj {
 };
 
 struct NamedStructObj : public StructObj {
-    NamedStructObj(std::vector<ValueRef> values, const StructDef* structDef)
-        : StructObj{std::move(values)}, structDef{structDef} {
-        if (!structDef)
-            throw std::runtime_error(
-                "Cannot instantiate StructObj without struct definition");
-    }
-
-    ValueRef getField(std::string_view fieldName) const {
-        const auto field = std::ranges::find(structDef->fields, fieldName, &Field::name);
-        if (field == structDef->fields.end())
-            throw std::runtime_error("Field " + std::string(fieldName) + " not found");
-        const auto index = std::ranges::distance(structDef->fields.begin(), field);
-        return values.at(index);
-    }
+    NamedStructObj(std::vector<ValueRef> values, const StructDef* structDef);
+    ValueRef getField(std::string_view fieldName) const;
 
     const StructDef* structDef;
 };

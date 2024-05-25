@@ -45,6 +45,15 @@ class InvalidFieldCount : public BaseException {
     std::size_t actual_;
 };
 
+class InvalidField : public BaseException {
+   public:
+    InvalidField(const Position& position, std::string_view fieldName);
+    InvalidField(const Position& position, const InvalidField& e);
+
+   private:
+    std::string fieldName_;
+};
+
 class Redefinition : public BaseException {
    protected:
     Redefinition(const Position& position, std::string type, std::string name);

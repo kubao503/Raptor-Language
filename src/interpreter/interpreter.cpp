@@ -181,10 +181,9 @@ struct FieldAccessor {
         : interpreter_{interpreter} {}
 
     VarEntry operator()(std::string_view name) {
-        const auto varEntry = interpreter_.getVariable(name);
-        if (!varEntry)
-            throw SymbolNotFound{{}, "Variable", std::string(name)};
-        return *varEntry;
+        if (const auto varEntry = interpreter_.getVariable(name))
+            return *varEntry;
+        throw SymbolNotFound{{}, "Variable", std::string(name)};
     }
 
     VarEntry operator()(const std::unique_ptr<FieldAccess>& fieldAccess) {
@@ -199,8 +198,18 @@ struct FieldAccessor {
     Interpreter interpreter_;
 };
 
+VarEntry Interpreter::tryAccessField(const Assignment& stmt) const {
+    try {
+        return std::visit(FieldAccessor(*this), stmt.lhs);
+    } catch (const SymbolNotFound& e) {
+        throw SymbolNotFound{stmt.position, e};
+    } catch (const InvalidField& e) {
+        throw InvalidField{stmt.position, e};
+    }
+}
+
 void Interpreter::operator()(const Assignment& stmt) {
-    const auto oldVarEntry = std::visit(FieldAccessor(*this), stmt.lhs);
+    const auto oldVarEntry = tryAccessField(stmt);
 
     if (oldVarEntry.isConst)
         throw ConstViolation(stmt.position);
