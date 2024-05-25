@@ -176,16 +176,36 @@ void Interpreter::operator()(const VarDef& stmt) {
     }
 }
 
-void Interpreter::operator()(const Assignment& stmt) {
-    auto name = std::get<std::string>(stmt.lhs);
-    auto oldVarEntry = getVariable(name);
-    if (!oldVarEntry)
-        throw SymbolNotFound(stmt.position, "Variable", name);
+struct FieldAccessor {
+    FieldAccessor(const Interpreter& interpreter)
+        : interpreter_{interpreter} {}
 
-    if (oldVarEntry->isConst)
+    VarEntry operator()(std::string_view name) {
+        const auto varEntry = interpreter_.getVariable(name);
+        if (!varEntry)
+            throw SymbolNotFound{{}, "Variable", std::string(name)};
+        return *varEntry;
+    }
+
+    VarEntry operator()(const std::unique_ptr<FieldAccess>& fieldAccess) {
+        const auto varEntry = std::visit(*this, fieldAccess->container);
+        const auto namedStruct = std::get_if<NamedStructObj>(&varEntry.valueRef->value);
+        if (!namedStruct)
+            throw std::runtime_error("Lhs of field access is not a named struct");
+        auto fieldRef = namedStruct->getField(fieldAccess->field);
+        return {.name = "", .valueRef = std::move(fieldRef), .isConst = varEntry.isConst};
+    }
+
+    Interpreter interpreter_;
+};
+
+void Interpreter::operator()(const Assignment& stmt) {
+    const auto oldVarEntry = std::visit(FieldAccessor(*this), stmt.lhs);
+
+    if (oldVarEntry.isConst)
         throw ConstViolation(stmt.position);
 
-    const auto expectedType = std::visit(ValueToType(), oldVarEntry->valueRef->value);
+    const auto expectedType = std::visit(ValueToType(), oldVarEntry.valueRef->value);
 
     auto newValueRef = getValueFromExpr(*stmt.rhs);
 
@@ -197,7 +217,7 @@ void Interpreter::operator()(const Assignment& stmt) {
         throw InvalidFieldCount{stmt.position, e};
     }
 
-    oldVarEntry->valueRef->value = std::move(newValueRef->value);
+    oldVarEntry.valueRef->value = std::move(newValueRef->value);
 }
 
 void Interpreter::operator()(const FuncDef& stmt) {

@@ -513,6 +513,25 @@ TEST_F(InterpreterTest, nested_struct_assignment) {
     EXPECT_EQ(std::get<Integral>(structA.values.at(0)->value), 7);
 }
 
+TEST_F(InterpreterTest, struct_field_assignment) {
+    SetUp(
+        "struct A { int x, int y }"
+        "A a = {3, 4};"
+        "a.x = 9;"
+        "print a;");
+    EXPECT_EQ(interpretAndGetOutput(), "{ 9 4 }\n");
+}
+
+TEST_F(InterpreterTest, struct_nested_field_assignment) {
+    SetUp(
+        "struct A { int num }"
+        "struct B { int x, A a }"
+        "B b = { 3, { 8 } };"
+        "b.a.num = 99;"
+        "print b;");
+    EXPECT_EQ(interpretAndGetOutput(), "{ 3 { 99 } }\n");
+}
+
 TEST_F(InterpreterTest, struct_redefinition) {
     SetUp(
         "struct A { int num }\n"
