@@ -10,7 +10,7 @@ class ExpressionInterpreter : public ExpressionVisitor {
    public:
     ExpressionInterpreter(Interpreter& interpreter);
 
-    ValueRef getValue() const { return lastResult_; }
+    ValueHolder getValue() const { return std::move(lastResult_); }
 
     void operator()(const StructInitExpression& expr) const override;
     void operator()(const DisjunctionExpression& expr) const override;
@@ -35,7 +35,8 @@ class ExpressionInterpreter : public ExpressionVisitor {
     void operator()(const VariableAccess& expr) const override;
 
    private:
-    std::pair<bool, bool> getBoolExpression(Expression* lhs, Expression* rhs) const;
+    ValueObj getExprValue(const Expression& expr) const;
+    bool getBoolValue(const Expression& expr) const;
     void checkExprEquality(const BinaryExpression& expr) const;
 
     template <typename Functor>
@@ -45,7 +46,7 @@ class ExpressionInterpreter : public ExpressionVisitor {
     void evalNumericExpr(const BinaryExpression& expr, Functor func) const;
 
     Interpreter& interpreter_;
-    mutable ValueRef lastResult_;
+    mutable ValueHolder lastResult_;
 };
 
 #endif

@@ -96,7 +96,7 @@ class VariantRedefinition : public Redefinition {
 class InvalidTypeConversion : public BaseException {
    public:
     InvalidTypeConversion(const Position& position, ValueObj::Value from, Type to);
-    InvalidTypeConversion(const Position& position, const InvalidTypeConversion& e);
+    InvalidTypeConversion(const Position& position, InvalidTypeConversion e);
 
    private:
     ValueObj::Value from_;

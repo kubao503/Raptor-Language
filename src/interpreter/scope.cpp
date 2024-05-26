@@ -22,10 +22,10 @@ void Scope::addVariant(const VariantDef* variantDef) {
     variants_.emplace_back(variantDef);
 }
 
-std::optional<VarEntry> Scope::getVariable(std::string_view name) const {
+std::optional<RefObj> Scope::getVariable(std::string_view name) const {
     auto res = std::ranges::find(variables_, name, &VarEntry::name);
     if (res != variables_.end())
-        return *res;
+        return RefObj{.valueObj = res->valueObj.get(), .isConst = res->isConst};
     return std::nullopt;
 }
 

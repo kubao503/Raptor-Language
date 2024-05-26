@@ -115,9 +115,9 @@ InvalidTypeConversion::InvalidTypeConversion(const Position& position,
                                              ValueObj::Value from, Type to)
     : BaseException{position, "Cannot convert from " + std::visit(ValueToString(), from)
                                   + " to " + std::visit(TypeToString(), to)},
-      from_{from},
+      from_{std::move(from)},
       to_{to} {}
 
 InvalidTypeConversion::InvalidTypeConversion(const Position& position,
-                                             const InvalidTypeConversion& e)
-    : InvalidTypeConversion{position, e.from_, e.to_} {}
+                                             InvalidTypeConversion e)
+    : InvalidTypeConversion{position, std::move(e.from_), e.to_} {}

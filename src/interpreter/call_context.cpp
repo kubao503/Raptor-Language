@@ -1,6 +1,6 @@
 #include "call_context.hpp"
 
-std::optional<VarEntry> CallContext::getVariable(std::string_view name) const {
+std::optional<RefObj> CallContext::getVariable(std::string_view name) const {
     for (auto iter = scopes_.crbegin(); iter != scopes_.crend(); ++iter)
         if (auto val = iter->getVariable(name))
             return *val;

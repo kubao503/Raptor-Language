@@ -8,7 +8,9 @@
 class CallContext {
    public:
     CallContext(const CallContext* parent)
-        : parentContext_{parent}, scopes_{Scope()} {}
+        : parentContext_{parent} {
+        addScope();
+    }
 
     void addVariable(VarEntry entry) { scopes_.back().addVariable(std::move(entry)); }
 
@@ -23,7 +25,7 @@ class CallContext {
     void addScope() { scopes_.emplace_back(); }
     void removeScope() { scopes_.pop_back(); }
 
-    std::optional<VarEntry> getVariable(std::string_view name) const;
+    std::optional<RefObj> getVariable(std::string_view name) const;
 
     using FuncWithCtx = std::pair<const FuncDef*, const CallContext*>;
     std::optional<FuncWithCtx> getFunctionWithCtx(std::string_view name) const;

@@ -10,21 +10,20 @@
 
 struct ValueObj;
 
-using ValueRef = std::shared_ptr<ValueObj>;
-
 struct StructObj {
-    std::vector<ValueRef> values;
+    using Values = std::vector<std::unique_ptr<ValueObj>>;
+    Values values;
 };
 
 struct NamedStructObj : public StructObj {
-    NamedStructObj(std::vector<ValueRef> values, const StructDef* structDef);
-    ValueRef getField(std::string_view fieldName) const;
+    NamedStructObj(Values values, const StructDef* structDef);
+    ValueObj* getField(std::string_view fieldName) const;
 
     const StructDef* structDef;
 };
 
 struct VariantObj {
-    ValueRef valueRef;
+    std::unique_ptr<ValueObj> valueObj;
     const VariantDef* variantDef;
 };
 
@@ -33,5 +32,26 @@ struct ValueObj {
                                NamedStructObj, VariantObj>;
     Value value;
 };
+
+struct RefObj {
+    ValueObj* valueObj;
+    bool isConst{false};
+};
+
+using ValueHolder = std::variant<ValueObj, RefObj>;
+
+struct GetHeldValue {
+    ValueObj operator()(ValueObj obj) const;
+    ValueObj operator()(const RefObj& obj) const;
+};
+
+ValueObj getHeldValue(ValueHolder holder);
+
+struct GetHeldValueCopy {
+    ValueObj operator()(const ValueObj& obj) const;
+    ValueObj operator()(const RefObj& obj) const;
+};
+
+ValueObj getHeldValueCopy(const ValueHolder& holder);
 
 #endif

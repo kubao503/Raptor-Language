@@ -44,7 +44,7 @@ void Interpreter::addVariant(const VariantDef* variantDef) {
     callStack_.top().addVariant(variantDef);
 }
 
-std::optional<VarEntry> Interpreter::getVariable(std::string_view name) const {
+std::optional<RefObj> Interpreter::getVariable(std::string_view name) const {
     return callStack_.top().getVariable(name);
 }
 
@@ -61,7 +61,7 @@ const VariantDef* Interpreter::getVariantDef(std::string_view name) const {
     return callStack_.top().getVariantDef(name);
 }
 
-ValueRef Interpreter::getValueFromExpr(const Expression& expr) {
+ValueHolder Interpreter::getValueFromExpr(const Expression& expr) {
     auto exprInterpreter = ExpressionInterpreter(*this);
     expr.accept(exprInterpreter);
     return exprInterpreter.getValue();
@@ -69,11 +69,11 @@ ValueRef Interpreter::getValueFromExpr(const Expression& expr) {
 
 template <typename ConditionalStatement>
 bool Interpreter::evaluateCondition(const ConditionalStatement& stmt) {
-    const auto conditionValue = getValueFromExpr(*stmt.condition);
-    const auto condition = std::get_if<bool>(&conditionValue->value);
+    const auto conditionValue = getHeldValue(getValueFromExpr(*stmt.condition));
+    const auto condition = std::get_if<bool>(&conditionValue.value);
     if (!condition)
         throw TypeMismatch{stmt.condition->position, BuiltInType::BOOL,
-                           std::visit(ValueToType(), conditionValue->value)};
+                           std::visit(ValueToType(), conditionValue.value)};
     return *condition;
 }
 
@@ -106,8 +106,10 @@ void Interpreter::operator()(const WhileStatement& whileStmt) {
 void Interpreter::operator()(const ReturnStatement& stmt) {
     returning_ = true;
     returnValue_ = std::nullopt;
-    if (auto expr = stmt.expression.get())
-        returnValue_ = *getValueFromExpr(*expr);
+    if (auto expr = stmt.expression.get()) {
+        auto heldValue = getHeldValueCopy(getValueFromExpr(*expr));
+        returnValue_ = std::move(heldValue);
+    }
 }
 
 struct ValuePrinter {
@@ -116,13 +118,13 @@ struct ValuePrinter {
 
     void operator()(const StructObj& s) const { printStruct(s.values); }
     void operator()(const NamedStructObj& s) const { printStruct(s.values); }
-    void operator()(const VariantObj& v) const { std::visit(*this, v.valueRef->value); }
+    void operator()(const VariantObj& v) const { std::visit(*this, v.valueObj->value); }
     void operator()(const auto& v) const { out_ << std::boolalpha << v; }
 
    private:
-    void printStruct(const std::vector<ValueRef>& values) const {
+    void printStruct(const StructObj::Values& values) const {
         out_ << "{ ";
-        for (auto v : values) {
+        for (const auto& v : values) {
             std::visit(*this, v->value);
             out_ << ' ';
         }
@@ -135,22 +137,27 @@ struct ValuePrinter {
 void Interpreter::operator()(const PrintStatement& stmt) {
     if (auto expr = stmt.expression.get()) {
         auto valueRef = getValueFromExpr(*expr);
-        std::visit(ValuePrinter(out_), std::move(valueRef->value));
+        const auto valueObj = getHeldValue(std::move(valueRef));
+        std::visit(ValuePrinter(out_), valueObj.value);
     }
     out_ << '\n';
 }
 
-void compareTypes(const Type& type, ValueRef valueRef) {
-    if (!std::visit(TypeComparer(), type, valueRef->value))
-        throw TypeMismatch{{}, type, std::visit(ValueToType(), valueRef->value)};
+void compareTypes(const Type& type, const ValueObj& valueObj) {
+    if (!std::visit(TypeComparer(), type, valueObj.value))
+        throw TypeMismatch{{}, type, std::visit(ValueToType(), valueObj.value)};
 }
 
-ValueRef Interpreter::convertAndCheckType(const Type& expected, ValueRef valueRef) const {
+ValueHolder Interpreter::convertAndCheckType(const Type& expected,
+                                             ValueHolder valueRef) const {
     if (auto typeName = std::get_if<std::string>(&expected)) {
-        convertToUserDefinedType(*valueRef, *typeName);
+        auto valueObj = getHeldValue(std::move(valueRef));
+        convertToUserDefinedType(valueObj, *typeName);
+        compareTypes(expected, valueObj);
+        return valueObj;
     }
 
-    compareTypes(expected, valueRef);
+    compareTypes(expected, getHeldValueCopy(valueRef));
     return valueRef;
 }
 
@@ -173,13 +180,17 @@ void Interpreter::convertToNamedStruct(ValueObj& valueObj,
     if (structDef->fields.size() != structObj->values.size())
         throw InvalidFieldCount{{}, structDef->fields.size(), structObj->values.size()};
 
-    auto binaryOp = [this](const Field& field, ValueRef value) {
-        return convertAndCheckType(field.type, value);
+    auto binaryOp = [this](const Field& field, std::unique_ptr<ValueObj> valueObj) {
+        auto convertedValue = convertAndCheckType(field.type, std::move(*valueObj));
+        auto convertedValueObj = getHeldValue(std::move(convertedValue));
+        return std::make_unique<ValueObj>(std::move(convertedValueObj));
     };
-    std::ranges::transform(structDef->fields, structObj->values,
+    std::ranges::transform(structDef->fields.begin(), structDef->fields.end(),
+                           std::make_move_iterator(structObj->values.begin()),
+                           std::make_move_iterator(structObj->values.end()),
                            structObj->values.begin(), binaryOp);
 
-    valueObj.value = NamedStructObj{structObj->values, structDef};
+    valueObj.value = NamedStructObj{std::move(structObj->values), structDef};
 }
 
 void Interpreter::convertToVariant(ValueObj& valueObj,
@@ -188,15 +199,15 @@ void Interpreter::convertToVariant(ValueObj& valueObj,
         return std::visit(TypeComparer(), type, valueObj.value);
     };
     if (std::ranges::any_of(variantDef->types, compareTypeWithValue)) {
-        auto valueRef = std::make_shared<ValueObj>(valueObj);
-        valueObj.value = VariantObj{std::move(valueRef), variantDef};
+        auto valuePtr = std::make_unique<ValueObj>(std::move(valueObj));
+        valueObj.value = VariantObj{std::move(valuePtr), variantDef};
     }
 }
 
 void Interpreter::operator()(const VarDef& stmt) {
-    auto valueRef = getValueFromExpr(*stmt.expression);
+    auto valueRef = getHeldValue(getValueFromExpr(*stmt.expression));
     try {
-        valueRef = convertAndCheckType(stmt.type, std::move(valueRef));
+        valueRef = getHeldValue(convertAndCheckType(stmt.type, std::move(valueRef)));
     } catch (const TypeMismatch& e) {
         throw TypeMismatch{stmt.position, e};
     } catch (const SymbolNotFound& e) {
@@ -205,12 +216,9 @@ void Interpreter::operator()(const VarDef& stmt) {
         throw InvalidFieldCount{stmt.position, e};
     }
 
-    // Deliberate copy of the value
-    valueRef = std::make_shared<ValueObj>(*valueRef);
-
     try {
         addVariable({.name = std::move(stmt.name),
-                     .valueRef = std::move(valueRef),
+                     .valueObj = std::make_unique<ValueObj>(std::move(valueRef)),
                      .isConst = stmt.isConst});
     } catch (const VariableRedefinition& e) {
         throw VariableRedefinition{stmt.position, e};
@@ -221,25 +229,26 @@ struct FieldAccessor {
     FieldAccessor(const Interpreter& interpreter)
         : interpreter_{interpreter} {}
 
-    VarEntry operator()(std::string_view name) {
-        if (const auto varEntry = interpreter_.getVariable(name))
-            return *varEntry;
+    RefObj operator()(std::string_view name) {
+        if (const auto refObj = interpreter_.getVariable(name))
+            return *refObj;
         throw SymbolNotFound{{}, "Variable", std::string(name)};
     }
 
-    VarEntry operator()(const std::unique_ptr<FieldAccess>& fieldAccess) {
-        const auto varEntry = std::visit(*this, fieldAccess->container);
-        const auto namedStruct = std::get_if<NamedStructObj>(&varEntry.valueRef->value);
+    RefObj operator()(const std::unique_ptr<FieldAccess>& fieldAccess) {
+        const auto containerRef = std::visit(*this, fieldAccess->container);
+        const auto namedStruct =
+            std::get_if<NamedStructObj>(&containerRef.valueObj->value);
         if (!namedStruct)
             throw std::runtime_error("Lhs of field access is not a named struct");
         auto fieldRef = namedStruct->getField(fieldAccess->field);
-        return {.name = "", .valueRef = std::move(fieldRef), .isConst = varEntry.isConst};
+        return {.valueObj = fieldRef, .isConst = containerRef.isConst};
     }
 
-    Interpreter interpreter_;
+    const Interpreter& interpreter_;
 };
 
-VarEntry Interpreter::tryAccessField(const Assignment& stmt) const {
+RefObj Interpreter::tryAccessField(const Assignment& stmt) const {
     try {
         return std::visit(FieldAccessor(*this), stmt.lhs);
     } catch (const SymbolNotFound& e) {
@@ -250,12 +259,12 @@ VarEntry Interpreter::tryAccessField(const Assignment& stmt) const {
 }
 
 void Interpreter::operator()(const Assignment& stmt) {
-    const auto oldVarEntry = tryAccessField(stmt);
+    auto fieldRef = tryAccessField(stmt);
 
-    if (oldVarEntry.isConst)
+    if (fieldRef.isConst)
         throw ConstViolation(stmt.position);
 
-    const auto expectedType = std::visit(ValueToType(), oldVarEntry.valueRef->value);
+    const auto expectedType = std::visit(ValueToType(), fieldRef.valueObj->value);
 
     auto newValueRef = getValueFromExpr(*stmt.rhs);
 
@@ -267,7 +276,7 @@ void Interpreter::operator()(const Assignment& stmt) {
         throw InvalidFieldCount{stmt.position, e};
     }
 
-    oldVarEntry.valueRef->value = std::move(newValueRef->value);
+    fieldRef.valueObj->value = getHeldValue(std::move(newValueRef)).value;
 }
 
 void Interpreter::operator()(const FuncDef& stmt) {
@@ -319,7 +328,7 @@ std::optional<ValueObj> Interpreter::handleFunctionCall(const FuncCall& funcCall
     }
 
     callStack_.pop();
-    return returnValue_;
+    return std::move(returnValue_);
 }
 
 void Interpreter::checkReturnType(ReturnType expected) const {
@@ -372,13 +381,36 @@ void checkArgRef(const Argument& arg, const Parameter& param) {
         throw std::runtime_error("Expected value argument");
 }
 
+struct VariableAdder {
+    VariableAdder(CallContext& callCtx, std::string name)
+        : callCtx_{callCtx}, name_{std::move(name)} {}
+
+    void operator()(ValueObj valueObj) const {
+        VarEntry varEntry = {.name = name_,
+                             .valueObj = std::make_unique<ValueObj>(std::move(valueObj)),
+                             .isConst = false};
+        callCtx_.addVariable(std::move(varEntry));
+    }
+    void operator()(RefObj) const { throw std::runtime_error("Not implemented"); }
+
+   private:
+    CallContext& callCtx_;
+    std::string name_;
+};
+
+bool isConst(const ValueHolder& holder) {
+    if (auto varRef = std::get_if<RefObj>(&holder))
+        return varRef->isConst;
+    return false;
+}
+
 void Interpreter::passArgumentToCtx(CallContext& ctx, const Argument& arg,
                                     const Parameter& param) {
     checkArgRef(arg, param);
     auto valueRef = getValueFromExpr(*arg.value);
 
     if (!arg.ref)
-        valueRef = std::make_shared<ValueObj>(*valueRef);
+        valueRef = getHeldValueCopy(std::move(valueRef));
 
     try {
         valueRef = convertAndCheckType(param.type, std::move(valueRef));
@@ -388,16 +420,10 @@ void Interpreter::passArgumentToCtx(CallContext& ctx, const Argument& arg,
         throw InvalidFieldCount{arg.position, e};
     }
 
-    auto varAccess = dynamic_cast<VariableAccess*>(arg.value.get());
-    if (varAccess) {
-        auto varEntry = getVariable(varAccess->name);
-        if (varEntry->isConst)
-            throw ConstViolation{arg.position};
-    }
+    if (isConst(valueRef))
+        throw ConstViolation{arg.position};
 
-    ctx.addVariable({.name = std::move(param.name),
-                     .valueRef = std::move(valueRef),
-                     .isConst = false});
+    std::visit(VariableAdder{ctx, param.name}, std::move(valueRef));
 }
 
 void Interpreter::operator()(const StructDef& stmt) {

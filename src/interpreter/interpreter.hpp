@@ -12,7 +12,7 @@ class Interpreter {
     Interpreter(std::ostream& out);
     void interpret(const Program& program);
 
-    std::optional<VarEntry> getVariable(std::string_view name) const;
+    std::optional<RefObj> getVariable(std::string_view name) const;
     std::optional<CallContext::FuncWithCtx> getFunctionWithCtx(
         std::string_view name) const;
     const StructDef* getStructDef(std::string_view name) const;
@@ -42,12 +42,12 @@ class Interpreter {
     void expectVoidReturnValue() const;
     void expectNonVoidReturnValue(ReturnType expected) const;
 
-    ValueRef convertAndCheckType(const Type& expected, ValueRef valueRef) const;
+    ValueHolder convertAndCheckType(const Type& expected, ValueHolder valueRef) const;
     void convertToUserDefinedType(ValueObj& valueObj, std::string_view typeName) const;
     void convertToNamedStruct(ValueObj& valueObj, const StructDef* structDef) const;
     void convertToVariant(ValueObj& valueObj, const VariantDef* variantDef) const;
 
-    VarEntry tryAccessField(const Assignment& stmt) const;
+    RefObj tryAccessField(const Assignment& stmt) const;
 
     template <typename ConditionalStatement>
     bool evaluateCondition(const ConditionalStatement& stmt);
@@ -57,7 +57,7 @@ class Interpreter {
                             const Parameters& params);
     void passArgumentToCtx(CallContext& ctx, const Argument& arg, const Parameter& param);
 
-    ValueRef getValueFromExpr(const Expression& expr);
+    ValueHolder getValueFromExpr(const Expression& expr);
 
     std::stack<CallContext> callStack_;
     std::ostream& out_;
@@ -86,7 +86,7 @@ struct TypeComparer {
     bool operator()(const std::string& variableType, const VariantObj& variantObj) const {
         return variantObj.variantDef->name == variableType;
     }
-    bool operator()(auto, auto) const { return false; }
+    bool operator()(const auto&, const auto&) const { return false; }
 };
 
 struct ValueToType {
