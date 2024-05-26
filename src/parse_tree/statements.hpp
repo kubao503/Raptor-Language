@@ -73,6 +73,7 @@ struct IfStatement {
 struct WhileStatement {
     PExpression condition;
     Statements statements;
+    Position position;
 };
 
 struct ReturnStatement {

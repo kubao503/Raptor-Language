@@ -86,9 +86,7 @@ std::optional<Statement> Parser::parseIfStatement() {
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(), "Missing right curly brace"));
 
-    return IfStatement{.condition = std::move(condition),
-                       .statements = std::move(statements),
-                       .position = statementPosition_};
+    return IfStatement{std::move(condition), std::move(statements), statementPosition_};
 }
 
 /// WHILE_STMT = while DISJ '{' STMTS '}'
@@ -97,8 +95,8 @@ std::optional<Statement> Parser::parseWhileStatement() {
         return std::nullopt;
     consumeToken();
 
-    auto expression = parseDisjunctionExpression();
-    if (!expression)
+    auto condition = parseDisjunctionExpression();
+    if (!condition)
         throw SyntaxException(currentToken_.getPosition(),
                               "Expected while-statement condition");
 
@@ -110,7 +108,8 @@ std::optional<Statement> Parser::parseWhileStatement() {
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(), "Missing right curly brace"));
 
-    return WhileStatement{std::move(expression), std::move(statements)};
+    return WhileStatement{std::move(condition), std::move(statements),
+                          statementPosition_};
 }
 
 /// RET_STMT = return [ EXPR ] ';'

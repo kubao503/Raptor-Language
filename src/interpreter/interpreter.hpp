@@ -18,7 +18,8 @@ class Interpreter {
     const StructDef* getStructDef(std::string_view name) const;
     const VariantDef* getVariantDef(std::string_view name) const;
 
-    void operator()(const IfStatement& stmt);
+    void operator()(const IfStatement& ifStmt);
+    void operator()(const WhileStatement& whileStmt);
     void operator()(const ReturnStatement& stmt);
     void operator()(const PrintStatement& stmt);
     void operator()(const VarDef& stmt);
@@ -47,6 +48,10 @@ class Interpreter {
     void convertToVariant(ValueObj& valueObj, const VariantDef* variantDef) const;
 
     VarEntry tryAccessField(const Assignment& stmt) const;
+
+    template <typename ConditionalStatement>
+    bool evaluateCondition(const ConditionalStatement& stmt);
+    void interpretStatements(const Statements& statements);
 
     void passArgumentsToCtx(CallContext& ctx, const Arguments& args,
                             const Parameters& params);

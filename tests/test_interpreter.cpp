@@ -301,6 +301,16 @@ TEST_F(InterpreterTest, var_outside_of_if_statement) {
     EXPECT_EQ(interpretAndGetOutput(), "7\n");
 }
 
+TEST_F(InterpreterTest, while_statement) {
+    SetUp(
+        "int i = 5;"
+        "while i == 5 {"
+        "    print 77;"
+        "    i = 10;"
+        "}");
+    EXPECT_EQ(interpretAndGetOutput(), "77\n");
+}
+
 TEST_F(InterpreterTest, struct_definition) {
     SetUp(
         "struct Point {"
@@ -804,6 +814,19 @@ TEST_F(InterpreterTest, return_in_if_statement) {
     SetUp(
         "void foo() {"
         "    if true {"
+        "        return;"
+        "        print 1;"
+        "    }"
+        "    print 2;"
+        "}"
+        "foo();");
+    EXPECT_EQ(interpretAndGetOutput(), "");
+}
+
+TEST_F(InterpreterTest, return_in_while_statement) {
+    SetUp(
+        "void foo() {"
+        "    while true {"
         "        return;"
         "        print 1;"
         "    }"

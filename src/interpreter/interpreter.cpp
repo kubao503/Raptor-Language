@@ -63,22 +63,38 @@ ValueRef Interpreter::getValueFromExpr(const Expression& expr) {
     return exprInterpreter.getValue();
 }
 
-void Interpreter::operator()(const IfStatement& ifStmt) {
-    const auto conditionValue = getValueFromExpr(*ifStmt.condition);
+template <typename ConditionalStatement>
+bool Interpreter::evaluateCondition(const ConditionalStatement& stmt) {
+    const auto conditionValue = getValueFromExpr(*stmt.condition);
     const auto condition = std::get_if<bool>(&conditionValue->value);
     if (!condition)
-        throw TypeMismatch{ifStmt.condition->position, BuiltInType::BOOL,
+        throw TypeMismatch{stmt.condition->position, BuiltInType::BOOL,
                            std::visit(ValueToType(), conditionValue->value)};
+    return *condition;
+}
 
-    if (*condition) {
+void Interpreter::interpretStatements(const Statements& statements) {
+    for (const auto& stmt : statements) {
+        std::visit(*this, stmt);
+        if (returning_)
+            break;
+    }
+}
+
+void Interpreter::operator()(const IfStatement& ifStmt) {
+    const auto condition = evaluateCondition(ifStmt);
+
+    if (condition) {
         callStack_.top().addScope();
+        interpretStatements(ifStmt.statements);
+        callStack_.top().removeScope();
+    }
+}
 
-        for (const auto& stmt : ifStmt.statements) {
-            std::visit(*this, stmt);
-            if (returning_)
-                break;
-        }
-
+void Interpreter::operator()(const WhileStatement& whileStmt) {
+    while (evaluateCondition(whileStmt) && !returning_) {
+        callStack_.top().addScope();
+        interpretStatements(whileStmt.statements);
         callStack_.top().removeScope();
     }
 }
