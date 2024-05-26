@@ -63,7 +63,28 @@ ValueRef Interpreter::getValueFromExpr(const Expression& expr) {
     return exprInterpreter.getValue();
 }
 
+void Interpreter::operator()(const IfStatement& ifStmt) {
+    const auto conditionValue = getValueFromExpr(*ifStmt.condition);
+    const auto condition = std::get_if<bool>(&conditionValue->value);
+    if (!condition)
+        throw TypeMismatch{ifStmt.condition->position, BuiltInType::BOOL,
+                           std::visit(ValueToType(), conditionValue->value)};
+
+    if (*condition) {
+        callStack_.top().addScope();
+
+        for (const auto& stmt : ifStmt.statements) {
+            std::visit(*this, stmt);
+            if (returning_)
+                break;
+        }
+
+        callStack_.top().removeScope();
+    }
+}
+
 void Interpreter::operator()(const ReturnStatement& stmt) {
+    returning_ = true;
     returnValue_ = std::nullopt;
     if (auto expr = stmt.expression.get())
         returnValue_ = *getValueFromExpr(*expr);
@@ -255,9 +276,10 @@ std::optional<ValueObj> Interpreter::handleFunctionCall(const FuncCall& funcCall
     returnValue_ = std::nullopt;
     for (const auto& stmt : funcDef->getStatements()) {
         std::visit(*this, stmt);
-        if (std::holds_alternative<ReturnStatement>(stmt))
+        if (returning_)
             break;
     }
+    returning_ = false;
 
     if (auto typeName = std::get_if<std::string>(&funcDef->getReturnType()))
         try {

@@ -67,6 +67,7 @@ using Statements = std::vector<Statement>;
 struct IfStatement {
     PExpression condition;
     Statements statements;
+    Position position;
 };
 
 struct WhileStatement {

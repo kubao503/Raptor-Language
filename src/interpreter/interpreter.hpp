@@ -18,6 +18,7 @@ class Interpreter {
     const StructDef* getStructDef(std::string_view name) const;
     const VariantDef* getVariantDef(std::string_view name) const;
 
+    void operator()(const IfStatement& stmt);
     void operator()(const ReturnStatement& stmt);
     void operator()(const PrintStatement& stmt);
     void operator()(const VarDef& stmt);
@@ -55,7 +56,9 @@ class Interpreter {
 
     std::stack<CallContext> callStack_;
     std::ostream& out_;
+
     std::optional<ValueObj> returnValue_;
+    bool returning_{false};
 };
 
 struct TypeComparer {

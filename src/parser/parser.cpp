@@ -73,8 +73,8 @@ std::optional<Statement> Parser::parseIfStatement() {
         return std::nullopt;
     consumeToken();
 
-    auto expression = parseDisjunctionExpression();
-    if (!expression)
+    auto condition = parseDisjunctionExpression();
+    if (!condition)
         throw SyntaxException(currentToken_.getPosition(),
                               "Expected if-statement condition");
 
@@ -86,7 +86,9 @@ std::optional<Statement> Parser::parseIfStatement() {
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(), "Missing right curly brace"));
 
-    return IfStatement{std::move(expression), std::move(statements)};
+    return IfStatement{.condition = std::move(condition),
+                       .statements = std::move(statements),
+                       .position = statementPosition_};
 }
 
 /// WHILE_STMT = while DISJ '{' STMTS '}'

@@ -20,6 +20,9 @@ class CallContext {
         scopes_.back().addVariant(variantDef);
     }
 
+    void addScope() { scopes_.emplace_back(); }
+    void removeScope() { scopes_.pop_back(); }
+
     std::optional<VarEntry> getVariable(std::string_view name) const;
 
     using FuncWithCtx = std::pair<const FuncDef*, const CallContext*>;

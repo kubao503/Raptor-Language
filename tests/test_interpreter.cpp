@@ -73,12 +73,12 @@ TEST_F(InterpreterTest, var_def) {
 TEST_F(InterpreterTest, var_shadowing) {
     SetUp(
         "int x = 5;"
-        "void foo() {"
+        "if true {"
         "    int x = 22;"
         "    print x;"
         "}"
-        "foo();");
-    EXPECT_EQ(interpretAndGetOutput(), "22\n");
+        "print x;");
+    EXPECT_EQ(interpretAndGetOutput(), "22\n5\n");
 }
 
 TEST_F(InterpreterTest, var_not_found) {
@@ -266,6 +266,39 @@ TEST_F(InterpreterTest, function_call_inside_a_function) {
 TEST_F(InterpreterTest, function_not_found) {
     SetUp("foo(5);");
     interpretAndExpectThrowAt<SymbolNotFound>({1, 1});
+}
+
+TEST_F(InterpreterTest, if_statement_true_condition) {
+    SetUp(
+        "if true {"
+        "    print 2;"
+        "}");
+    EXPECT_EQ(interpretAndGetOutput(), "2\n");
+}
+
+TEST_F(InterpreterTest, if_statement_false_condition) {
+    SetUp(
+        "if false {"
+        "    print 2;"
+        "}");
+    EXPECT_EQ(interpretAndGetOutput(), "");
+}
+
+TEST_F(InterpreterTest, if_statement_invalid_condition) {
+    SetUp(
+        "if 2 + 3 {"
+        "    print 2;"
+        "}");
+    interpretAndExpectThrowAt<TypeMismatch>({1, 4});
+}
+
+TEST_F(InterpreterTest, var_outside_of_if_statement) {
+    SetUp(
+        "int x = 7;"
+        "if true {"
+        "    print x;"
+        "}");
+    EXPECT_EQ(interpretAndGetOutput(), "7\n");
 }
 
 TEST_F(InterpreterTest, struct_definition) {
@@ -765,6 +798,19 @@ TEST_F(InterpreterTest, return_statement_nested_call) {
         "}"
         "bar();");
     EXPECT_EQ(interpretAndGetOutput(), "6\n");
+}
+
+TEST_F(InterpreterTest, return_in_if_statement) {
+    SetUp(
+        "void foo() {"
+        "    if true {"
+        "        return;"
+        "        print 1;"
+        "    }"
+        "    print 2;"
+        "}"
+        "foo();");
+    EXPECT_EQ(interpretAndGetOutput(), "");
 }
 
 TEST_F(InterpreterTest, returning_value_in_void_func) {
