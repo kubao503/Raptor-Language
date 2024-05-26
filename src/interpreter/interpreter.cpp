@@ -12,8 +12,12 @@ Interpreter::Interpreter(std::ostream& out)
 }
 
 void Interpreter::interpret(const Program& program) {
-    for (const auto& stmt : program.statements)
+    for (const auto& stmt : program.statements) {
         std::visit(*this, stmt);
+        if (returning_)
+            throw ReturnTypeMismatch{
+                {}, "No return in global scope", "Returning in global scope"};
+    }
 }
 
 void Interpreter::addVariable(VarEntry entry) {
