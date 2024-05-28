@@ -227,6 +227,13 @@ TEST_F(InterpreterTest, function_multiple_args) {
     EXPECT_EQ(interpretAndGetOutput(), "5\n7\n");
 }
 
+TEST_F(InterpreterTest, redefinition_of_func_parameter) {
+    SetUp(
+        "void foo(int a, int a) {}"
+        "foo(1, 2);");
+    interpretAndExpectThrowAt<VariableRedefinition>({1, 17});
+}
+
 TEST_F(InterpreterTest, function_pass_by_value) {
     SetUp(
         "void foo(int a) {"

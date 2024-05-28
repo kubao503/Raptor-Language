@@ -5,9 +5,10 @@
 
 #include "scope.hpp"
 
+using RefEntry = std::pair<std::string, RefObj>;
+
 class CallContext {
    public:
-    using RefEntry = std::pair<std::string, RefObj>;
     using FuncWithCtx = std::pair<const FuncDef*, const CallContext*>;
 
     explicit CallContext(const CallContext* parent)

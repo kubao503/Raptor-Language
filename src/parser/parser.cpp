@@ -290,6 +290,8 @@ std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
 
 /// PARAM = [ ref ] TYPE ID
 std::optional<Parameter> Parser::parseParameter() {
+    const auto position = currentToken_.getPosition();
+
     const bool ref{currentToken_.getType() == Token::Type::REF_KW};
     if (ref)
         consumeToken();
@@ -307,7 +309,7 @@ std::optional<Parameter> Parser::parseParameter() {
         Token::Type::ID,
         SyntaxException(currentToken_.getPosition(), "Expected parameter name"));
 
-    return Parameter{.type = *type, .name = name, .ref = ref};
+    return Parameter{.type = *type, .name = name, .ref = ref, .position = position};
 }
 
 /// FUNC_CALL = '(' ARGS ')'

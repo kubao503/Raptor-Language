@@ -392,7 +392,10 @@ struct VariableAdder {
                              .isConst = false};
         callCtx_.addVariable(std::move(varEntry));
     }
-    void operator()(RefObj varRef) const { callCtx_.addReference({name_, varRef}); }
+    void operator()(RefObj varRef) const {
+        RefEntry refEntry = {name_, varRef};
+        callCtx_.addReference(std::move(refEntry));
+    }
 
    private:
     CallContext& callCtx_;
@@ -424,7 +427,11 @@ void Interpreter::passArgumentToCtx(CallContext& ctx, const Argument& arg,
     if (isConst(valueRef))
         throw ConstViolation{arg.position};
 
-    std::visit(VariableAdder{ctx, param.name}, std::move(valueRef));
+    try {
+        std::visit(VariableAdder{ctx, param.name}, std::move(valueRef));
+    } catch (const VariableRedefinition& e) {
+        throw VariableRedefinition{param.position, e};
+    }
 }
 
 void Interpreter::operator()(const StructDef& stmt) {

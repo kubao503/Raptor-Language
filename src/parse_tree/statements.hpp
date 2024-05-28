@@ -36,6 +36,7 @@ struct Parameter {
     Type type{""};
     std::string name;
     bool ref{false};
+    Position position;
 };
 
 using Parameters = std::vector<Parameter>;
