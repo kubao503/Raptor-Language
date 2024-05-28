@@ -7,9 +7,11 @@
 #include "call_context.hpp"
 #include "parse_tree.hpp"
 
+using ReturnValue = std::optional<ValueObj>;
+
 class Interpreter {
    public:
-    Interpreter(std::ostream& out);
+    explicit Interpreter(std::ostream& out);
     void interpret(const Program& program);
 
     std::optional<RefObj> getVariable(std::string_view name) const;
@@ -28,19 +30,14 @@ class Interpreter {
     void operator()(const FuncCall& funcCall);
     void operator()(const StructDef& stmt);
     void operator()(const VariantDef& stmt);
-    void operator()(const auto&) const { throw std::runtime_error("unknown statement"); }
 
-    std::optional<ValueObj> handleFunctionCall(const FuncCall& funcCall);
+    ReturnValue handleFunctionCall(const FuncCall& funcCall);
 
    private:
     void addVariable(VarEntry entry);
     void addFunction(const FuncDef* func);
     void addStruct(const StructDef* structDef);
     void addVariant(const VariantDef* variantDef);
-
-    void checkReturnType(ReturnType expected) const;
-    void expectVoidReturnValue() const;
-    void expectNonVoidReturnValue(ReturnType expected) const;
 
     ValueHolder convertAndCheckType(const Type& expected, ValueHolder valueRef) const;
     void convertToUserDefinedType(ValueObj& valueObj, std::string_view typeName) const;
@@ -62,7 +59,7 @@ class Interpreter {
     std::stack<CallContext> callStack_;
     std::ostream& out_;
 
-    std::optional<ValueObj> returnValue_;
+    ReturnValue returnValue_;
     bool returning_{false};
 };
 

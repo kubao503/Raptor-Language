@@ -143,7 +143,35 @@ void Interpreter::operator()(const PrintStatement& stmt) {
     out_ << '\n';
 }
 
-void compareTypes(const Type& type, const ValueObj& valueObj) {
+void expectVoidReturnValue(const ReturnValue& valueObj) {
+    if (valueObj) {
+        const auto actualType = std::visit(ValueToType(), valueObj->value);
+        throw ReturnTypeMismatch{
+            {},
+            VoidType(),
+            std::visit([](auto t) -> ReturnType { return t; }, actualType)};
+    }
+}
+
+void expectNonVoidReturnValue(const ReturnType& expected, const ReturnValue& valueObj) {
+    if (!valueObj)
+        throw ReturnTypeMismatch{{}, expected, VoidType{}};
+
+    if (!std::visit(TypeComparer(), expected, valueObj->value)) {
+        const auto actualType = std::visit(ValueToType(), valueObj->value);
+        throw ReturnTypeMismatch{
+            {}, expected, std::visit([](auto t) -> ReturnType { return t; }, actualType)};
+    }
+}
+
+void checkReturnType(const ReturnType& expected, const ReturnValue& valueObj) {
+    if (std::holds_alternative<VoidType>(expected))
+        expectVoidReturnValue(valueObj);
+    else
+        expectNonVoidReturnValue(expected, valueObj);
+}
+
+void checkValueType(const Type& type, const ValueObj& valueObj) {
     if (!std::visit(TypeComparer(), type, valueObj.value))
         throw TypeMismatch{{}, type, std::visit(ValueToType(), valueObj.value)};
 }
@@ -154,11 +182,11 @@ ValueHolder Interpreter::convertAndCheckType(const Type& expected,
     auto userDefinedTypeName = std::get_if<std::string>(&expected);
     if (!std::visit(TypeComparer(), expected, valueObj.value) && userDefinedTypeName) {
         convertToUserDefinedType(valueObj, *userDefinedTypeName);
-        compareTypes(expected, valueObj);
+        checkValueType(expected, valueObj);
         return valueObj;
     }
 
-    compareTypes(expected, getHeldValueCopy(valueRef));
+    checkValueType(expected, getHeldValueCopy(valueRef));
     return valueRef;
 }
 
@@ -292,7 +320,7 @@ void Interpreter::operator()(const FuncCall& funcCall) {
     handleFunctionCall(funcCall);
 }
 
-std::optional<ValueObj> Interpreter::handleFunctionCall(const FuncCall& funcCall) {
+ReturnValue Interpreter::handleFunctionCall(const FuncCall& funcCall) {
     auto funcWithCtx = getFunctionWithCtx(funcCall.name);
     if (!funcWithCtx)
         throw SymbolNotFound{funcCall.position, "Function", funcCall.name};
@@ -323,41 +351,13 @@ std::optional<ValueObj> Interpreter::handleFunctionCall(const FuncCall& funcCall
         }
 
     try {
-        checkReturnType(funcDef->getReturnType());
+        checkReturnType(funcDef->getReturnType(), returnValue_);
     } catch (const ReturnTypeMismatch& e) {
         throw ReturnTypeMismatch{funcDef->getPosition(), e};
     }
 
     callStack_.pop();
     return std::move(returnValue_);
-}
-
-void Interpreter::checkReturnType(ReturnType expected) const {
-    if (std::holds_alternative<VoidType>(expected))
-        expectVoidReturnValue();
-    else
-        expectNonVoidReturnValue(expected);
-}
-
-void Interpreter::expectVoidReturnValue() const {
-    if (returnValue_) {
-        auto actualType = std::visit(ValueToType(), returnValue_->value);
-        throw ReturnTypeMismatch{
-            {},
-            VoidType(),
-            std::visit([](auto t) -> ReturnType { return t; }, actualType)};
-    }
-}
-
-void Interpreter::expectNonVoidReturnValue(ReturnType expected) const {
-    if (!returnValue_)
-        throw ReturnTypeMismatch{{}, expected, VoidType{}};
-
-    if (!std::visit(TypeComparer(), expected, returnValue_->value)) {
-        auto actualType = std::visit(ValueToType(), returnValue_->value);
-        throw ReturnTypeMismatch{
-            {}, expected, std::visit([](auto t) -> ReturnType { return t; }, actualType)};
-    }
 }
 
 void checkArgsCount(const Arguments& args, const Parameters& params) {
