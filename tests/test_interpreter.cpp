@@ -414,6 +414,15 @@ TEST_F(InterpreterTest, struct_field_access) {
     EXPECT_EQ(interpretAndGetOutput(), "1\n");
 }
 
+TEST_F(InterpreterTest, struct_chained_field_access) {
+    SetUp(
+        "struct MyInteger { int x }"
+        "struct Container { MyInteger m }"
+        "Container c = { { 4 } };"
+        "print c.m.x;");
+    EXPECT_EQ(interpretAndGetOutput(), "4\n");
+}
+
 TEST_F(InterpreterTest, field_access_of_non_struct) {
     SetUp(
         "int x = 5;\n"
@@ -735,6 +744,42 @@ TEST_F(InterpreterTest, variant_redefinition) {
         "}\n"
         "foo();");
     interpretAndExpectThrowAt<VariantRedefinition>({3, 5});
+}
+
+TEST_F(InterpreterTest, passing_variant_to_func_by_value) {
+    SetUp(
+        "variant V { int, bool }"
+        "void foo(V var) {"
+        "    print var;"
+        "    var = 5;"
+        "}"
+        "V v = true;"
+        "foo(v);"
+        "print v;");
+    EXPECT_EQ(interpretAndGetOutput(), "true\ntrue\n");
+}
+
+TEST_F(InterpreterTest, passing_variant_to_func_by_ref) {
+    SetUp(
+        "variant V { int, bool }"
+        "void foo(ref V var) {"
+        "    print var;"
+        "    var = 5;"
+        "}"
+        "V v = true;"
+        "foo(ref v);"
+        "print v;");
+    EXPECT_EQ(interpretAndGetOutput(), "true\n5\n");
+}
+
+TEST_F(InterpreterTest, argument_conversion_to_variant) {
+    SetUp(
+        "variant V { int, bool }"
+        "void foo(V var) {"
+        "    print var;"
+        "}"
+        "foo(7);");
+    EXPECT_EQ(interpretAndGetOutput(), "7\n");
 }
 
 class TypeConversionTest : public InterpreterTest,
