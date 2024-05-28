@@ -107,6 +107,13 @@ TEST_F(InterpreterTest, var_def_mismatched_types) {
     interpretAndExpectThrowAt<TypeMismatch>({1, 1});
 }
 
+TEST_F(InterpreterTest, var_def_void) {
+    SetUp(
+        "void foo() {}\n"
+        "int x = foo();");
+    interpretAndExpectThrowAt<TypeMismatch>({2, 1});
+}
+
 TEST_F(InterpreterTest, assignment) {
     SetUp(
         "int x = 5;"
@@ -142,6 +149,13 @@ TEST_F(InterpreterTest, assignment_makes_a_copy) {
 }
 
 TEST_F(InterpreterTest, assigning_to_const_var) {
+    SetUp(
+        "const int x = 5;\n"
+        "x = 10;");
+    interpretAndExpectThrowAt<ConstViolation>({2, 1});
+}
+
+TEST_F(InterpreterTest, assigning_to_field_of_const_struct) {
     SetUp(
         "const int x = 5;\n"
         "x = 10;");

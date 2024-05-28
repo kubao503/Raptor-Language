@@ -322,8 +322,9 @@ void ExpressionInterpreter::operator()(const Constant& expr) const {
 }
 
 void ExpressionInterpreter::operator()(const FuncCall& funcCall) const {
-    interpreter_(funcCall);
     auto value = interpreter_.handleFunctionCall(funcCall);
+    if (!value)
+        throw TypeMismatch{funcCall.position, "NON-VOID", "VOID"};
     lastResult_ = std::move(*value);
 }
 
