@@ -28,7 +28,7 @@ class Scope {
     void addVariant(const VariantDef* variantDef);
 
     std::optional<RefObj> getVariable(std::string_view name) const;
-    std::optional<const FuncDef*> getFunction(std::string_view name) const;
+    const FuncDef* getFunction(std::string_view name) const;
     StructDefEntry getStructDef(std::string_view name) const;
     VariantDefEntry getVariantDef(std::string_view name) const;
 

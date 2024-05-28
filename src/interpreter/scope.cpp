@@ -31,11 +31,11 @@ std::optional<RefObj> Scope::getVariable(std::string_view name) const {
     return std::nullopt;
 }
 
-std::optional<const FuncDef*> Scope::getFunction(std::string_view name) const {
+const FuncDef* Scope::getFunction(std::string_view name) const {
     auto res = std::ranges::find(functions_, name, &FuncDef::getName);
     if (res != functions_.end())
         return *res;
-    return std::nullopt;
+    return nullptr;
 }
 
 Scope::StructDefEntry Scope::getStructDef(std::string_view name) const {

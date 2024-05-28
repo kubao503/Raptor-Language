@@ -21,7 +21,7 @@ std::optional<CallContext::FuncWithCtx> CallContext::getFunctionWithCtx(
     std::string_view name) const {
     for (auto const& scope : std::ranges::views::reverse(scopes_))
         if (const auto& func = scope.getFunction(name))
-            return std::make_pair(*func, this);
+            return std::make_pair(func, this);
 
     if (parentContext_)
         if (auto funcWithCtx = parentContext_->getFunctionWithCtx(name))
