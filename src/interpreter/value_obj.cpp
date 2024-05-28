@@ -39,42 +39,34 @@ struct ValueCopier {
     ValueObj::Value operator()(const auto& v) const { return v; }
 
    private:
-    StructObj::Values copyStructValues(const StructObj::Values& values) const;
+    StructObj::Values copyStructValues(const StructObj::Values& values) const {
+        StructObj::Values copiedValues;
+        const auto copyValue = [this](const std::unique_ptr<ValueObj>& val) {
+            auto copiedValue = std::visit(*this, val->value);
+            return std::make_unique<ValueObj>(std::move(copiedValue));
+        };
+        std::ranges::transform(values, std::back_inserter(copiedValues), copyValue);
+        return copiedValues;
+    }
 };
-
-StructObj::Values ValueCopier::copyStructValues(const StructObj::Values& values) const {
-    StructObj::Values copiedValues;
-    auto copyValue = [this](const std::unique_ptr<ValueObj>& val) {
-        auto copiedValue = std::visit(*this, val->value);
-        return std::make_unique<ValueObj>(std::move(copiedValue));
-    };
-    std::ranges::transform(values, std::back_inserter(copiedValues), copyValue);
-    return copiedValues;
-}
 
 ValueObj makeValueCopy(const ValueObj& obj) {
     return {std::visit(ValueCopier(), obj.value)};
 }
 
-ValueObj GetHeldValue::operator()(ValueObj obj) const {
-    return obj;
-}
-
-ValueObj GetHeldValue::operator()(const RefObj& obj) const {
-    return makeValueCopy(*obj.valueObj);
-}
+struct GetHeldValue {
+    ValueObj operator()(ValueObj obj) const { return obj; }
+    ValueObj operator()(const RefObj& obj) const { return makeValueCopy(*obj.valueObj); }
+};
 
 ValueObj getHeldValue(ValueHolder holder) {
     return std::visit(GetHeldValue(), std::move(holder));
 }
 
-ValueObj GetHeldValueCopy::operator()(const ValueObj& obj) const {
-    return makeValueCopy(obj);
-}
-
-ValueObj GetHeldValueCopy::operator()(const RefObj& obj) const {
-    return makeValueCopy(*obj.valueObj);
-}
+struct GetHeldValueCopy {
+    ValueObj operator()(const ValueObj& obj) const { return makeValueCopy(obj); }
+    ValueObj operator()(const RefObj& obj) const { return makeValueCopy(*obj.valueObj); }
+};
 
 ValueObj getHeldValueCopy(const ValueHolder& holder) {
     return std::visit(GetHeldValueCopy(), holder);

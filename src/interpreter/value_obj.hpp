@@ -40,18 +40,7 @@ struct RefObj {
 
 using ValueHolder = std::variant<ValueObj, RefObj>;
 
-struct GetHeldValue {
-    ValueObj operator()(ValueObj obj) const;
-    ValueObj operator()(const RefObj& obj) const;
-};
-
 ValueObj getHeldValue(ValueHolder holder);
-
-struct GetHeldValueCopy {
-    ValueObj operator()(const ValueObj& obj) const;
-    ValueObj operator()(const RefObj& obj) const;
-};
-
 ValueObj getHeldValueCopy(const ValueHolder& holder);
 
 #endif
