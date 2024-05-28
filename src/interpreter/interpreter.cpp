@@ -227,7 +227,7 @@ void Interpreter::operator()(const VarDef& stmt) {
 }
 
 struct FieldAccessor {
-    FieldAccessor(const Interpreter& interpreter)
+    explicit FieldAccessor(const Interpreter& interpreter)
         : interpreter_{interpreter} {}
 
     RefObj operator()(std::string_view name) {

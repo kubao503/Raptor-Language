@@ -294,25 +294,43 @@ void ExpressionInterpreter::operator()(const TypeCheckExpression& expr) const {
     lastResult_ = ValueObj{result};
 }
 
+struct FieldAccessor {
+    explicit FieldAccessor(const FieldAccessExpression& expr)
+        : expr_{expr} {}
+
+    ValueHolder operator()(const RefObj& ref) const {
+        const auto valueObj = ref.valueObj;
+        const auto fieldRef = tryGetNamedStructField(*valueObj);
+
+        return RefObj{.valueObj = fieldRef, .isConst = ref.isConst};
+    }
+
+    ValueHolder operator()(const ValueObj& valueObj) const {
+        const auto fieldRef = tryGetNamedStructField(valueObj);
+        return ValueObj{std::move(fieldRef->value)};
+    }
+
+   private:
+    ValueObj* tryGetNamedStructField(const ValueObj& valueObj) const {
+        const auto namedStructObj = std::get_if<NamedStructObj>(&valueObj.value);
+        if (!namedStructObj)
+            throw TypeMismatch{expr_.position, "Named struct",
+                               std::visit(ValueToType(), valueObj.value)};
+
+        try {
+            return namedStructObj->getField(expr_.field);
+        } catch (const InvalidField& e) {
+            throw InvalidField{expr_.position, e};
+        }
+    }
+
+    const FieldAccessExpression& expr_;
+};
+
 void ExpressionInterpreter::operator()(const FieldAccessExpression& expr) const {
     expr.expr->accept(*this);
-    auto containerRef = std::get_if<RefObj>(&lastResult_);
-    if (!containerRef)
-        throw TypeMismatch{
-            expr.expr->position, "Named struct reference",
-            std::visit(ValueToType(), getHeldValue(std::move(lastResult_)).value)};
-
-    const auto valueObj = containerRef->valueObj;
-    const auto namedStructObj = std::get_if<NamedStructObj>(&valueObj->value);
-    if (!namedStructObj)
-        throw TypeMismatch{expr.position, "Named struct",
-                           std::visit(ValueToType(), valueObj->value)};
-
-    try {
-        lastResult_ = RefObj{.valueObj = namedStructObj->getField(expr.field)};
-    } catch (const InvalidField& e) {
-        throw InvalidField{expr.position, e};
-    }
+    auto fieldValue = std::visit(FieldAccessor(expr), lastResult_);
+    lastResult_ = std::move(fieldValue);
 }
 
 void ExpressionInterpreter::operator()(const Constant& expr) const {

@@ -484,7 +484,7 @@ TEST_F(InterpreterTest, struct_assignment_invalid_type) {
 
 TEST_F(InterpreterTest, field_access_of_anonymous_struct) {
     SetUp("print ({1, 2}).field;");
-    interpretAndExpectThrowAt<TypeMismatch>({1, 8});
+    interpretAndExpectThrowAt<TypeMismatch>({1, 7});
 }
 
 TEST_F(InterpreterTest, field_access_of_invalid_field) {
@@ -940,6 +940,29 @@ TEST_F(InterpreterTest, returning_struct) {
         "}"
         "print foo();");
     EXPECT_EQ(interpretAndGetOutput(), "{ 5 }\n");
+}
+
+TEST_F(InterpreterTest, accessing_field_of_returned_struct) {
+    SetUp(
+        "struct A { int num }"
+        "A foo() {"
+        "    A a = { 5 };"
+        "    return a;"
+        "}"
+        "print foo().num;");
+    EXPECT_EQ(interpretAndGetOutput(), "5\n");
+}
+
+TEST_F(InterpreterTest, accessing_field_of_returned_struct_covered_in_variant) {
+    SetUp(
+        "struct A { int num }"
+        "variant V { A }"
+        "V foo() {"
+        "    A a = { 5 };"
+        "    return a;"
+        "}"
+        "print (foo() as A).num;");
+    EXPECT_EQ(interpretAndGetOutput(), "5\n");
 }
 
 TEST_F(InterpreterTest, returning_anonymous_struct) {
