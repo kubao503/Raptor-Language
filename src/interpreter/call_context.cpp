@@ -5,6 +5,10 @@ std::optional<RefObj> CallContext::getVariable(std::string_view name) const {
         if (auto val = iter->getVariable(name))
             return *val;
 
+    const auto res = std::ranges::find(varRefs_, name, &RefEntry::first);
+    if (res != varRefs_.end())
+        return res->second;
+
     if (parentContext_)
         if (auto val = parentContext_->getVariable(name))
             return val;

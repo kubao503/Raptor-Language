@@ -501,17 +501,15 @@ TEST_F(InterpreterTest, passing_anonymous_struct_to_function_by_value) {
 
 TEST_F(InterpreterTest, passing_struct_to_function_by_ref) {
     SetUp(
-        "struct MyInteger {"
-        "    int x"
-        "}"
+        "struct MyInteger { int x }"
         "void foo(ref MyInteger i) {"
-        "    i = {9};"
+        "    i = { 9 };"
         "    print i;"
         "}"
-        "MyInteger myInteger = {7};"
+        "MyInteger myInteger = { 7 };"
         "foo(ref myInteger);"
         "print myInteger;");
-    EXPECT_EQ(interpretAndGetOutput(), "{ 9 } \n{ 9 }\n");
+    EXPECT_EQ(interpretAndGetOutput(), "{ 9 }\n{ 9 }\n");
 }
 
 TEST_F(InterpreterTest, passing_struct_to_function_mismatched_field_type) {

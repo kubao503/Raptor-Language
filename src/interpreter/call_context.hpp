@@ -7,12 +7,16 @@
 
 class CallContext {
    public:
+    using RefEntry = std::pair<std::string, RefObj>;
+
     CallContext(const CallContext* parent)
         : parentContext_{parent} {
         addScope();
     }
 
     void addVariable(VarEntry entry) { scopes_.back().addVariable(std::move(entry)); }
+
+    void addReference(RefEntry entry) { varRefs_.push_back(std::move(entry)); }
 
     void addFunction(const FuncDef* func) { scopes_.back().addFunction(func); }
 
@@ -35,6 +39,7 @@ class CallContext {
    private:
     const CallContext* parentContext_{nullptr};
     std::vector<Scope> scopes_;
+    std::vector<RefEntry> varRefs_;
 };
 
 #endif

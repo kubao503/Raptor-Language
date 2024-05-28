@@ -150,9 +150,10 @@ void compareTypes(const Type& type, const ValueObj& valueObj) {
 
 ValueHolder Interpreter::convertAndCheckType(const Type& expected,
                                              ValueHolder valueRef) const {
-    if (auto typeName = std::get_if<std::string>(&expected)) {
-        auto valueObj = getHeldValue(std::move(valueRef));
-        convertToUserDefinedType(valueObj, *typeName);
+    auto valueObj = getHeldValueCopy(std::move(valueRef));
+    auto userDefinedTypeName = std::get_if<std::string>(&expected);
+    if (!std::visit(TypeComparer(), expected, valueObj.value) && userDefinedTypeName) {
+        convertToUserDefinedType(valueObj, *userDefinedTypeName);
         compareTypes(expected, valueObj);
         return valueObj;
     }
@@ -391,7 +392,7 @@ struct VariableAdder {
                              .isConst = false};
         callCtx_.addVariable(std::move(varEntry));
     }
-    void operator()(RefObj) const { throw std::runtime_error("Not implemented"); }
+    void operator()(RefObj varRef) const { callCtx_.addReference({name_, varRef}); }
 
    private:
     CallContext& callCtx_;
