@@ -1101,3 +1101,10 @@ TEST_F(InterpreterTest, negation_type_mismatch) {
     SetUp("print not 2;");
     interpretAndExpectThrowAt<TypeMismatch>({1, 11});
 }
+
+TEST_F(InterpreterTest, max_recursion_depth) {
+    SetUp(
+        "void foo() { foo(); }"
+        "foo();");
+    interpretAndExpectThrowAt<MaxRecursionDepth>({1, 14});
+}

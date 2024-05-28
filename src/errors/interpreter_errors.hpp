@@ -109,4 +109,10 @@ class ConstViolation : public BaseException {
         : BaseException{position, "Violation of const constraint"} {}
 };
 
+class MaxRecursionDepth : public BaseException {
+   public:
+    MaxRecursionDepth(const Position& position)
+        : BaseException{position, "Max recursion depth reached"} {}
+};
+
 #endif
