@@ -36,10 +36,7 @@ struct ValueCopier {
             val.variantDef};
     }
 
-    ValueObj::Value operator()(Integral v) const { return v; }
-    ValueObj::Value operator()(Floating v) const { return v; }
-    ValueObj::Value operator()(bool v) const { return v; }
-    ValueObj::Value operator()(const std::string& v) const { return v; }
+    ValueObj::Value operator()(const auto& v) const { return v; }
 
    private:
     StructObj::Values copyStructValues(const StructObj::Values& values) const;
