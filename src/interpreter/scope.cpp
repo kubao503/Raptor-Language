@@ -1,5 +1,7 @@
 #include "scope.hpp"
 
+#include <algorithm>
+
 #include "interpreter_errors.hpp"
 
 void Scope::addVariable(VarEntry entry) {

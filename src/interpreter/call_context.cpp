@@ -1,9 +1,11 @@
 #include "call_context.hpp"
 
+#include <algorithm>
+
 std::optional<RefObj> CallContext::getVariable(std::string_view name) const {
-    for (auto iter = scopes_.crbegin(); iter != scopes_.crend(); ++iter)
-        if (auto val = iter->getVariable(name))
-            return *val;
+    for (const auto& scope : std::ranges::views::reverse(scopes_))
+        if (const auto& varRef = scope.getVariable(name))
+            return *varRef;
 
     const auto res = std::ranges::find(varRefs_, name, &RefEntry::first);
     if (res != varRefs_.end())
@@ -17,10 +19,9 @@ std::optional<RefObj> CallContext::getVariable(std::string_view name) const {
 
 std::optional<CallContext::FuncWithCtx> CallContext::getFunctionWithCtx(
     std::string_view name) const {
-    for (auto iter = scopes_.crbegin(); iter != scopes_.crend(); ++iter)
-        if (auto func = iter->getFunction(name)) {
+    for (auto const& scope : std::ranges::views::reverse(scopes_))
+        if (const auto& func = scope.getFunction(name))
             return std::make_pair(*func, this);
-        }
 
     if (parentContext_)
         if (auto funcWithCtx = parentContext_->getFunctionWithCtx(name))
@@ -29,10 +30,9 @@ std::optional<CallContext::FuncWithCtx> CallContext::getFunctionWithCtx(
 }
 
 const StructDef* CallContext::getStructDef(std::string_view name) const {
-    for (auto iter = scopes_.crbegin(); iter != scopes_.crend(); ++iter) {
-        if (auto structDef = iter->getStructDef(name))
+    for (auto const& scope : std::ranges::views::reverse(scopes_))
+        if (const auto& structDef = scope.getStructDef(name))
             return structDef;
-    }
 
     if (parentContext_)
         if (auto structDef = parentContext_->getStructDef(name))
@@ -42,10 +42,9 @@ const StructDef* CallContext::getStructDef(std::string_view name) const {
 }
 
 const VariantDef* CallContext::getVariantDef(std::string_view name) const {
-    for (auto iter = scopes_.crbegin(); iter != scopes_.crend(); ++iter) {
-        if (auto variantDef = iter->getVariantDef(name))
+    for (auto const& scope : std::ranges::views::reverse(scopes_))
+        if (auto variantDef = scope.getVariantDef(name))
             return variantDef;
-    }
 
     if (parentContext_)
         if (auto variantDef = parentContext_->getVariantDef(name))

@@ -1,5 +1,7 @@
 #include "expr_interpreter.hpp"
 
+#include <algorithm>
+
 #include "interpreter.hpp"
 #include "interpreter_errors.hpp"
 

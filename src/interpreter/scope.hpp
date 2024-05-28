@@ -1,7 +1,6 @@
 #ifndef SCOPE_H
 #define SCOPE_H
 
-#include <algorithm>
 #include <memory>
 #include <optional>
 #include <string>
