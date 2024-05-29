@@ -335,7 +335,6 @@ ReturnValue Interpreter::handleFunctionCall(const FuncCall& funcCall) {
 
     callStack_.push(std::move(ctx));
 
-    returnValue_ = std::nullopt;
     for (const auto& stmt : funcDef->getStatements()) {
         std::visit(*this, stmt);
         if (returning_)
@@ -361,7 +360,10 @@ ReturnValue Interpreter::handleFunctionCall(const FuncCall& funcCall) {
     }
 
     callStack_.pop();
-    return std::move(returnValue_);
+
+    auto returnValue = std::move(returnValue_);
+    returnValue_ = std::nullopt;
+    return returnValue;
 }
 
 void checkArgsCount(const Arguments& args, const Parameters& params) {

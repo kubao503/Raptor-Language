@@ -819,6 +819,7 @@ TEST_P(BuiltInTypeConversionTest, built_in_type_conversions) {
 
 auto conversionTuples = testing::Values(
     std::make_tuple("5", "float", "5"), std::make_tuple("7.8", "int", "7"),
+    std::make_tuple("-5", "float", "-5"), std::make_tuple("-7.8", "int", "-7"),
     std::make_tuple("0", "bool", "false"), std::make_tuple("1", "bool", "true"),
     std::make_tuple("5", "bool", "true"), std::make_tuple("0.4", "bool", "true"),
     std::make_tuple("0.0", "bool", "false"), std::make_tuple("true", "int", "1"),
@@ -949,6 +950,26 @@ TEST_F(InterpreterTest, returning_value_in_void_func) {
         "}\n"
         "foo();");
     interpretAndExpectThrowAt<ReturnTypeMismatch>({1, 1});
+}
+
+TEST_F(InterpreterTest, return_value_from_func_call_stmt_does_not_presist) {
+    SetUp(
+        "void foo() {"
+        "    int return_five() { return 5; }"
+        "    return_five();"
+        "}"
+        "foo();");
+    EXPECT_EQ(interpretAndGetOutput(), "");
+}
+
+TEST_F(InterpreterTest, return_value_from_func_call_expr_does_not_presist) {
+    SetUp(
+        "void foo() {"
+        "    int return_five() { return 5; }"
+        "    int x = return_five();"
+        "}"
+        "foo();");
+    EXPECT_EQ(interpretAndGetOutput(), "");
 }
 
 TEST_F(InterpreterTest, function_call_in_expression) {
