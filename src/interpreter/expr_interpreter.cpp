@@ -5,8 +5,11 @@
 #include "interpreter.hpp"
 #include "interpreter_errors.hpp"
 
-ExpressionInterpreter::ExpressionInterpreter(Interpreter& interpreter)
-    : interpreter_{interpreter} {}
+ExpressionInterpreter::ExpressionInterpreter(Interpreter* interpreter)
+    : interpreter_{interpreter} {
+    if (!interpreter_)
+        throw std::runtime_error("Null interpreter pointer");
+}
 
 void ExpressionInterpreter::operator()(const StructInitExpression& expr) const {
     auto exprToStructValue = [this](const PExpression& expr) {
@@ -222,9 +225,16 @@ void ExpressionInterpreter::operator()(const LogicalNegationExpression& expr) co
 }
 
 struct TypeConverter {
+    explicit TypeConverter(Interpreter* interpreter)
+        : interpreter_{interpreter} {
+        if (!interpreter_)
+            throw std::runtime_error("Null interpreter pointer");
+    }
+
     ValueObj::Value operator()(VariantObj from, const auto& to) const {
         if (std::visit(TypeComparer(), static_cast<Type>(to), from.valueObj->value))
             return std::move(from.valueObj->value);
+
         throw InvalidTypeConversion{{}, std::move(from.valueObj->value), to};
     }
     ValueObj::Value operator()(Integral from, BuiltInType to) const {
@@ -239,13 +249,27 @@ struct TypeConverter {
     ValueObj::Value operator()(std::string from, BuiltInType to) const {
         if (to == BuiltInType::STR)
             return from;
-        throw InvalidTypeConversion{{}, from, to};
+        throw InvalidTypeConversion{{}, std::move(from), to};
     }
     ValueObj::Value operator()(NamedStructObj from, const std::string& to) const {
         if (from.structDef->name == to)
             return from;
-        throw InvalidTypeConversion{{}, std::move(from), to};
+        return convertToVariant(std::move(from), to);
     }
+
+    ValueObj::Value operator()(Integral from, const std::string& to) const {
+        return convertToVariant(from, to);
+    }
+    ValueObj::Value operator()(Floating from, const std::string& to) const {
+        return convertToVariant(from, to);
+    }
+    ValueObj::Value operator()(bool from, const std::string& to) const {
+        return convertToVariant(from, to);
+    }
+    ValueObj::Value operator()(std::string from, const std::string& to) const {
+        return convertToVariant(std::move(from), to);
+    }
+
     ValueObj::Value operator()(auto from, const auto& to) const {
         throw InvalidTypeConversion{{}, std::move(from), to};
     }
@@ -263,14 +287,33 @@ struct TypeConverter {
                 throw InvalidTypeConversion{{}, builtInValue, to};
         }
     }
+
+    ValueObj::Value convertToVariant(auto from, const std::string& to) const {
+        const auto variantDef = interpreter_->getVariantDef(to);
+        if (!variantDef)
+            throw InvalidTypeConversion{{}, std::move(from), to};
+
+        auto value = static_cast<ValueObj::Value>(std::move(from));
+
+        auto compareTypeWithValue = [&](const Type& type) {
+            return std::visit(TypeComparer(), type, value);
+        };
+        if (std::ranges::any_of(variantDef->types, compareTypeWithValue)) {
+            auto valuePtr = std::make_unique<ValueObj>(std::move(value));
+            return VariantObj{std::move(valuePtr), variantDef};
+        }
+        throw InvalidTypeConversion{{}, std::move(value), to};
+    }
+
+    Interpreter* interpreter_;
 };
 
 void ExpressionInterpreter::operator()(const ConversionExpression& conversionExpr) const {
     auto valueObj = getExprValue(*conversionExpr.expr);
 
     try {
-        auto value =
-            std::visit(TypeConverter(), std::move(valueObj.value), conversionExpr.type);
+        auto value = std::visit(TypeConverter(interpreter_), std::move(valueObj.value),
+                                conversionExpr.type);
         lastResult_ = ValueObj{std::move(value)};
     } catch (InvalidTypeConversion& e) {
         throw InvalidTypeConversion{conversionExpr.position, std::move(e)};
@@ -342,14 +385,14 @@ void ExpressionInterpreter::operator()(const Constant& expr) const {
 }
 
 void ExpressionInterpreter::operator()(const FuncCall& funcCall) const {
-    auto value = interpreter_.handleFunctionCall(funcCall);
+    auto value = interpreter_->handleFunctionCall(funcCall);
     if (!value)
         throw TypeMismatch{funcCall.position, "NON-VOID", "VOID"};
     lastResult_ = std::move(*value);
 }
 
 void ExpressionInterpreter::operator()(const VariableAccess& expr) const {
-    auto varRef = interpreter_.getVariable(expr.name);
+    auto varRef = interpreter_->getVariable(expr.name);
     if (!varRef)
         throw SymbolNotFound{expr.position, "Variable", expr.name};
     lastResult_ = *varRef;

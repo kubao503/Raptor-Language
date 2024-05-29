@@ -8,7 +8,7 @@ class Interpreter;
 
 class ExpressionInterpreter : public ExpressionVisitor {
    public:
-    ExpressionInterpreter(Interpreter& interpreter);
+    ExpressionInterpreter(Interpreter* interpreter);
 
     ValueHolder getValue() const { return std::move(lastResult_); }
 
@@ -45,7 +45,7 @@ class ExpressionInterpreter : public ExpressionVisitor {
     template <typename Functor>
     void evalNumericExpr(const BinaryExpression& expr, Functor func) const;
 
-    Interpreter& interpreter_;
+    Interpreter* interpreter_;
     mutable ValueHolder lastResult_;
 };
 

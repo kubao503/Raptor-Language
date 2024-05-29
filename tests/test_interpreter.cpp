@@ -807,7 +807,10 @@ class TypeConversionTest : public InterpreterTest,
                            public testing::WithParamInterface<
                                std::tuple<std::string, std::string, std::string>> {};
 
-TEST_P(TypeConversionTest, built_in_type_conversions) {
+class BuiltInTypeConversionTest : public TypeConversionTest {};
+class ConversionToVariantTest : public TypeConversionTest {};
+
+TEST_P(BuiltInTypeConversionTest, built_in_type_conversions) {
     auto& [value, type, expected] = GetParam();
 
     SetUp("print " + value + " as " + type + ";");
@@ -822,7 +825,24 @@ auto conversionTuples = testing::Values(
     std::make_tuple("true", "float", "1"), std::make_tuple("false", "int", "0"),
     std::make_tuple("false", "float", "0"), std::make_tuple(R"("text")", "str", "text"));
 
-INSTANTIATE_TEST_SUITE_P(TypeConversions, TypeConversionTest, conversionTuples);
+INSTANTIATE_TEST_SUITE_P(TypeConversions, BuiltInTypeConversionTest, conversionTuples);
+
+TEST_P(ConversionToVariantTest, conversions_to_variant) {
+    auto& [value, type, expected] = GetParam();
+
+    SetUp(
+        "variant V { int, float, bool, str }"
+        "V v = " + value + " as " + type + ";"
+        "print v;");
+    EXPECT_EQ(interpretAndGetOutput(), expected + '\n');
+}
+
+auto variantConversionTuples = testing::Values(
+    std::make_tuple("5", "V", "5"), std::make_tuple("2.1", "V", "2.1"),
+    std::make_tuple("true", "V", "true"), std::make_tuple(R"("text")", "V", "text"));
+
+INSTANTIATE_TEST_SUITE_P(ConversionsToVariant, ConversionToVariantTest,
+                         variantConversionTuples);
 
 TEST_F(InterpreterTest, same_struct_conversion) {
     SetUp(
@@ -831,6 +851,14 @@ TEST_F(InterpreterTest, same_struct_conversion) {
         "A b = a as A;"
         "print b;");
     EXPECT_EQ(interpretAndGetOutput(), "{ 5 }\n");
+}
+
+TEST_F(InterpreterTest, coverting_built_int_to_variant) {
+    SetUp(
+        "variant V { int, bool }"
+        "V v = 5 as V;"
+        "print v;");
+    EXPECT_EQ(interpretAndGetOutput(), "5\n");
 }
 
 TEST_F(InterpreterTest, redefining_struct_with_variant) {
