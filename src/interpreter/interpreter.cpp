@@ -15,8 +15,8 @@ void Interpreter::interpret(const Program& program) {
     for (const auto& stmt : program.statements) {
         stmt->accept(*this);
         if (returning_)
-            throw ReturnTypeMismatch{
-                {}, "No return in global scope", "Returning in global scope"};
+            throw ReturnTypeMismatch{stmt->position, "No return in global scope",
+                                     "Returning in global scope"};
     }
 }
 

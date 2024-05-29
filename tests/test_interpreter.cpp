@@ -1102,6 +1102,11 @@ TEST_F(InterpreterTest, returning_returned_value) {
     EXPECT_EQ(interpretAndGetOutput(), "5\n");
 }
 
+TEST_F(InterpreterTest, returning_in_global_scope) {
+    SetUp("return 2;");
+    interpretAndExpectThrowAt<ReturnTypeMismatch>({1, 1});
+}
+
 TEST_F(InterpreterTest, disjunction_invalid_type_of_first_operand) {
     SetUp("print 2 or true;");
     interpretAndExpectThrowAt<TypeMismatch>({1, 7});
