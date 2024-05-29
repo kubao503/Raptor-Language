@@ -5,6 +5,7 @@
 #include <stack>
 
 #include "call_context.hpp"
+#include "expr_interpreter.hpp"
 #include "parse_tree.hpp"
 
 using ReturnValue = std::optional<ValueObj>;
@@ -82,6 +83,7 @@ class Interpreter : public StatementVisitor {
     std::stack<CallContext> callStack_;
     std::ostream& out_;
 
+    ExpressionInterpreter exprInterpreter_{this};
     ReturnValue returnValue_{std::nullopt};
     bool returning_{false};
 };
