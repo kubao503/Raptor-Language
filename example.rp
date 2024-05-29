@@ -30,13 +30,18 @@ struct Point {
     int y
 }
 
-Point p = {7, 2};
+struct Container {
+    Point point
+}
 
-p.y = 1;
-print p;
+Point p = { 7, 2 };
+Container c = { p };
 
-p.y = p.x;
-print p;
+c.point.y = 1;
+print c;
+
+c.point.y = c.point.x;
+print c;
 
 int add_one(int num) {
     return num + 1;
@@ -82,18 +87,18 @@ foo(a);
 struct None {}
 None none = {};
 
-variant OptionalFloat {
-    float, None
-}
-
-OptionalFloat divide(int a, int b) {
-    if b == 0 {
-        return none;
-    }
-    return a as float / b as float;
-}
-
 void tryDivide(int a, int b) {
+    variant OptionalFloat {
+        float, None
+    }
+
+    OptionalFloat divide(int a, int b) {
+        if b == 0 {
+            return none;
+        }
+        return a as float / b as float;
+    }
+
     OptionalFloat result = divide(a, b);
     if result is None {
         print "Dividing by zero!";
@@ -127,7 +132,7 @@ int fibonacci_rec(int x) {
 }
 
 print "Recursive Fibonacci:";
-int x = 2;
+int x = 0;
 while x < 14 {
     print fibonacci_rec(x);
     x = x + 1;
