@@ -66,7 +66,6 @@ ValueHolder Interpreter::getValueFromExpr(const Expression& expr) {
     return exprInterpreter_.getLastResult();
 }
 
-template <typename ConditionalStatement>
 bool Interpreter::evaluateCondition(const ConditionalStatement& stmt) {
     const auto conditionValue = getHeldValue(getValueFromExpr(*stmt.condition));
     const auto condition = std::get_if<bool>(&conditionValue.value);

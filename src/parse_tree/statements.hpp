@@ -37,28 +37,31 @@ struct Statement : public virtual SyntaxNode {
 using PStatement = std::unique_ptr<Statement>;
 using Statements = std::vector<PStatement>;
 
-struct IfStatement : public Statement {
-    IfStatement(PExpression condition, Statements statements, const Position& position)
+struct ConditionalStatement : public Statement {
+    ConditionalStatement(PExpression condition, Statements statements,
+                         const Position& position)
         : SyntaxNode{position},
           condition{std::move(condition)},
           statements{std::move(statements)} {}
-
-    void accept(StatementVisitor& vis) const override { vis(*this); }
 
     PExpression condition;
     Statements statements;
 };
 
-struct WhileStatement : public Statement {
-    WhileStatement(PExpression condition, Statements statements, const Position& position)
+struct IfStatement : public ConditionalStatement {
+    IfStatement(PExpression condition, Statements statements, const Position& position)
         : SyntaxNode{position},
-          condition{std::move(condition)},
-          statements{std::move(statements)} {}
+          ConditionalStatement{std::move(condition), std::move(statements), position} {}
 
     void accept(StatementVisitor& vis) const override { vis(*this); }
+};
 
-    PExpression condition;
-    Statements statements;
+struct WhileStatement : public ConditionalStatement {
+    WhileStatement(PExpression condition, Statements statements, const Position& position)
+        : SyntaxNode{position},
+          ConditionalStatement{std::move(condition), std::move(statements), position} {}
+
+    void accept(StatementVisitor& vis) const override { vis(*this); }
 };
 
 struct ReturnStatement : public Statement {

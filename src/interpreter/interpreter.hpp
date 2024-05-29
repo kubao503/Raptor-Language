@@ -70,7 +70,6 @@ class Interpreter : public StatementVisitor {
 
     RefObj tryAccessField(const Assignment& stmt) const;
 
-    template <typename ConditionalStatement>
     bool evaluateCondition(const ConditionalStatement& stmt);
     void interpretStatements(const Statements& statements);
 
