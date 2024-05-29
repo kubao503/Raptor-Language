@@ -1,6 +1,7 @@
 #include "call_context.hpp"
 
 #include <algorithm>
+#include <ranges>
 
 std::optional<RefObj> CallContext::getVariable(std::string_view name) const {
     for (const auto& scope : std::ranges::views::reverse(scopes_))
