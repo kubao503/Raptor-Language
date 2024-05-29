@@ -117,6 +117,7 @@ class FuncDef : public Statement {
 
 struct FieldAccess;
 
+/// @brief Left hand side of the assignment statement
 using LValue = std::variant<std::string, std::unique_ptr<FieldAccess>>;
 
 struct FieldAccess {

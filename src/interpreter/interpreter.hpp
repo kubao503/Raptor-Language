@@ -63,7 +63,7 @@ class Interpreter : public StatementVisitor {
     void addStruct(const StructDef* structDef);
     void addVariant(const VariantDef* variantDef);
 
-    ValueHolder convertAndCheckType(const Type& expected, ValueHolder valueRef) const;
+    ValueHolder convertAndCheckType(const Type& expected, ValueHolder holder) const;
     void convertToUserDefinedType(ValueObj& valueObj, std::string_view typeName) const;
 
     /// @brief Converts anonymous struct (StructObj) to one with field names (NamedStruct)
@@ -77,10 +77,10 @@ class Interpreter : public StatementVisitor {
     /// @param variantDef
     void convertToVariant(ValueObj& valueObj, const VariantDef* variantDef) const;
 
-    RefObj tryAccessField(const Assignment& stmt) const;
+    RefObj tryAccessLValue(const Assignment& stmt) const;
 
     bool evaluateCondition(const ConditionalStatement& stmt);
-    void interpretStatements(const Statements& statements);
+    void interpretStatementsInNewContext(const Statements& statements);
 
     void passArgumentsToCtx(CallContext& ctx, const Arguments& args,
                             const Parameters& params);

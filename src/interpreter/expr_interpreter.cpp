@@ -11,6 +11,11 @@ ExpressionInterpreter::ExpressionInterpreter(Interpreter* interpreter)
         throw std::runtime_error("Null interpreter pointer");
 }
 
+ValueObj ExpressionInterpreter::getExprValue(const Expression& expr) const {
+    expr.accept(*this);
+    return getHeldValue(std::move(lastResult_));
+}
+
 void ExpressionInterpreter::operator()(const StructInitExpression& expr) const {
     auto exprToStructValue = [this](const PExpression& expr) {
         auto value = getExprValue(*expr);
@@ -20,11 +25,6 @@ void ExpressionInterpreter::operator()(const StructInitExpression& expr) const {
     std::ranges::transform(expr.exprs, std::back_inserter(structObj.values),
                            exprToStructValue);
     lastResult_ = ValueObj{std::move(structObj)};
-}
-
-ValueObj ExpressionInterpreter::getExprValue(const Expression& expr) const {
-    expr.accept(*this);
-    return getHeldValue(std::move(lastResult_));
 }
 
 bool ExpressionInterpreter::getBoolValue(const Expression& expr) const {
@@ -37,41 +37,50 @@ bool ExpressionInterpreter::getBoolValue(const Expression& expr) const {
     return *boolValue;
 }
 
-void ExpressionInterpreter::operator()(const DisjunctionExpression& expr) const {
+template <typename Functor>
+void ExpressionInterpreter::evalLogicalExpr(const BinaryExpression& expr,
+                                            const Functor& func) const {
     auto leftBool = getBoolValue(*expr.lhs);
     auto rightBool = getBoolValue(*expr.rhs);
-    auto result = leftBool || rightBool;
+    auto result = func(leftBool, rightBool);
     lastResult_ = ValueObj{result};
+}
+
+void ExpressionInterpreter::operator()(const DisjunctionExpression& expr) const {
+    evalLogicalExpr(expr, std::logical_or());
 }
 
 void ExpressionInterpreter::operator()(const ConjunctionExpression& expr) const {
-    auto leftBool = getBoolValue(*expr.lhs);
-    auto rightBool = getBoolValue(*expr.rhs);
-    auto result = leftBool && rightBool;
-    lastResult_ = ValueObj{result};
+    evalLogicalExpr(expr, std::logical_and());
 }
 
+template <typename Functor>
 struct EqualityEvaluator {
-    bool operator()(bool lhs, bool rhs) const { return lhs == rhs; }
-    bool operator()(Integral lhs, Integral rhs) const { return lhs == rhs; }
-    bool operator()(Floating lhs, Floating rhs) const { return lhs == rhs; }
+    EqualityEvaluator(const Functor& func)
+        : func_{func} {}
+
+    bool operator()(bool lhs, bool rhs) const { return func_(lhs, rhs); }
+    bool operator()(Integral lhs, Integral rhs) const { return func_(lhs, rhs); }
+    bool operator()(Floating lhs, Floating rhs) const { return func_(lhs, rhs); }
     bool operator()(const std::string& lhs, const std::string& rhs) const {
-        return lhs == rhs;
+        return func_(lhs, rhs);
     }
     bool operator()(const auto& lhs, const auto& rhs) const {
         throw TypeMismatch{{}, ValueToType()(lhs), ValueToType()(rhs)};
     }
+
+   private:
+    Functor func_;
 };
 
-void ExpressionInterpreter::checkExprEquality(const BinaryExpression& expr) const {
-    expr.lhs->accept(*this);
-    const auto leftValueObj = getHeldValue(std::move(lastResult_));
-    expr.rhs->accept(*this);
-    const auto rightValueObj = getHeldValue(std::move(lastResult_));
-
+template <typename Functor>
+void ExpressionInterpreter::evalEqualityExpr(const BinaryExpression& expr,
+                                             const Functor& func) const {
+    const auto leftValue = getExprValue(*expr.lhs);
+    const auto rightValue = getExprValue(*expr.rhs);
     try {
         const auto result =
-            std::visit(EqualityEvaluator(), leftValueObj.value, rightValueObj.value);
+            std::visit(EqualityEvaluator(func), leftValue.value, rightValue.value);
         lastResult_ = ValueObj{result};
     } catch (const TypeMismatch& e) {
         throw TypeMismatch{expr.position, e};
@@ -79,19 +88,16 @@ void ExpressionInterpreter::checkExprEquality(const BinaryExpression& expr) cons
 }
 
 void ExpressionInterpreter::operator()(const EqualExpression& expr) const {
-    checkExprEquality(expr);
+    evalEqualityExpr(expr, std::equal_to());
 }
 
 void ExpressionInterpreter::operator()(const NotEqualExpression& expr) const {
-    checkExprEquality(expr);
-    const auto valueObj = getHeldValue(std::move(lastResult_));
-    const auto boolValue = std::get<bool>(valueObj.value);
-    lastResult_ = ValueObj{!boolValue};
+    evalEqualityExpr(expr, std::not_equal_to());
 }
 
 template <typename Functor>
 struct ComparisonEvaluator {
-    ComparisonEvaluator(Functor func)
+    ComparisonEvaluator(const Functor& func)
         : func_{func} {}
 
     bool operator()(Integral lhs, Integral rhs) { return func_(lhs, rhs); }
@@ -108,14 +114,13 @@ struct ComparisonEvaluator {
 
 template <typename Functor>
 void ExpressionInterpreter::compareExpr(const BinaryExpression& expr,
-                                        Functor func) const {
-    expr.lhs->accept(*this);
-    const auto leftValue = getHeldValue(std::move(lastResult_)).value;
-    expr.rhs->accept(*this);
-    const auto rightValue = getHeldValue(std::move(lastResult_)).value;
+                                        const Functor& func) const {
+    const auto leftValue = getExprValue(*expr.lhs);
+    const auto rightValue = getExprValue(*expr.rhs);
 
     try {
-        const auto result = std::visit(ComparisonEvaluator(func), leftValue, rightValue);
+        const auto result =
+            std::visit(ComparisonEvaluator(func), leftValue.value, rightValue.value);
         lastResult_ = ValueObj{result};
     } catch (const TypeMismatch& e) {
         throw TypeMismatch{expr.position, e};
@@ -140,7 +145,7 @@ void ExpressionInterpreter::operator()(const GreaterThanOrEqualExpression& expr)
 
 template <typename Functor>
 struct NumericEvaluator {
-    NumericEvaluator(Functor func)
+    NumericEvaluator(const Functor& func)
         : func_{func} {}
 
     ValueObj::Value operator()(Integral lhs, Integral rhs) const {
@@ -177,7 +182,7 @@ struct NumericEvaluator<std::divides<>> {
 
 template <typename Functor>
 void ExpressionInterpreter::evalNumericExpr(const BinaryExpression& expr,
-                                            Functor func) const {
+                                            const Functor& func) const {
     const auto leftValueObj = getExprValue(*expr.lhs);
     const auto rightValueObj = getExprValue(*expr.rhs);
 
@@ -225,11 +230,11 @@ void ExpressionInterpreter::operator()(const DivisionExpression& expr) const {
     evalNumericExpr(expr, std::divides());
 }
 
-struct SignChanger {
+struct SignChangeEvaluator {
     ValueObj::Value operator()(Integral i) { return -i; }
     ValueObj::Value operator()(Floating i) { return -i; }
     ValueObj::Value operator()(const auto& i) {
-        throw TypeMismatch{{}, BuiltInType::INT, ValueToType()(i)};
+        throw TypeMismatch{{}, "Numeric", ValueToType()(i)};
     }
 };
 
@@ -237,7 +242,7 @@ void ExpressionInterpreter::operator()(const SignChangeExpression& expr) const {
     const auto value = getExprValue(*expr.expr);
 
     try {
-        auto result = std::visit(SignChanger(), value.value);
+        auto result = std::visit(SignChangeEvaluator(), value.value);
         lastResult_ = ValueObj{std::move(result)};
     } catch (const TypeMismatch& e) {
         throw TypeMismatch{expr.position, e};
@@ -345,8 +350,8 @@ void ExpressionInterpreter::operator()(const ConversionExpression& conversionExp
     }
 }
 
-struct TypeChecker {
-    TypeChecker(Type expected)
+struct TypeCheckEvaluator {
+    TypeCheckEvaluator(Type expected)
         : expected_{expected} {}
 
     bool operator()(const VariantObj& variantObj) const {
@@ -360,12 +365,12 @@ struct TypeChecker {
 void ExpressionInterpreter::operator()(const TypeCheckExpression& expr) const {
     const auto valueObj = getExprValue(*expr.expr);
 
-    const auto result = std::visit(TypeChecker(expr.type), valueObj.value);
+    const auto result = std::visit(TypeCheckEvaluator(expr.type), valueObj.value);
     lastResult_ = ValueObj{result};
 }
 
-struct FieldAccessor {
-    explicit FieldAccessor(const FieldAccessExpression& expr)
+struct FieldAccessEvaluator {
+    explicit FieldAccessEvaluator(const FieldAccessExpression& expr)
         : expr_{expr} {}
 
     ValueHolder operator()(const RefObj& ref) const {
@@ -399,7 +404,7 @@ struct FieldAccessor {
 
 void ExpressionInterpreter::operator()(const FieldAccessExpression& expr) const {
     expr.expr->accept(*this);
-    auto fieldValue = std::visit(FieldAccessor(expr), lastResult_);
+    auto fieldValue = std::visit(FieldAccessEvaluator(expr), lastResult_);
     lastResult_ = std::move(fieldValue);
 }
 

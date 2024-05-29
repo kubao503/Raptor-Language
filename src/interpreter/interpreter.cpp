@@ -75,30 +75,26 @@ bool Interpreter::evaluateCondition(const ConditionalStatement& stmt) {
     return *condition;
 }
 
-void Interpreter::interpretStatements(const Statements& statements) {
+void Interpreter::operator()(const IfStatement& ifStmt) {
+    if (evaluateCondition(ifStmt))
+        interpretStatementsInNewContext(ifStmt.statements);
+}
+
+void Interpreter::operator()(const WhileStatement& whileStmt) {
+    while (evaluateCondition(whileStmt) && !returning_)
+        interpretStatementsInNewContext(whileStmt.statements);
+}
+
+void Interpreter::interpretStatementsInNewContext(const Statements& statements) {
+    callStack_.top().addScope();
+
     for (const auto& stmt : statements) {
         stmt->accept(*this);
         if (returning_)
             break;
     }
-}
 
-void Interpreter::operator()(const IfStatement& ifStmt) {
-    const auto condition = evaluateCondition(ifStmt);
-
-    if (condition) {
-        callStack_.top().addScope();
-        interpretStatements(ifStmt.statements);
-        callStack_.top().removeScope();
-    }
-}
-
-void Interpreter::operator()(const WhileStatement& whileStmt) {
-    while (evaluateCondition(whileStmt) && !returning_) {
-        callStack_.top().addScope();
-        interpretStatements(whileStmt.statements);
-        callStack_.top().removeScope();
-    }
+    callStack_.top().removeScope();
 }
 
 void Interpreter::operator()(const ReturnStatement& stmt) {
@@ -173,18 +169,23 @@ void checkValueType(const Type& type, const ValueObj& valueObj) {
         throw TypeMismatch{{}, type, std::visit(ValueToType(), valueObj.value)};
 }
 
+bool valueTypeOtherThanExpected(const Type& expected, const ValueHolder& holder) {
+    auto valueObj = getHeldValueCopy(holder);
+    return !std::visit(TypeComparer(), expected, valueObj.value);
+}
+
 ValueHolder Interpreter::convertAndCheckType(const Type& expected,
-                                             ValueHolder valueRef) const {
-    auto valueObj = getHeldValueCopy(std::move(valueRef));
+                                             ValueHolder holder) const {
     auto userDefinedTypeName = std::get_if<std::string>(&expected);
-    if (!std::visit(TypeComparer(), expected, valueObj.value) && userDefinedTypeName) {
+    if (valueTypeOtherThanExpected(expected, holder) && userDefinedTypeName) {
+        auto valueObj = getHeldValue(std::move(holder));
         convertToUserDefinedType(valueObj, *userDefinedTypeName);
         checkValueType(expected, valueObj);
         return valueObj;
     }
 
-    checkValueType(expected, getHeldValueCopy(valueRef));
-    return valueRef;
+    checkValueType(expected, getHeldValueCopy(holder));
+    return holder;
 }
 
 void Interpreter::convertToUserDefinedType(ValueObj& valueObj,
@@ -206,7 +207,8 @@ void Interpreter::convertToNamedStruct(ValueObj& valueObj,
     if (structDef->fields.size() != structObj->values.size())
         throw InvalidFieldCount{{}, structDef->fields.size(), structObj->values.size()};
 
-    auto binaryOp = [this](const Field& field, std::unique_ptr<ValueObj> valueObj) {
+    auto covertSturctValue = [this](const Field& field,
+                                    std::unique_ptr<ValueObj> valueObj) {
         auto convertedValue = convertAndCheckType(field.type, std::move(*valueObj));
         auto convertedValueObj = getHeldValue(std::move(convertedValue));
         return std::make_unique<ValueObj>(std::move(convertedValueObj));
@@ -214,7 +216,7 @@ void Interpreter::convertToNamedStruct(ValueObj& valueObj,
     std::ranges::transform(structDef->fields.begin(), structDef->fields.end(),
                            std::make_move_iterator(structObj->values.begin()),
                            std::make_move_iterator(structObj->values.end()),
-                           structObj->values.begin(), binaryOp);
+                           structObj->values.begin(), covertSturctValue);
 
     valueObj.value = NamedStructObj{std::move(structObj->values), structDef};
 }
@@ -243,16 +245,17 @@ void Interpreter::operator()(const VarDef& stmt) {
     }
 
     try {
-        addVariable({.name = std::move(stmt.name),
-                     .valueObj = std::make_unique<ValueObj>(std::move(valueRef)),
-                     .isConst = stmt.isConst});
+        VarEntry varEntry = {.name = std::move(stmt.name),
+                             .valueObj = std::make_unique<ValueObj>(std::move(valueRef)),
+                             .isConst = stmt.isConst};
+        addVariable(std::move(varEntry));
     } catch (const VariableRedefinition& e) {
         throw VariableRedefinition{stmt.position, e};
     }
 }
 
-struct FieldAccessor {
-    explicit FieldAccessor(const Interpreter& interpreter)
+struct FieldAccessEvaluator {
+    explicit FieldAccessEvaluator(const Interpreter& interpreter)
         : interpreter_{interpreter} {}
 
     RefObj operator()(std::string_view name) {
@@ -274,9 +277,9 @@ struct FieldAccessor {
     const Interpreter& interpreter_;
 };
 
-RefObj Interpreter::tryAccessField(const Assignment& stmt) const {
+RefObj Interpreter::tryAccessLValue(const Assignment& stmt) const {
     try {
-        return std::visit(FieldAccessor(*this), stmt.lhs);
+        return std::visit(FieldAccessEvaluator(*this), stmt.lhs);
     } catch (const SymbolNotFound& e) {
         throw SymbolNotFound{stmt.position, e};
     } catch (const InvalidField& e) {
@@ -285,24 +288,24 @@ RefObj Interpreter::tryAccessField(const Assignment& stmt) const {
 }
 
 void Interpreter::operator()(const Assignment& stmt) {
-    auto fieldRef = tryAccessField(stmt);
+    auto lvalue = tryAccessLValue(stmt);
 
-    if (fieldRef.isConst)
+    if (lvalue.isConst)
         throw ConstViolation(stmt.position);
 
-    const auto expectedType = std::visit(ValueToType(), fieldRef.valueObj->value);
+    const auto expectedType = std::visit(ValueToType(), lvalue.valueObj->value);
 
-    auto newValueRef = getValueFromExpr(*stmt.rhs);
+    auto newValue = getValueFromExpr(*stmt.rhs);
 
     try {
-        newValueRef = convertAndCheckType(expectedType, std::move(newValueRef));
+        newValue = convertAndCheckType(expectedType, std::move(newValue));
     } catch (const TypeMismatch& e) {
         throw TypeMismatch{stmt.position, e};
     } catch (const InvalidFieldCount& e) {
         throw InvalidFieldCount{stmt.position, e};
     }
 
-    fieldRef.valueObj->value = getHeldValue(std::move(newValueRef)).value;
+    lvalue.valueObj->value = getHeldValue(std::move(newValue)).value;
 }
 
 void Interpreter::operator()(const FuncDef& stmt) {
@@ -321,7 +324,7 @@ ReturnValue Interpreter::handleFunctionCall(const FuncCall& funcCall) {
     auto funcWithCtx = getFunctionWithCtx(funcCall.name);
     if (!funcWithCtx)
         throw SymbolNotFound{funcCall.position, "Function", funcCall.name};
-    auto [funcDef, parentCtx] = *funcWithCtx;
+    const auto [funcDef, parentCtx] = *funcWithCtx;
 
     CallContext ctx{parentCtx};
     passArgumentsToCtx(ctx, funcCall.arguments, funcDef->getParameters());
@@ -343,7 +346,7 @@ ReturnValue Interpreter::handleFunctionCall(const FuncCall& funcCall) {
     }
     returning_ = false;
 
-    if (auto typeName = std::get_if<std::string>(&funcDef->getReturnType()))
+    if (const auto typeName = std::get_if<std::string>(&funcDef->getReturnType()))
         try {
             convertToUserDefinedType(*returnValue_, *typeName);
         } catch (const InvalidFieldCount& e) {

@@ -38,13 +38,18 @@ class ExpressionInterpreter : public ExpressionVisitor {
    private:
     ValueObj getExprValue(const Expression& expr) const;
     bool getBoolValue(const Expression& expr) const;
-    void checkExprEquality(const BinaryExpression& expr) const;
 
     template <typename Functor>
-    void compareExpr(const BinaryExpression& expr, Functor func) const;
+    void evalLogicalExpr(const BinaryExpression& expr, const Functor& func) const;
 
     template <typename Functor>
-    void evalNumericExpr(const BinaryExpression& expr, Functor func) const;
+    void evalEqualityExpr(const BinaryExpression& expr, const Functor& func) const;
+
+    template <typename Functor>
+    void compareExpr(const BinaryExpression& expr, const Functor& func) const;
+
+    template <typename Functor>
+    void evalNumericExpr(const BinaryExpression& expr, const Functor& func) const;
 
     Interpreter* interpreter_;
     mutable ValueHolder lastResult_;
