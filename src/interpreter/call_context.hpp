@@ -32,8 +32,9 @@ class CallContext {
 
     std::optional<RefObj> getVariable(std::string_view name) const;
 
-    /// @brief Returns a function with the given name along with 'this' as it is the
-    /// @param name
+    /// @brief Returns a function with the given name along with the call context in which
+    /// the function is defined
+    /// @param name Named of the function
     /// @return
     std::optional<FuncWithCtx> getFunctionWithCtx(std::string_view name) const;
     const StructDef* getStructDef(std::string_view name) const;

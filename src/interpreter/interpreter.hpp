@@ -65,7 +65,16 @@ class Interpreter : public StatementVisitor {
 
     ValueHolder convertAndCheckType(const Type& expected, ValueHolder valueRef) const;
     void convertToUserDefinedType(ValueObj& valueObj, std::string_view typeName) const;
+
+    /// @brief Converts anonymous struct (StructObj) to one with field names (NamedStruct)
+    /// @param valueObj
+    /// @param structDef
     void convertToNamedStruct(ValueObj& valueObj, const StructDef* structDef) const;
+
+    /// @brief Converts value to variant if the value type matches one of the variant's
+    /// types
+    /// @param valueObj
+    /// @param variantDef
     void convertToVariant(ValueObj& valueObj, const VariantDef* variantDef) const;
 
     RefObj tryAccessField(const Assignment& stmt) const;
