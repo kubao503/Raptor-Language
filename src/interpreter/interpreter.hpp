@@ -9,15 +9,35 @@
 
 using ReturnValue = std::optional<ValueObj>;
 
+/// @brief Statement interpreter
 class Interpreter {
    public:
+    /// @brief
+    /// @param out the stream to which the output will be written
     explicit Interpreter(std::ostream& out);
+
+    /// @brief Interprets the given program
+    /// @param program
     void interpret(const Program& program);
 
+    /// @brief Returns a reference to a variable with the given name or std::nullopt if
+    /// not found
+    /// @param name
     std::optional<RefObj> getVariable(std::string_view name) const;
+
+    /// @brief Returns a function definition with the given name along with the scope in
+    /// which the function is defined. If not found the std::nullopt is returned
+    /// @param name
     std::optional<CallContext::FuncWithCtx> getFunctionWithCtx(
         std::string_view name) const;
+
+    /// @brief Returns a function definition with the given name or a nullptr if nout
+    /// found
+    /// @param name
     const StructDef* getStructDef(std::string_view name) const;
+
+    /// @brief Returns a variant definition with the given name or a nullptr if nout found
+    /// @param name
     const VariantDef* getVariantDef(std::string_view name) const;
 
     void operator()(const IfStatement& ifStmt);
@@ -31,6 +51,9 @@ class Interpreter {
     void operator()(const StructDef& stmt);
     void operator()(const VariantDef& stmt);
 
+    /// @brief Executes the given function call and returns the returned value
+    /// @param funcCall
+    /// @return Value returned from the function call
     ReturnValue handleFunctionCall(const FuncCall& funcCall);
 
    private:
@@ -59,10 +82,11 @@ class Interpreter {
     std::stack<CallContext> callStack_;
     std::ostream& out_;
 
-    ReturnValue returnValue_;
+    ReturnValue returnValue_{std::nullopt};
     bool returning_{false};
 };
 
+/// @brief Checks if the given value is of the given type
 struct TypeComparer {
     bool operator()(BuiltInType variableType, Integral) const {
         return variableType == BuiltInType::INT;
@@ -86,6 +110,7 @@ struct TypeComparer {
     bool operator()(const auto&, const auto&) const { return false; }
 };
 
+/// @brief Returns the type of the given value
 struct ValueToType {
     Type operator()(Integral) const { return BuiltInType::INT; }
     Type operator()(Floating) const { return BuiltInType::FLOAT; }

@@ -64,7 +64,7 @@ const VariantDef* Interpreter::getVariantDef(std::string_view name) const {
 ValueHolder Interpreter::getValueFromExpr(const Expression& expr) {
     auto exprInterpreter = ExpressionInterpreter(this);
     expr.accept(exprInterpreter);
-    return exprInterpreter.getValue();
+    return exprInterpreter.getLastResult();
 }
 
 template <typename ConditionalStatement>

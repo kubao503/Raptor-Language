@@ -10,7 +10,8 @@ class ExpressionInterpreter : public ExpressionVisitor {
    public:
     ExpressionInterpreter(Interpreter* interpreter);
 
-    ValueHolder getValue() const { return std::move(lastResult_); }
+    /// @brief Returns the result of most recent expression
+    ValueHolder getLastResult() const { return std::move(lastResult_); }
 
     void operator()(const StructInitExpression& expr) const override;
     void operator()(const DisjunctionExpression& expr) const override;
