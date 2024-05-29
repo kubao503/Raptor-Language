@@ -69,9 +69,13 @@ void ExpressionInterpreter::checkExprEquality(const BinaryExpression& expr) cons
     expr.rhs->accept(*this);
     const auto rightValueObj = getHeldValue(std::move(lastResult_));
 
-    const auto result =
-        std::visit(EqualityEvaluator(), leftValueObj.value, rightValueObj.value);
-    lastResult_ = ValueObj{result};
+    try {
+        const auto result =
+            std::visit(EqualityEvaluator(), leftValueObj.value, rightValueObj.value);
+        lastResult_ = ValueObj{result};
+    } catch (const TypeMismatch& e) {
+        throw TypeMismatch{expr.position, e};
+    }
 }
 
 void ExpressionInterpreter::operator()(const EqualExpression& expr) const {

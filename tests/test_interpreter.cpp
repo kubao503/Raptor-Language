@@ -305,9 +305,17 @@ TEST_F(InterpreterTest, if_statement_false_condition) {
     EXPECT_EQ(interpretAndGetOutput(), "");
 }
 
-TEST_F(InterpreterTest, if_statement_invalid_condition) {
+TEST_F(InterpreterTest, if_statement_invalid_condition_type) {
     SetUp(
         "if 2 + 3 {"
+        "    print 2;"
+        "}");
+    interpretAndExpectThrowAt<TypeMismatch>({1, 4});
+}
+
+TEST_F(InterpreterTest, if_statement_type_mismatch_in_condition) {
+    SetUp(
+        "if 2 + true {"
         "    print 2;"
         "}");
     interpretAndExpectThrowAt<TypeMismatch>({1, 4});
