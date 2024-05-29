@@ -1089,6 +1089,19 @@ TEST_F(InterpreterTest, return_makes_a_copy) {
     EXPECT_EQ(interpretAndGetOutput(), "5\n9\n");
 }
 
+TEST_F(InterpreterTest, returning_returned_value) {
+    SetUp(
+        "int foo() {"
+        "    int inner() {"
+        "        if true {}"
+        "        return 5;"
+        "    }"
+        "    return inner();"
+        "}"
+        "print foo();");
+    EXPECT_EQ(interpretAndGetOutput(), "5\n");
+}
+
 TEST_F(InterpreterTest, disjunction_invalid_type_of_first_operand) {
     SetUp("print 2 or true;");
     interpretAndExpectThrowAt<TypeMismatch>({1, 7});

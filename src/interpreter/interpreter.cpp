@@ -104,12 +104,11 @@ void Interpreter::operator()(const WhileStatement& whileStmt) {
 }
 
 void Interpreter::operator()(const ReturnStatement& stmt) {
-    returning_ = true;
-    returnValue_ = std::nullopt;
     if (auto expr = stmt.expression.get()) {
         auto heldValue = getHeldValueCopy(getValueFromExpr(*expr));
         returnValue_ = std::move(heldValue);
     }
+    returning_ = true;
 }
 
 struct ValuePrinter {
