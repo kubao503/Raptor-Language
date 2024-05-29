@@ -39,7 +39,7 @@ void Parser::expectEndOfFile() const {
 Statements Parser::parseStatements() {
     Statements statements;
     while (auto statement = parseStatement())
-        statements.push_back(std::move(*statement));
+        statements.push_back(std::move(statement));
     return statements;
 }
 
@@ -53,7 +53,7 @@ Statements Parser::parseStatements() {
 ///      | BUILT_IN_DEF
 ///      | STRUCT_DEF
 ///      | VNT_DEF
-std::optional<Statement> Parser::parseStatement() {
+PStatement Parser::parseStatement() {
     auto prevPosition = statementPosition_;
     statementPosition_ = currentToken_.getPosition();
 
@@ -64,13 +64,13 @@ std::optional<Statement> Parser::parseStatement() {
         }
     }
     statementPosition_ = prevPosition;
-    return std::nullopt;
+    return nullptr;
 }
 
 /// IF_STMT = if DISJ '{' STMTS '}'
-std::optional<Statement> Parser::parseIfStatement() {
+PStatement Parser::parseIfStatement() {
     if (currentToken_.getType() != Token::Type::IF_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto condition = parseDisjunctionExpression();
@@ -86,13 +86,14 @@ std::optional<Statement> Parser::parseIfStatement() {
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(), "Missing right curly brace"));
 
-    return IfStatement{std::move(condition), std::move(statements), statementPosition_};
+    return std::make_unique<IfStatement>(std::move(condition), std::move(statements),
+                                         statementPosition_);
 }
 
 /// WHILE_STMT = while DISJ '{' STMTS '}'
-std::optional<Statement> Parser::parseWhileStatement() {
+PStatement Parser::parseWhileStatement() {
     if (currentToken_.getType() != Token::Type::WHILE_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto condition = parseDisjunctionExpression();
@@ -108,14 +109,14 @@ std::optional<Statement> Parser::parseWhileStatement() {
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(), "Missing right curly brace"));
 
-    return WhileStatement{std::move(condition), std::move(statements),
-                          statementPosition_};
+    return std::make_unique<WhileStatement>(std::move(condition), std::move(statements),
+                                            statementPosition_);
 }
 
 /// RET_STMT = return [ EXPR ] ';'
-std::optional<Statement> Parser::parseReturnStatement() {
+PStatement Parser::parseReturnStatement() {
     if (currentToken_.getType() != Token::Type::RETURN_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto expression = parseExpression();
@@ -124,13 +125,13 @@ std::optional<Statement> Parser::parseReturnStatement() {
            SyntaxException(currentToken_.getPosition(),
                            "Missing semicolon after return statement"));
 
-    return ReturnStatement{std::move(expression)};
+    return std::make_unique<ReturnStatement>(std::move(expression), statementPosition_);
 }
 
 /// PRINT_STMT = print [ EXPR ] ';'
-std::optional<Statement> Parser::parsePrintStatement() {
+PStatement Parser::parsePrintStatement() {
     if (currentToken_.getType() != Token::Type::PRINT_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto expression = parseExpression();
@@ -138,13 +139,13 @@ std::optional<Statement> Parser::parsePrintStatement() {
     expect(Token::Type::SEMI, SyntaxException(currentToken_.getPosition(),
                                               "Missing semicolon after print statement"));
 
-    return PrintStatement{std::move(expression)};
+    return std::make_unique<PrintStatement>(std::move(expression), statementPosition_);
 }
 
 /// CONST_VAR_DEF = const TYPE ID ASGN
-std::optional<VarDef> Parser::parseConstVarDef() {
+PStatement Parser::parseConstVarDef() {
     if (currentToken_.getType() != Token::Type::CONST_KW)
-        return std::nullopt;
+        return nullptr;
     const auto position = currentToken_.getPosition();
     consumeToken();
 
@@ -159,17 +160,14 @@ std::optional<VarDef> Parser::parseConstVarDef() {
 
     auto assignment = parseAssignment(name);
 
-    return VarDef{.isConst = true,
-                  .type = *type,
-                  .name = std::move(name),
-                  .expression = std::move(assignment.rhs),
-                  .position = std::move(position)};
+    return std::make_unique<VarDef>(true, *type, std::move(name),
+                                    std::move(assignment->rhs), std::move(position));
 }
 
 /// VOID_FUNC = void ID FUNC_DEF
-std::optional<FuncDef> Parser::parseVoidFunc() {
+PStatement Parser::parseVoidFunc() {
     if (currentToken_.getType() != Token::Type::VOID_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     const auto name = expectAndReturnValue<std::string>(
@@ -182,9 +180,9 @@ std::optional<FuncDef> Parser::parseVoidFunc() {
 /// DEF_OR_ASGN = ID ( FIELD_ASGN
 ///                  | DEF
 ///                  | FUNC_CALL ';' )
-std::optional<Statement> Parser::parseDefOrAssignment() {
+PStatement Parser::parseDefOrAssignment() {
     if (currentToken_.getType() != Token::Type::ID)
-        return std::nullopt;
+        return nullptr;
 
     auto name = std::get<std::string>(currentToken_.getValue());
     consumeToken();
@@ -201,7 +199,7 @@ std::optional<Statement> Parser::parseDefOrAssignment() {
 }
 
 /// FIELD_ASGN = { '.' ID } ASGN
-Assignment Parser::parseFieldAssignment(const std::string& name) {
+PStatement Parser::parseFieldAssignment(const std::string& name) {
     LValue lvalue{name};
 
     while (currentToken_.getType() == Token::Type::DOT) {
@@ -219,7 +217,7 @@ Assignment Parser::parseFieldAssignment(const std::string& name) {
 }
 
 /// ASGN = '=' EXPR ';'
-Assignment Parser::parseAssignment(LValue lvalue) {
+std::unique_ptr<Assignment> Parser::parseAssignment(LValue lvalue) {
     expect(Token::Type::ASGN_OP,
            SyntaxException(currentToken_.getPosition(), "Expected assignment operator"));
 
@@ -231,25 +229,24 @@ Assignment Parser::parseAssignment(LValue lvalue) {
     expect(Token::Type::SEMI,
            SyntaxException(currentToken_.getPosition(), "Missing semicolon"));
 
-    return Assignment{.lhs = std::move(lvalue),
-                      .rhs = std::move(expression),
-                      .position = statementPosition_};
+    return std::make_unique<Assignment>(std::move(lvalue), std::move(expression),
+                                        statementPosition_);
 }
 
 /// BUILT_IN_DEF = BUILT_IN_TYPE DEF
-std::optional<Statement> Parser::parseBuiltInDef() {
+PStatement Parser::parseBuiltInDef() {
     const auto type = getCurrentTokenBuiltInType();
     if (!type)
-        return std::nullopt;
+        return nullptr;
 
     consumeToken();
     return parseDef(*type);
 }
 
 /// DEF = ID ( FUNC_DEF | ASGN )
-std::optional<Statement> Parser::parseDef(const Type& type) {
+PStatement Parser::parseDef(const Type& type) {
     if (currentToken_.getType() != Token::Type::ID)
-        return std::nullopt;
+        return nullptr;
     const auto name = std::get<std::string>(currentToken_.getValue());
     consumeToken();
 
@@ -257,17 +254,14 @@ std::optional<Statement> Parser::parseDef(const Type& type) {
     if (auto def = parseFuncDef(returnType, name))
         return def;
     auto assignment = parseAssignment(name);
-    return VarDef{.type = type,
-                  .name = std::get<std::string>(assignment.lhs),
-                  .expression = std::move(assignment.rhs),
-                  .position = statementPosition_};
+    return std::make_unique<VarDef>(false, type, std::get<std::string>(assignment->lhs),
+                                    std::move(assignment->rhs), statementPosition_);
 }
 
 /// FUNC_DEF = '(' PARAMS ')' '{' STMTS '}'
-std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
-                                            const std::string& name) {
+PStatement Parser::parseFuncDef(const ReturnType& returnType, const std::string& name) {
     if (currentToken_.getType() != Token::Type::L_PAR)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto parameters = parseList<Parameter>(&Parser::parseParameter);
@@ -284,8 +278,8 @@ std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(),
                            "Missing right curly brace after function body"));
-    return FuncDef(returnType, name, std::move(parameters), std::move(statements),
-                   statementPosition_);
+    return std::make_unique<FuncDef>(returnType, name, std::move(parameters),
+                                     std::move(statements), statementPosition_);
 }
 
 /// PARAM = [ ref ] TYPE ID
@@ -313,9 +307,9 @@ std::optional<Parameter> Parser::parseParameter() {
 }
 
 /// FUNC_CALL = '(' ARGS ')'
-std::optional<FuncCall> Parser::parseFuncCall(const std::string& name) {
+std::unique_ptr<FuncCall> Parser::parseFuncCall(const std::string& name) {
     if (currentToken_.getType() != Token::Type::L_PAR)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto arguments = parseList<Argument>(&Parser::parseArgument);
@@ -323,13 +317,13 @@ std::optional<FuncCall> Parser::parseFuncCall(const std::string& name) {
     expect(Token::Type::R_PAR,
            SyntaxException(currentToken_.getPosition(),
                            "Missing right parenthesis after function call arguments"));
-    return FuncCall{name, std::move(arguments), statementPosition_};
+    return std::make_unique<FuncCall>(name, std::move(arguments), statementPosition_);
 }
 
 /// STRUCT_DEF = struct ID '{' FIELDS '}'
-std::optional<StructDef> Parser::parseStructDef() {
+PStatement Parser::parseStructDef() {
     if (currentToken_.getType() != Token::Type::STRUCT_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto name = expectAndReturnValue<std::string>(
@@ -345,15 +339,14 @@ std::optional<StructDef> Parser::parseStructDef() {
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(),
                            "Missing right curly brace in struct difinition"));
-    return StructDef{.name = std::move(name),
-                     .fields = std::move(fields),
-                     .position = statementPosition_};
+    return std::make_unique<StructDef>(std::move(name), std::move(fields),
+                                       statementPosition_);
 }
 
 /// VNT_DEF = variant ID '{' TYPES '}'
-std::optional<VariantDef> Parser::parseVariantDef() {
+PStatement Parser::parseVariantDef() {
     if (currentToken_.getType() != Token::Type::VARIANT_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto name = expectAndReturnValue<std::string>(
@@ -372,9 +365,8 @@ std::optional<VariantDef> Parser::parseVariantDef() {
            SyntaxException(currentToken_.getPosition(),
                            "Missing right curly brace in variant difinition"));
 
-    return VariantDef{.name = std::move(name),
-                      .types = std::move(types),
-                      .position = statementPosition_};
+    return std::make_unique<VariantDef>(std::move(name), std::move(types),
+                                        statementPosition_);
 }
 
 std::optional<Type> Parser::parseType() {
@@ -673,7 +665,7 @@ PExpression Parser::parseVariableAccessOrFuncCall() {
     consumeToken();
 
     if (auto funcCall = parseFuncCall(name))
-        return std::make_unique<FuncCall>(std::move(*funcCall));
+        return funcCall;
     return std::make_unique<VariableAccess>(name, std::move(position));
 }
 

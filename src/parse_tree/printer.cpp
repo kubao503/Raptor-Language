@@ -5,8 +5,10 @@
 #include "magic_enum/magic_enum.hpp"
 
 std::ostream& operator<<(std::ostream& stream, const Program& program) {
-    for (const auto& stmt : program.statements)
-        std::visit(StatementPrinter(), stmt);
+    for (const auto& stmt : program.statements) {
+        auto printer = StatementPrinter();
+        stmt->accept(printer);
+    }
     return stream;
 }
 
@@ -113,53 +115,59 @@ void ExpressionPrinter::operator()(const VariableAccess& expr) const {
     std::cout << getPrefix() << "VariableAccess " << expr.name << '\n';
 }
 
-void StatementPrinter::operator()(const IfStatement& ifStatement) const {
+void StatementPrinter::operator()(const IfStatement& ifStatement) {
     std::cout << getPrefix() << "IfStatement\n" << getPrefix() << "└condition:\n";
     ifStatement.condition->accept(getSubExprPrinter());
     std::cout << getPrefix() << "└statements {\n";
-    for (const auto& stmt : ifStatement.statements)
-        std::visit(getSubStmtPrinter(), stmt);
+    for (const auto& stmt : ifStatement.statements) {
+        auto vis = getSubStmtPrinter();
+        stmt->accept(vis);
+    }
     std::cout << getPrefix() << "}\n";
 }
 
-void StatementPrinter::operator()(const WhileStatement& whileStatement) const {
+void StatementPrinter::operator()(const WhileStatement& whileStatement) {
     std::cout << getPrefix() << "WhileStatement\n" << getPrefix() << "└condition:\n";
     whileStatement.condition->accept(getSubExprPrinter());
     std::cout << getPrefix() << "└statements {\n";
-    for (const auto& stmt : whileStatement.statements)
-        std::visit(getSubStmtPrinter(), stmt);
+    for (const auto& stmt : whileStatement.statements) {
+        auto vis = getSubStmtPrinter();
+        stmt->accept(vis);
+    }
     std::cout << getPrefix() << "}\n";
 }
 
-void StatementPrinter::operator()(const ReturnStatement& stmt) const {
+void StatementPrinter::operator()(const ReturnStatement& stmt) {
     std::cout << getPrefix() << "ReturnStatement\n";
     if (stmt.expression)
         stmt.expression->accept(getSubExprPrinter());
 }
 
-void StatementPrinter::operator()(const PrintStatement& stmt) const {
+void StatementPrinter::operator()(const PrintStatement& stmt) {
     std::cout << getPrefix() << "PrintStatement\n";
     if (stmt.expression)
         stmt.expression->accept(getSubExprPrinter());
 }
 
-void StatementPrinter::operator()(const FuncDef& funcDef) const {
+void StatementPrinter::operator()(const FuncDef& funcDef) {
     std::cout << getPrefix() << "FuncDef " << funcDef.getName();
     for (const auto& param : funcDef.getParameters())
         std::cout << ' ' << param.name << ',';
     std::cout << " {\n";
-    for (const auto& stmt : funcDef.getStatements())
-        std::visit(getSubStmtPrinter(), stmt);
+    for (const auto& stmt : funcDef.getStatements()) {
+        auto vis = getSubStmtPrinter();
+        stmt->accept(vis);
+    }
     std::cout << '\n' << getPrefix() << "}\n";
 }
 
-void StatementPrinter::operator()(const Assignment& stmt) const {
+void StatementPrinter::operator()(const Assignment& stmt) {
     std::cout << getPrefix() << "Assignment\n"
               << std::visit(LValuePrinter(indent_ + indentWidth_), stmt.lhs) << '\n';
     stmt.rhs->accept(getSubExprPrinter());
 }
 
-void StatementPrinter::operator()(const VarDef& stmt) const {
+void StatementPrinter::operator()(const VarDef& stmt) {
     std::cout << getPrefix() << "VarDef\n"
               << getPrefix() << "  is const: " << std::to_string(stmt.isConst) << '\n'
               << getPrefix()
@@ -170,7 +178,7 @@ void StatementPrinter::operator()(const VarDef& stmt) const {
     stmt.expression->accept(getSubExprPrinter());
 }
 
-void StatementPrinter::operator()(const FuncCall& stmt) const {
+void StatementPrinter::operator()(const FuncCall& stmt) {
     std::cout << getPrefix() << "FuncCall\n"
               << getPrefix() << "  name: " << stmt.name << '\n'
               << getPrefix() << "  args:\n";
@@ -178,7 +186,7 @@ void StatementPrinter::operator()(const FuncCall& stmt) const {
         arg.value->accept(getSubExprPrinter());
 }
 
-void StatementPrinter::operator()(const StructDef& stmt) const {
+void StatementPrinter::operator()(const StructDef& stmt) {
     std::cout << getPrefix() << "StructDef " << stmt.name << '\n'
               << getPrefix() << "fields: \n";
     for (const auto& field : stmt.fields)
@@ -187,16 +195,12 @@ void StatementPrinter::operator()(const StructDef& stmt) const {
                   << field.name << '\n';
 }
 
-void StatementPrinter::operator()(const VariantDef& stmt) const {
+void StatementPrinter::operator()(const VariantDef& stmt) {
     std::cout << getPrefix() << "VariantDef " << stmt.name << '\n'
               << getPrefix() << "types:\n";
     for (const auto& type : stmt.types)
         std::cout << getPrefix() << "  "
                   << std::visit(TypePrinter(indent_ + indentWidth_), type) << '\n';
-}
-
-void StatementPrinter::operator()(const auto& stmt) const {
-    std::cout << getPrefix() << typeid(stmt).name();
 }
 
 std::string LValuePrinter::operator()(const std::unique_ptr<FieldAccess>& lvalue) const {

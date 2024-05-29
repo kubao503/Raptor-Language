@@ -13,7 +13,7 @@ Interpreter::Interpreter(std::ostream& out)
 
 void Interpreter::interpret(const Program& program) {
     for (const auto& stmt : program.statements) {
-        std::visit(*this, stmt);
+        stmt->accept(*this);
         if (returning_)
             throw ReturnTypeMismatch{
                 {}, "No return in global scope", "Returning in global scope"};
@@ -79,7 +79,7 @@ bool Interpreter::evaluateCondition(const ConditionalStatement& stmt) {
 
 void Interpreter::interpretStatements(const Statements& statements) {
     for (const auto& stmt : statements) {
-        std::visit(*this, stmt);
+        stmt->accept(*this);
         if (returning_)
             break;
     }
@@ -311,7 +311,7 @@ void Interpreter::operator()(const FuncDef& stmt) {
     try {
         addFunction(&stmt);
     } catch (const FunctionRedefinition& e) {
-        throw FunctionRedefinition{stmt.getPosition(), e};
+        throw FunctionRedefinition{stmt.position, e};
     }
 }
 
@@ -335,7 +335,7 @@ ReturnValue Interpreter::handleFunctionCall(const FuncCall& funcCall) {
     callStack_.push(std::move(ctx));
 
     for (const auto& stmt : funcDef->getStatements()) {
-        std::visit(*this, stmt);
+        stmt->accept(*this);
         if (returning_)
             break;
     }
@@ -345,17 +345,17 @@ ReturnValue Interpreter::handleFunctionCall(const FuncCall& funcCall) {
         try {
             convertToUserDefinedType(*returnValue_, *typeName);
         } catch (const InvalidFieldCount& e) {
-            throw InvalidFieldCount{funcDef->getPosition(), e};
+            throw InvalidFieldCount{funcDef->position, e};
         } catch (const TypeMismatch& e) {
-            throw TypeMismatch{funcDef->getPosition(), e};
+            throw TypeMismatch{funcDef->position, e};
         } catch (const SymbolNotFound& e) {
-            throw SymbolNotFound{funcDef->getPosition(), e};
+            throw SymbolNotFound{funcDef->position, e};
         }
 
     try {
         checkReturnType(funcDef->getReturnType(), returnValue_);
     } catch (const ReturnTypeMismatch& e) {
-        throw ReturnTypeMismatch{funcDef->getPosition(), e};
+        throw ReturnTypeMismatch{funcDef->position, e};
     }
 
     callStack_.pop();

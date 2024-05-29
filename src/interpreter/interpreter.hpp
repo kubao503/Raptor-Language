@@ -10,7 +10,7 @@
 using ReturnValue = std::optional<ValueObj>;
 
 /// @brief Statement interpreter
-class Interpreter {
+class Interpreter : public StatementVisitor {
    public:
     /// @brief
     /// @param out the stream to which the output will be written
@@ -40,16 +40,16 @@ class Interpreter {
     /// @param name
     const VariantDef* getVariantDef(std::string_view name) const;
 
-    void operator()(const IfStatement& ifStmt);
-    void operator()(const WhileStatement& whileStmt);
-    void operator()(const ReturnStatement& stmt);
-    void operator()(const PrintStatement& stmt);
-    void operator()(const VarDef& stmt);
-    void operator()(const Assignment& stmt);
-    void operator()(const FuncDef& stmt);
-    void operator()(const FuncCall& funcCall);
-    void operator()(const StructDef& stmt);
-    void operator()(const VariantDef& stmt);
+    void operator()(const IfStatement& ifStmt) override;
+    void operator()(const WhileStatement& whileStmt) override;
+    void operator()(const ReturnStatement& stmt) override;
+    void operator()(const PrintStatement& stmt) override;
+    void operator()(const VarDef& stmt) override;
+    void operator()(const Assignment& stmt) override;
+    void operator()(const FuncDef& stmt) override;
+    void operator()(const FuncCall& funcCall) override;
+    void operator()(const StructDef& stmt) override;
+    void operator()(const VariantDef& stmt) override;
 
     /// @brief Executes the given function call and returns the returned value
     /// @param funcCall

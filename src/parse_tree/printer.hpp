@@ -55,21 +55,20 @@ class ExpressionPrinter : public BasePrinter, public ExpressionVisitor {
     void printBinaryExpression(const auto& expression) const;
 };
 
-class StatementPrinter : public BasePrinter {
+class StatementPrinter : public BasePrinter, public StatementVisitor {
    public:
     using BasePrinter::BasePrinter;
 
-    void operator()(const IfStatement& ifStatement) const;
-    void operator()(const WhileStatement& whileStatement) const;
-    void operator()(const ReturnStatement& stmt) const;
-    void operator()(const PrintStatement& stmt) const;
-    void operator()(const FuncDef& funcDef) const;
-    void operator()(const Assignment& stmt) const;
-    void operator()(const VarDef& stmt) const;
-    void operator()(const FuncCall& stmt) const;
-    void operator()(const StructDef& stmt) const;
-    void operator()(const VariantDef& stmt) const;
-    void operator()(const auto& stmt) const;
+    void operator()(const IfStatement& ifStatement) override;
+    void operator()(const WhileStatement& whileStatement) override;
+    void operator()(const ReturnStatement& stmt) override;
+    void operator()(const PrintStatement& stmt) override;
+    void operator()(const FuncDef& funcDef) override;
+    void operator()(const Assignment& stmt) override;
+    void operator()(const VarDef& stmt) override;
+    void operator()(const FuncCall& stmt) override;
+    void operator()(const StructDef& stmt) override;
+    void operator()(const VariantDef& stmt) override;
 };
 
 class LValuePrinter : public BasePrinter {

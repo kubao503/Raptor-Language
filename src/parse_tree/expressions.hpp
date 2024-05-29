@@ -66,14 +66,17 @@ class ExpressionVisitor {
     virtual void operator()(const VariableAccess& expr) const = 0;
 };
 
-struct Expression {
-    virtual ~Expression() = default;
-    virtual void accept(const ExpressionVisitor& vis) const = 0;
+struct SyntaxNode {
+    virtual ~SyntaxNode() = default;
 
-    Expression(const Position& position)
+    SyntaxNode(const Position& position)
         : position{position} {}
 
     Position position;
+};
+
+struct Expression : public virtual SyntaxNode {
+    virtual void accept(const ExpressionVisitor& vis) const = 0;
 };
 
 using PExpression = std::unique_ptr<Expression>;
@@ -82,7 +85,7 @@ struct StructInitExpression : public Expression {
     std::vector<PExpression> exprs;
 
     StructInitExpression(std::vector<PExpression> exprs, const Position& position)
-        : Expression{position}, exprs{std::move(exprs)} {}
+        : SyntaxNode{position}, exprs{std::move(exprs)} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
@@ -92,17 +95,21 @@ struct BinaryExpression : public Expression {
     PExpression rhs;
 
     BinaryExpression(PExpression lhs, PExpression rhs, const Position& position)
-        : Expression{position}, lhs{std::move(lhs)}, rhs{std::move(rhs)} {}
+        : SyntaxNode{position}, lhs{std::move(lhs)}, rhs{std::move(rhs)} {}
 };
 
 struct DisjunctionExpression : public BinaryExpression {
-    using BinaryExpression::BinaryExpression;
+    DisjunctionExpression(PExpression lhs, PExpression rhs, const Position& position)
+        : SyntaxNode{position},
+          BinaryExpression{std::move(lhs), std::move(rhs), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
 
 struct ConjunctionExpression : public BinaryExpression {
-    using BinaryExpression::BinaryExpression;
+    ConjunctionExpression(PExpression lhs, PExpression rhs, const Position& position)
+        : SyntaxNode{position},
+          BinaryExpression{std::move(lhs), std::move(rhs), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
@@ -115,13 +122,17 @@ struct ComparisonExpression : public BinaryExpression {
 };
 
 struct EqualExpression : public ComparisonExpression {
-    using ComparisonExpression::ComparisonExpression;
+    EqualExpression(PExpression lhs, PExpression rhs, const Position& position)
+        : SyntaxNode{position},
+          ComparisonExpression{std::move(lhs), std::move(rhs), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
 
 struct NotEqualExpression : public ComparisonExpression {
-    using ComparisonExpression::ComparisonExpression;
+    NotEqualExpression(PExpression lhs, PExpression rhs, const Position& position)
+        : SyntaxNode{position},
+          ComparisonExpression{std::move(lhs), std::move(rhs), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
@@ -134,25 +145,34 @@ struct RelationExpression : public BinaryExpression {
 };
 
 struct LessThanExpression : public RelationExpression {
-    using RelationExpression::RelationExpression;
+    LessThanExpression(PExpression lhs, PExpression rhs, const Position& position)
+        : SyntaxNode{position},
+          RelationExpression{std::move(lhs), std::move(rhs), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
 
 struct LessThanOrEqualExpression : public RelationExpression {
-    using RelationExpression::RelationExpression;
+    LessThanOrEqualExpression(PExpression lhs, PExpression rhs, const Position& position)
+        : SyntaxNode{position},
+          RelationExpression{std::move(lhs), std::move(rhs), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
 
 struct GreaterThanExpression : public RelationExpression {
-    using RelationExpression::RelationExpression;
+    GreaterThanExpression(PExpression lhs, PExpression rhs, const Position& position)
+        : SyntaxNode{position},
+          RelationExpression{std::move(lhs), std::move(rhs), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
 
 struct GreaterThanOrEqualExpression : public RelationExpression {
-    using RelationExpression::RelationExpression;
+    GreaterThanOrEqualExpression(PExpression lhs, PExpression rhs,
+                                 const Position& position)
+        : SyntaxNode{position},
+          RelationExpression{std::move(lhs), std::move(rhs), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
@@ -165,13 +185,17 @@ struct AdditiveExpression : public BinaryExpression {
 };
 
 struct AdditionExpression : public AdditiveExpression {
-    using AdditiveExpression::AdditiveExpression;
+    AdditionExpression(PExpression lhs, PExpression rhs, const Position& position)
+        : SyntaxNode{position},
+          AdditiveExpression{std::move(lhs), std::move(rhs), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
 
 struct SubtractionExpression : public AdditiveExpression {
-    using AdditiveExpression::AdditiveExpression;
+    SubtractionExpression(PExpression lhs, PExpression rhs, const Position& position)
+        : SyntaxNode{position},
+          AdditiveExpression{std::move(lhs), std::move(rhs), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
@@ -184,13 +208,17 @@ struct MultiplicativeExpression : public BinaryExpression {
 };
 
 struct MultiplicationExpression : public MultiplicativeExpression {
-    using MultiplicativeExpression::MultiplicativeExpression;
+    MultiplicationExpression(PExpression lhs, PExpression rhs, const Position& position)
+        : SyntaxNode{position},
+          MultiplicativeExpression{std::move(lhs), std::move(rhs), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
 
 struct DivisionExpression : public MultiplicativeExpression {
-    using MultiplicativeExpression::MultiplicativeExpression;
+    DivisionExpression(PExpression lhs, PExpression rhs, const Position& position)
+        : SyntaxNode{position},
+          MultiplicativeExpression{std::move(lhs), std::move(rhs), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
@@ -198,7 +226,7 @@ struct DivisionExpression : public MultiplicativeExpression {
 struct NegationExpression : public Expression {
     PExpression expr;
     NegationExpression(PExpression expr, const Position& position)
-        : Expression{position}, expr{std::move(expr)} {}
+        : SyntaxNode{position}, expr{std::move(expr)} {}
 
     using Ctor = std::function<PExpression(PExpression, const Position&)>;
 
@@ -206,13 +234,15 @@ struct NegationExpression : public Expression {
 };
 
 struct SignChangeExpression : public NegationExpression {
-    using NegationExpression::NegationExpression;
+    SignChangeExpression(PExpression expr, const Position& position)
+        : SyntaxNode{position}, NegationExpression{std::move(expr), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
 
 struct LogicalNegationExpression : public NegationExpression {
-    using NegationExpression::NegationExpression;
+    LogicalNegationExpression(PExpression expr, const Position& position)
+        : SyntaxNode{position}, NegationExpression{std::move(expr), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
@@ -222,7 +252,7 @@ struct TypeExpression : public Expression {
     Type type;
 
     TypeExpression(PExpression expr, Type type, const Position& position)
-        : Expression{position}, expr{std::move(expr)}, type{std::move(type)} {}
+        : SyntaxNode{position}, expr{std::move(expr)}, type{std::move(type)} {}
 
     using Ctor = std::function<PExpression(PExpression, Type, const Position&)>;
 
@@ -230,13 +260,17 @@ struct TypeExpression : public Expression {
 };
 
 struct ConversionExpression : public TypeExpression {
-    using TypeExpression::TypeExpression;
+    ConversionExpression(PExpression expr, Type type, const Position& position)
+        : SyntaxNode{position},
+          TypeExpression{std::move(expr), std::move(type), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
 
 struct TypeCheckExpression : public TypeExpression {
-    using TypeExpression::TypeExpression;
+    TypeCheckExpression(PExpression expr, Type type, const Position& position)
+        : SyntaxNode{position},
+          TypeExpression{std::move(expr), std::move(type), position} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
@@ -246,36 +280,18 @@ struct FieldAccessExpression : public Expression {
     std::string field;
 
     FieldAccessExpression(PExpression expr, std::string field, const Position& position)
-        : Expression{position}, expr{std::move(expr)}, field{std::move(field)} {}
+        : SyntaxNode{position}, expr{std::move(expr)}, field{std::move(field)} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
 
 struct Constant : public Expression {
-    using Value = std::variant<Integral, Floating, bool, std::string>;
+    using Value = std::variant<int, float, bool, std::string>;
 
     Value value;
 
     Constant(Value value, const Position& position)
-        : Expression{position}, value{std::move(value)} {}
-
-    void accept(const ExpressionVisitor& vis) const override { vis(*this); }
-};
-
-struct Argument {
-    PExpression value;
-    bool ref{false};
-    Position position;
-};
-
-using Arguments = std::vector<Argument>;
-
-struct FuncCall : public Expression {
-    std::string name;
-    Arguments arguments;
-
-    FuncCall(std::string name, Arguments arguments, const Position& position)
-        : Expression{position}, name{std::move(name)}, arguments{std::move(arguments)} {}
+        : SyntaxNode{position}, value{std::move(value)} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };
@@ -284,7 +300,7 @@ struct VariableAccess : public Expression {
     std::string name;
 
     VariableAccess(std::string name, const Position& position)
-        : Expression{position}, name{std::move(name)} {}
+        : SyntaxNode{position}, name{std::move(name)} {}
 
     void accept(const ExpressionVisitor& vis) const override { vis(*this); }
 };

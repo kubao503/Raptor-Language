@@ -9,27 +9,74 @@ struct WhileStatement;
 struct ReturnStatement;
 struct PrintStatement;
 
-struct FieldAccess;
+struct FuncDef;
+struct Assignment;
+struct VarDef;
+struct FuncCall;
 
-using LValue = std::variant<std::string, std::unique_ptr<FieldAccess>>;
+struct StructDef;
+struct VariantDef;
 
-struct FieldAccess {
-    LValue container;
-    std::string field;
+struct StatementVisitor {
+    virtual void operator()(const IfStatement& stmt) = 0;
+    virtual void operator()(const WhileStatement& stmt) = 0;
+    virtual void operator()(const ReturnStatement& stmt) = 0;
+    virtual void operator()(const PrintStatement& stmt) = 0;
+    virtual void operator()(const FuncDef& stmt) = 0;
+    virtual void operator()(const Assignment& stmt) = 0;
+    virtual void operator()(const VarDef& stmt) = 0;
+    virtual void operator()(const FuncCall& stmt) = 0;
+    virtual void operator()(const StructDef& stmt) = 0;
+    virtual void operator()(const VariantDef& stmt) = 0;
 };
 
-struct Assignment {
-    LValue lhs;
-    PExpression rhs;
-    Position position;
+struct Statement : public virtual SyntaxNode {
+    virtual void accept(StatementVisitor& vis) const = 0;
 };
 
-struct VarDef {
-    bool isConst{false};
-    Type type{""};
-    std::string name;
+using PStatement = std::unique_ptr<Statement>;
+using Statements = std::vector<PStatement>;
+
+struct IfStatement : public Statement {
+    IfStatement(PExpression condition, Statements statements, const Position& position)
+        : SyntaxNode{position},
+          condition{std::move(condition)},
+          statements{std::move(statements)} {}
+
+    void accept(StatementVisitor& vis) const override { vis(*this); }
+
+    PExpression condition;
+    Statements statements;
+};
+
+struct WhileStatement : public Statement {
+    WhileStatement(PExpression condition, Statements statements, const Position& position)
+        : SyntaxNode{position},
+          condition{std::move(condition)},
+          statements{std::move(statements)} {}
+
+    void accept(StatementVisitor& vis) const override { vis(*this); }
+
+    PExpression condition;
+    Statements statements;
+};
+
+struct ReturnStatement : public Statement {
+    ReturnStatement(PExpression expression, const Position& position)
+        : SyntaxNode{position}, expression{std::move(expression)} {}
+
+    void accept(StatementVisitor& vis) const override { vis(*this); }
+
     PExpression expression;
-    Position position;
+};
+
+struct PrintStatement : public Statement {
+    PrintStatement(PExpression expression, const Position& position)
+        : SyntaxNode{position}, expression{std::move(expression)} {}
+
+    void accept(StatementVisitor& vis) const override { vis(*this); }
+
+    PExpression expression;
 };
 
 struct Parameter {
@@ -41,72 +88,108 @@ struct Parameter {
 
 using Parameters = std::vector<Parameter>;
 
-struct FuncDef;
-
-struct Field {
-    Type type{""};
-    std::string name;
-};
-
-struct StructDef {
-    std::string name;
-    std::vector<Field> fields;
-    Position position;
-};
-
-struct VariantDef {
-    std::string name;
-    std::vector<Type> types;
-    Position position;
-};
-
-using Statement =
-    std::variant<IfStatement, WhileStatement, ReturnStatement, PrintStatement, FuncDef,
-                 Assignment, VarDef, FuncCall, StructDef, VariantDef>;
-using Statements = std::vector<Statement>;
-
-struct IfStatement {
-    PExpression condition;
-    Statements statements;
-    Position position;
-};
-
-struct WhileStatement {
-    PExpression condition;
-    Statements statements;
-    Position position;
-};
-
-struct ReturnStatement {
-    PExpression expression;
-};
-
-struct PrintStatement {
-    PExpression expression;
-};
-
-class FuncDef {
+class FuncDef : public Statement {
    public:
     FuncDef(const ReturnType& returnType, const std::string& name,
-            const Parameters& parameters, Statements statements, Position position)
-        : returnType_{returnType},
+            const Parameters& parameters, Statements statements, const Position& position)
+        : SyntaxNode{position},
+          returnType_{returnType},
           name_{name},
           parameters_{parameters},
-          statements_{std::move(statements)},
-          position_{std::move(position)} {}
+          statements_{std::move(statements)} {}
+
+    void accept(StatementVisitor& vis) const override { vis(*this); }
 
     const ReturnType& getReturnType() const { return returnType_; }
     const std::string& getName() const { return name_; }
     const Parameters& getParameters() const { return parameters_; }
     const Statements& getStatements() const { return statements_; }
-    const Position& getPosition() const { return position_; }
 
    private:
     ReturnType returnType_{""};
     std::string name_;
     Parameters parameters_;
     Statements statements_;
-    Position position_;
+};
+
+struct FieldAccess;
+
+using LValue = std::variant<std::string, std::unique_ptr<FieldAccess>>;
+
+struct FieldAccess {
+    LValue container;
+    std::string field;
+};
+
+struct Assignment : public Statement {
+    Assignment(LValue lhs, PExpression rhs, const Position& position)
+        : SyntaxNode{position}, lhs{std::move(lhs)}, rhs{std::move(rhs)} {}
+
+    void accept(StatementVisitor& vis) const override { vis(*this); }
+
+    LValue lhs;
+    PExpression rhs;
+};
+
+struct VarDef : public Statement {
+    VarDef(bool isConst, Type type, std::string name, PExpression expression,
+           const Position& position)
+        : SyntaxNode{position},
+          isConst{isConst},
+          type{std::move(type)},
+          name{std::move(name)},
+          expression{std::move(expression)} {}
+
+    void accept(StatementVisitor& vis) const override { vis(*this); }
+
+    bool isConst;
+    Type type;
+    std::string name;
+    PExpression expression;
+};
+
+struct Argument {
+    PExpression value;
+    bool ref{false};
+    Position position;
+};
+
+using Arguments = std::vector<Argument>;
+
+struct FuncCall : public Expression, public Statement {
+    std::string name;
+    Arguments arguments;
+
+    FuncCall(std::string name, Arguments arguments, const Position& position)
+        : SyntaxNode{position}, name{std::move(name)}, arguments{std::move(arguments)} {}
+
+    void accept(const ExpressionVisitor& vis) const override { vis(*this); }
+    void accept(StatementVisitor& vis) const override { vis(*this); }
+};
+
+struct Field {
+    Type type{""};
+    std::string name;
+};
+
+struct StructDef : public Statement {
+    StructDef(std::string name, std::vector<Field> fields, const Position& position)
+        : SyntaxNode{position}, name{std::move(name)}, fields{std::move(fields)} {}
+
+    void accept(StatementVisitor& vis) const override { vis(*this); }
+
+    std::string name;
+    std::vector<Field> fields;
+};
+
+struct VariantDef : public Statement {
+    VariantDef(std::string name, std::vector<Type> types, const Position& position)
+        : SyntaxNode{position}, name{std::move(name)}, types{std::move(types)} {}
+
+    void accept(StatementVisitor& vis) const override { vis(*this); }
+
+    std::string name;
+    std::vector<Type> types;
 };
 
 #endif
