@@ -1151,6 +1151,11 @@ TEST_F(InterpreterTest, negation_type_mismatch) {
     interpretAndExpectThrowAt<TypeMismatch>({1, 11});
 }
 
+TEST_F(InterpreterTest, division_by_zero) {
+    SetUp("print 5 / 0;");
+    interpretAndExpectThrowAt<DivisionByZero>({1, 7});
+}
+
 TEST_F(InterpreterTest, max_recursion_depth) {
     SetUp(
         "void foo() { foo(); }"

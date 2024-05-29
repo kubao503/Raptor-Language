@@ -152,6 +152,25 @@ struct NumericEvaluator {
     Functor func_;
 };
 
+template <>
+struct NumericEvaluator<std::divides<>> {
+    NumericEvaluator(std::divides<>) {}
+
+    ValueObj::Value operator()(Integral lhs, Integral rhs) const {
+        if (rhs == 0)
+            throw DivisionByZero{{}};
+        return lhs / rhs;
+    }
+    ValueObj::Value operator()(Floating lhs, Floating rhs) const {
+        if (rhs == 0.0f)
+            throw DivisionByZero{{}};
+        return lhs / rhs;
+    }
+    ValueObj::Value operator()(const auto& lhs, const auto& rhs) const {
+        throw TypeMismatch{{}, ValueToType()(lhs), ValueToType()(rhs)};
+    }
+};
+
 template <typename Functor>
 void ExpressionInterpreter::evalNumericExpr(const BinaryExpression& expr,
                                             Functor func) const {
@@ -164,6 +183,8 @@ void ExpressionInterpreter::evalNumericExpr(const BinaryExpression& expr,
         lastResult_ = ValueObj{std::move(value)};
     } catch (const TypeMismatch& e) {
         throw TypeMismatch{expr.position, e};
+    } catch (const DivisionByZero&) {
+        throw DivisionByZero{expr.position};
     }
 }
 

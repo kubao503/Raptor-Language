@@ -115,4 +115,10 @@ class MaxRecursionDepth : public BaseException {
         : BaseException{position, "Max recursion depth reached"} {}
 };
 
+class DivisionByZero : public BaseException {
+   public:
+    DivisionByZero(const Position& position)
+        : BaseException{position, "Attempt to divide by zero"} {}
+};
+
 #endif
