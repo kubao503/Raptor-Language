@@ -334,10 +334,14 @@ ReturnValue Interpreter::handleFunctionCall(const FuncCall& funcCall) {
 
     callStack_.push(std::move(ctx));
 
+    Position lastStmtPosition{funcDef->position};
+
     for (const auto& stmt : funcDef->getStatements()) {
         stmt->accept(*this);
-        if (returning_)
+        if (returning_) {
+            lastStmtPosition = stmt->position;
             break;
+        }
     }
     returning_ = false;
 
@@ -345,7 +349,7 @@ ReturnValue Interpreter::handleFunctionCall(const FuncCall& funcCall) {
         try {
             convertToUserDefinedType(*returnValue_, *typeName);
         } catch (const InvalidFieldCount& e) {
-            throw InvalidFieldCount{funcDef->position, e};
+            throw InvalidFieldCount{lastStmtPosition, e};
         } catch (const TypeMismatch& e) {
             throw TypeMismatch{funcDef->position, e};
         } catch (const SymbolNotFound& e) {
@@ -355,7 +359,7 @@ ReturnValue Interpreter::handleFunctionCall(const FuncCall& funcCall) {
     try {
         checkReturnType(funcDef->getReturnType(), returnValue_);
     } catch (const ReturnTypeMismatch& e) {
-        throw ReturnTypeMismatch{funcDef->position, e};
+        throw ReturnTypeMismatch{lastStmtPosition, e};
     }
 
     callStack_.pop();

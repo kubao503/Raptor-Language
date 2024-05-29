@@ -957,7 +957,7 @@ TEST_F(InterpreterTest, returning_value_in_void_func) {
         "    return 5;\n"
         "}\n"
         "foo();");
-    interpretAndExpectThrowAt<ReturnTypeMismatch>({1, 1});
+    interpretAndExpectThrowAt<ReturnTypeMismatch>({2, 5});
 }
 
 TEST_F(InterpreterTest, return_value_from_func_call_stmt_does_not_presist) {
@@ -1040,9 +1040,9 @@ TEST_F(InterpreterTest, returning_anonymous_struct) {
 TEST_F(InterpreterTest, returning_wrong_struct) {
     SetUp(
         "struct A { int x, int y }\n"
-        "A foo() { return {5}; }\n"
+        "A foo() { return { 5 }; }\n"
         "foo();");
-    interpretAndExpectThrowAt<InvalidFieldCount>({2, 1});
+    interpretAndExpectThrowAt<InvalidFieldCount>({2, 11});
 }
 
 TEST_F(InterpreterTest, returning_variant) {
@@ -1058,7 +1058,7 @@ TEST_F(InterpreterTest, returning_wrong_variant) {
         "variant V { int, float }\n"
         "V foo() { return true; }\n"
         "print foo();");
-    interpretAndExpectThrowAt<ReturnTypeMismatch>({2, 1});
+    interpretAndExpectThrowAt<ReturnTypeMismatch>({2, 11});
 }
 
 TEST_F(InterpreterTest, checking_variant_type) {
