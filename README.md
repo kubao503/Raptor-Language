@@ -21,6 +21,13 @@ $ cd build/Debug/
 $ ctest
 ```
 
+### Running interpreter:
+
+```console
+$ cd build/Debug
+$ ./src/raptor_lang_interpreter ../../example.rp
+```
+
 ### Getting test coverage
 
 ```console
@@ -30,7 +37,7 @@ $ ctest
 $ lcov --capture --directory . --output-file coverage.info
 $ genhtml coverage.info --output-directory coverage_report
 ```
-Coverage report is then accessible at build/Debug/coverage_report/index.html 
+Coverage report is then accessible at build/Debug/coverage_report/index.html
 
 ### Generating documentation
 ```console
@@ -43,3 +50,6 @@ Documentation is then accessible at html/index.html
 
 ### Code linting
 clang-tidy built into VSCode
+
+### Architecture schema
+![](docs/architecture_schema.jpg)
