@@ -9,6 +9,7 @@ add_executable(
     test_stmt_parsing.cpp
     test_expr_parsing.cpp
     test_interpreter.cpp
+    acceptance_tests.cpp
 )
 
 target_link_libraries(
