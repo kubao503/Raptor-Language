@@ -9,7 +9,7 @@ struct WhileStatement;
 struct ReturnStatement;
 struct PrintStatement;
 
-struct FuncDef;
+class FuncDef;
 struct Assignment;
 struct VarDef;
 struct FuncCall;

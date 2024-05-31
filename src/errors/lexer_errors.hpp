@@ -7,9 +7,6 @@
 class InvalidToken : public BaseException {
    public:
     InvalidToken(const Position& position, char c);
-
-   private:
-    char c_;
 };
 
 class NotTerminatedStrConst : public BaseException {
@@ -20,18 +17,11 @@ class NotTerminatedStrConst : public BaseException {
 class NonEscapableChar : public BaseException {
    public:
     NonEscapableChar(const Position& position, char c);
-
-   private:
-    char c_;
 };
 
 class NumericOverflow : public BaseException {
    public:
     NumericOverflow(const Position& position, Integral value, Integral digit);
-
-   private:
-    Integral value_;
-    Integral digit_;
 };
 
 class InvalidFloat : public BaseException {
