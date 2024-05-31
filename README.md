@@ -5,12 +5,14 @@
 - genhtml 1.14
 - doxygen 1.10.0
 
+All of them can be installed using setup.sh
+
 ### Installation:
 
 ```console
-$ conan install . --build=missing
-$ cd build/Release/
-$ cmake ../../ -DCMAKE_TOOLCHAIN_FILE=generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
+$ conan install . --build=missing -s compiler.cppstd=20 -s build_type=Debug
+$ cd build/Debug/
+$ cmake ../../ -DCMAKE_TOOLCHAIN_FILE=generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug
 $ cmake --build .
 ```
 
@@ -50,6 +52,3 @@ Documentation is then accessible at html/index.html
 
 ### Code linting
 clang-tidy built into VSCode
-
-### Architecture schema
-![](docs/architecture_schema.jpg)
