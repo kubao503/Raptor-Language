@@ -46,8 +46,8 @@ class AcceptanceTest : public testing::Test {
     std::unique_ptr<Filter> filter_;
     std::unique_ptr<Parser> parser_;
     Program program_;
+    std::stringstream output_{};
     Interpreter interpreter_;
-    std::stringstream output_;
 };
 
 TEST_F(AcceptanceTest, data_types_and_operations) {

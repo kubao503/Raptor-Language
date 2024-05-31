@@ -44,8 +44,8 @@ class InterpreterTest : public testing::Test {
     std::unique_ptr<Lexer> lexer_;
     std::unique_ptr<Parser> parser_;
     Program program_;
+    std::stringstream output_{};
     Interpreter interpreter_;
-    std::stringstream output_;
 };
 
 TEST_F(InterpreterTest, empty_program) {
