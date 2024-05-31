@@ -4,20 +4,20 @@
 #include "parser_test.hpp"
 
 TEST_F(FullyParsedTest, parse_empty_program) {
-    SetUp("");
+    Init("");
 
     const auto prog = parser_->parseProgram();
     EXPECT_EQ(prog.statements.size(), 0);
 }
 
 TEST_F(ParserTest, unknown_statement) {
-    SetUp("unknown");
+    Init("unknown");
 
     EXPECT_THROW(parser_->parseProgram(), SyntaxException);
 }
 
 TEST_F(FullyParsedTest, parse_if_statement_empty) {
-    SetUp(
+    Init(
         "if true {"
         "}");
 
@@ -33,7 +33,7 @@ TEST_F(FullyParsedTest, parse_if_statement_empty) {
 }
 
 TEST_F(FullyParsedTest, parse_if_statement_body) {
-    SetUp(
+    Init(
         "if true {"
         "bool var = true;"
         "}");
@@ -51,14 +51,14 @@ TEST_F(FullyParsedTest, parse_if_statement_body) {
 }
 
 TEST_F(ParserTest, parse_if_statement_missing_condition) {
-    SetUp(
+    Init(
         "if {\n"
         "}");
     parseAndExpectThrowAt<SyntaxException>({1, 4});
 }
 
 TEST_F(FullyParsedTest, parse_while_statement_empty) {
-    SetUp(
+    Init(
         "while true {"
         "}");
 
@@ -75,7 +75,7 @@ TEST_F(FullyParsedTest, parse_while_statement_empty) {
 }
 
 TEST_F(FullyParsedTest, parse_while_statement_body) {
-    SetUp(
+    Init(
         "while true {"
         "    bool var = true;"
         "}");
@@ -94,7 +94,7 @@ TEST_F(FullyParsedTest, parse_while_statement_body) {
 }
 
 TEST_F(FullyParsedTest, parse_print_statement_empty) {
-    SetUp("print;");
+    Init("print;");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -107,7 +107,7 @@ TEST_F(FullyParsedTest, parse_print_statement_empty) {
 }
 
 TEST_F(FullyParsedTest, parse_print_statement) {
-    SetUp("print true;");
+    Init("print true;");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -121,7 +121,7 @@ TEST_F(FullyParsedTest, parse_print_statement) {
 }
 
 TEST_F(FullyParsedTest, parse_return_statement_empty) {
-    SetUp("return;");
+    Init("return;");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -134,7 +134,7 @@ TEST_F(FullyParsedTest, parse_return_statement_empty) {
 }
 
 TEST_F(FullyParsedTest, parse_return_statement) {
-    SetUp("return true;");
+    Init("return true;");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -148,7 +148,7 @@ TEST_F(FullyParsedTest, parse_return_statement) {
 }
 
 TEST_F(FullyParsedTest, parse_func_def) {
-    SetUp(
+    Init(
         "int foo() {"
         "}");
 
@@ -164,7 +164,7 @@ TEST_F(FullyParsedTest, parse_func_def) {
 }
 
 TEST_F(FullyParsedTest, parse_func_def_id_ret_type) {
-    SetUp(
+    Init(
         "MyStruct foo() {"
         "}");
 
@@ -177,7 +177,7 @@ TEST_F(FullyParsedTest, parse_func_def_id_ret_type) {
 }
 
 TEST_F(FullyParsedTest, parse_func_def_parameter) {
-    SetUp(
+    Init(
         "int foo(int num) {"
         "}");
 
@@ -196,7 +196,7 @@ TEST_F(FullyParsedTest, parse_func_def_parameter) {
 }
 
 TEST_F(FullyParsedTest, parse_func_def_id_parameter) {
-    SetUp(
+    Init(
         "int foo(MyInt num) {"
         "}");
 
@@ -214,7 +214,7 @@ TEST_F(FullyParsedTest, parse_func_def_id_parameter) {
 }
 
 TEST_F(FullyParsedTest, parse_func_def_two_parameters) {
-    SetUp(
+    Init(
         "int foo(int num, bool truth) {"
         "}");
 
@@ -241,7 +241,7 @@ TEST_F(FullyParsedTest, parse_func_def_two_parameters) {
 }
 
 TEST_F(ParserTest, parse_func_def_no_parameter_after_comma) {
-    SetUp(
+    Init(
         "int foo(int num, ) {\n"
         "}");
 
@@ -249,7 +249,7 @@ TEST_F(ParserTest, parse_func_def_no_parameter_after_comma) {
 }
 
 TEST_F(FullyParsedTest, parse_func_def_ref_parameter) {
-    SetUp(
+    Init(
         "int foo(ref int num) {"
         "}");
 
@@ -268,7 +268,7 @@ TEST_F(FullyParsedTest, parse_func_def_ref_parameter) {
 }
 
 TEST_F(ParserTest, parse_func_def_no_parameter_after_ref) {
-    SetUp(
+    Init(
         "int foo(ref) {\n"
         "}");
 
@@ -276,7 +276,7 @@ TEST_F(ParserTest, parse_func_def_no_parameter_after_ref) {
 }
 
 TEST_F(FullyParsedTest, parse_func_def_statements) {
-    SetUp(
+    Init(
         "int foo() {"
         "    if true {"
         "    }"
@@ -295,7 +295,7 @@ TEST_F(FullyParsedTest, parse_func_def_statements) {
 }
 
 TEST_F(FullyParsedTest, parse_void_func_def) {
-    SetUp(
+    Init(
         "void foo() {"
         "}");
 
@@ -308,7 +308,7 @@ TEST_F(FullyParsedTest, parse_void_func_def) {
 }
 
 TEST_F(ParserTest, parse_void_func_def_no_name_after_void_kw) {
-    SetUp(
+    Init(
         "void () {\n"
         "}");
 
@@ -316,7 +316,7 @@ TEST_F(ParserTest, parse_void_func_def_no_name_after_void_kw) {
 }
 
 TEST_F(FullyParsedTest, parse_assignment) {
-    SetUp("var = 42;");
+    Init("var = 42;");
 
     const auto prog = parser_->parseProgram();
 
@@ -333,7 +333,7 @@ TEST_F(FullyParsedTest, parse_assignment) {
 }
 
 TEST_F(FullyParsedTest, parse_field_assignment) {
-    SetUp("myStruct.firstField.secondField = true;");
+    Init("myStruct.firstField.secondField = true;");
 
     const auto prog = parser_->parseProgram();
 
@@ -360,13 +360,13 @@ TEST_F(FullyParsedTest, parse_field_assignment) {
 }
 
 TEST_F(FullyParsedTest, parse_assignment_missing_semicolon) {
-    SetUp("var = 42");
+    Init("var = 42");
 
     parseAndExpectThrowAt<SyntaxException>({1, 9});
 }
 
 TEST_F(FullyParsedTest, parse_var_def) {
-    SetUp("int var = 42;");
+    Init("int var = 42;");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -383,7 +383,7 @@ TEST_F(FullyParsedTest, parse_var_def) {
 }
 
 TEST_F(FullyParsedTest, parse_const_var_def) {
-    SetUp("const int var = 42;");
+    Init("const int var = 42;");
 
     const auto prog = parser_->parseProgram();
     ASSERT_EQ(prog.statements.size(), 1);
@@ -402,7 +402,7 @@ TEST_F(FullyParsedTest, parse_const_var_def) {
 }
 
 TEST_F(FullyParsedTest, parse_const_var_def_id_type) {
-    SetUp("const MyStruct var = 42;");
+    Init("const MyStruct var = 42;");
 
     const auto prog = parser_->parseProgram();
 
@@ -415,13 +415,13 @@ TEST_F(FullyParsedTest, parse_const_var_def_id_type) {
 }
 
 TEST_F(ParserTest, parse_const_var_def_invalid_type) {
-    SetUp("const if var = 42;");
+    Init("const if var = 42;");
 
     parseAndExpectThrowAt<SyntaxException>({1, 7});
 }
 
 TEST_F(FullyParsedTest, parse_func_call_statement) {
-    SetUp("foo();");
+    Init("foo();");
 
     const auto prog = parser_->parseProgram();
 
@@ -434,7 +434,7 @@ TEST_F(FullyParsedTest, parse_func_call_statement) {
 }
 
 TEST_F(FullyParsedTest, parse_func_call_statement_args) {
-    SetUp("foo(true, false);");
+    Init("foo(true, false);");
 
     const auto prog = parser_->parseProgram();
 
@@ -447,7 +447,7 @@ TEST_F(FullyParsedTest, parse_func_call_statement_args) {
 }
 
 TEST_F(FullyParsedTest, parse_empty_struct_def) {
-    SetUp(
+    Init(
         "struct MyStruct {"
         "}");
 
@@ -462,7 +462,7 @@ TEST_F(FullyParsedTest, parse_empty_struct_def) {
 }
 
 TEST_F(FullyParsedTest, parse_struct_def) {
-    SetUp(
+    Init(
         "struct Point {"
         "    int x,"
         "    bool y"
@@ -489,7 +489,7 @@ TEST_F(FullyParsedTest, parse_struct_def) {
 }
 
 TEST_F(FullyParsedTest, parse_variant_def) {
-    SetUp(
+    Init(
         "variant IntOrBool {"
         "    int,"
         "    bool"
@@ -514,7 +514,7 @@ TEST_F(FullyParsedTest, parse_variant_def) {
 }
 
 TEST_F(ParserTest, parse_invalid_variant_with_no_types) {
-    SetUp(
+    Init(
         "variant IntOrBool {\n"
         "}");
 

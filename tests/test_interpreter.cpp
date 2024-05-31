@@ -11,7 +11,7 @@ class InterpreterTest : public testing::Test {
     InterpreterTest()
         : interpreter_{output_} {}
 
-    void SetUp(const std::string& input) {
+    void Init(const std::string& input) {
         stream_ = std::istringstream(input);
         source_ = std::make_unique<Source>(stream_);
         lexer_ = std::make_unique<Lexer>(*source_);
@@ -49,29 +49,29 @@ class InterpreterTest : public testing::Test {
 };
 
 TEST_F(InterpreterTest, empty_program) {
-    SetUp("");
+    Init("");
     EXPECT_EQ(interpretAndGetOutput(), "");
 }
 
 TEST_F(InterpreterTest, print_new_line) {
-    SetUp("print;");
+    Init("print;");
     EXPECT_EQ(interpretAndGetOutput(), "\n");
 }
 
 TEST_F(InterpreterTest, print_constant) {
-    SetUp("print 5;");
+    Init("print 5;");
     EXPECT_EQ(interpretAndGetOutput(), "5\n");
 }
 
 TEST_F(InterpreterTest, var_def) {
-    SetUp(
+    Init(
         "int x = 5;"
         "print x;");
     EXPECT_EQ(interpretAndGetOutput(), "5\n");
 }
 
 TEST_F(InterpreterTest, var_shadowing) {
-    SetUp(
+    Init(
         "int x = 5;"
         "if true {"
         "    int x = 22;"
@@ -82,7 +82,7 @@ TEST_F(InterpreterTest, var_shadowing) {
 }
 
 TEST_F(InterpreterTest, var_not_found) {
-    SetUp(
+    Init(
         "void foo() {\n"
         "    print x;\n"
         "}\n"
@@ -91,31 +91,31 @@ TEST_F(InterpreterTest, var_not_found) {
 }
 
 TEST_F(InterpreterTest, assignment_var_not_found) {
-    SetUp("x = 2;");
+    Init("x = 2;");
     interpretAndExpectThrowAt<SymbolNotFound>({1, 1});
 }
 
 TEST_F(InterpreterTest, var_redefinition) {
-    SetUp(
+    Init(
         "int x = 5;\n"
         "int x = 10;");
     interpretAndExpectThrowAt<VariableRedefinition>({2, 1});
 }
 
 TEST_F(InterpreterTest, var_def_mismatched_types) {
-    SetUp("int x = true;");
+    Init("int x = true;");
     interpretAndExpectThrowAt<TypeMismatch>({1, 1});
 }
 
 TEST_F(InterpreterTest, var_def_void) {
-    SetUp(
+    Init(
         "void foo() {}\n"
         "int x = foo();");
     interpretAndExpectThrowAt<TypeMismatch>({2, 1});
 }
 
 TEST_F(InterpreterTest, assignment) {
-    SetUp(
+    Init(
         "int x = 5;"
         "x = 20;"
         "print x;");
@@ -123,14 +123,14 @@ TEST_F(InterpreterTest, assignment) {
 }
 
 TEST_F(InterpreterTest, assignment_mismatched_types) {
-    SetUp(
+    Init(
         "int x = 5;\n"
         "x = true;");
     interpretAndExpectThrowAt<TypeMismatch>({2, 1});
 }
 
 TEST_F(InterpreterTest, var_def_makes_a_copy) {
-    SetUp(
+    Init(
         "int x = 20;"
         "int y = x;"
         "y = 5;"
@@ -139,7 +139,7 @@ TEST_F(InterpreterTest, var_def_makes_a_copy) {
 }
 
 TEST_F(InterpreterTest, assignment_makes_a_copy) {
-    SetUp(
+    Init(
         "int x = 20;"
         "int y = 0;"
         "y = x;"
@@ -149,21 +149,21 @@ TEST_F(InterpreterTest, assignment_makes_a_copy) {
 }
 
 TEST_F(InterpreterTest, assigning_to_const_var) {
-    SetUp(
+    Init(
         "const int x = 5;\n"
         "x = 10;");
     interpretAndExpectThrowAt<ConstViolation>({2, 1});
 }
 
 TEST_F(InterpreterTest, assigning_to_field_of_const_struct) {
-    SetUp(
+    Init(
         "const int x = 5;\n"
         "x = 10;");
     interpretAndExpectThrowAt<ConstViolation>({2, 1});
 }
 
 TEST_F(InterpreterTest, func_call) {
-    SetUp(
+    Init(
         "void fun() {"
         R"(    print "Inside function";)"
         "}"
@@ -172,14 +172,14 @@ TEST_F(InterpreterTest, func_call) {
 }
 
 TEST_F(InterpreterTest, function_redefinition) {
-    SetUp(
+    Init(
         "void fun() { }\n"
         "int fun(int a) { }");
     interpretAndExpectThrowAt<FunctionRedefinition>({2, 1});
 }
 
 TEST_F(InterpreterTest, function_shadowing) {
-    SetUp(
+    Init(
         "void fun() { print 1; }"
         "void main() {"
         "    void fun() { print 2; }"
@@ -190,7 +190,7 @@ TEST_F(InterpreterTest, function_shadowing) {
 }
 
 TEST_F(InterpreterTest, variable_in_parent_context) {
-    SetUp(
+    Init(
         "void parent() {"
         "    void nested() {"
         "        print x;"
@@ -203,7 +203,7 @@ TEST_F(InterpreterTest, variable_in_parent_context) {
 }
 
 TEST_F(InterpreterTest, function_in_parent_context) {
-    SetUp(
+    Init(
         "void parent() {"
         "    void nested() {"
         "        second_nested();"
@@ -218,7 +218,7 @@ TEST_F(InterpreterTest, function_in_parent_context) {
 }
 
 TEST_F(InterpreterTest, function_multiple_args) {
-    SetUp(
+    Init(
         "void foo(int a, int b) {"
         "    print a;"
         "    print b;"
@@ -228,14 +228,14 @@ TEST_F(InterpreterTest, function_multiple_args) {
 }
 
 TEST_F(InterpreterTest, redefinition_of_func_parameter) {
-    SetUp(
+    Init(
         "void foo(int a, int a) {}"
         "foo(1, 2);");
     interpretAndExpectThrowAt<VariableRedefinition>({1, 17});
 }
 
 TEST_F(InterpreterTest, function_pass_by_value) {
-    SetUp(
+    Init(
         "void foo(int a) {"
         "    a = 27;"
         "    print a;"
@@ -247,7 +247,7 @@ TEST_F(InterpreterTest, function_pass_by_value) {
 }
 
 TEST_F(InterpreterTest, function_pass_by_ref) {
-    SetUp(
+    Init(
         "void foo(ref int a) {"
         "    a = 27;"
         "    print a;"
@@ -259,7 +259,7 @@ TEST_F(InterpreterTest, function_pass_by_ref) {
 }
 
 TEST_F(InterpreterTest, function_call_invalid_arg_count) {
-    SetUp(
+    Init(
         "void foo(int a, int b) {"
         "}"
         "foo(5);");
@@ -267,7 +267,7 @@ TEST_F(InterpreterTest, function_call_invalid_arg_count) {
 }
 
 TEST_F(InterpreterTest, function_call_mismatched_arg_type) {
-    SetUp(
+    Init(
         "void foo(str name) {\n"
         "}\n"
         "foo(5);");
@@ -275,7 +275,7 @@ TEST_F(InterpreterTest, function_call_mismatched_arg_type) {
 }
 
 TEST_F(InterpreterTest, function_call_inside_a_function) {
-    SetUp(
+    Init(
         "void foo(int a) { print a; }"
         "void bar(int b) {"
         "    foo(b);"
@@ -285,12 +285,12 @@ TEST_F(InterpreterTest, function_call_inside_a_function) {
 }
 
 TEST_F(InterpreterTest, function_not_found) {
-    SetUp("foo(5);");
+    Init("foo(5);");
     interpretAndExpectThrowAt<SymbolNotFound>({1, 1});
 }
 
 TEST_F(InterpreterTest, if_statement_true_condition) {
-    SetUp(
+    Init(
         "if true {"
         "    print 2;"
         "}");
@@ -298,7 +298,7 @@ TEST_F(InterpreterTest, if_statement_true_condition) {
 }
 
 TEST_F(InterpreterTest, if_statement_false_condition) {
-    SetUp(
+    Init(
         "if false {"
         "    print 2;"
         "}");
@@ -306,7 +306,7 @@ TEST_F(InterpreterTest, if_statement_false_condition) {
 }
 
 TEST_F(InterpreterTest, if_statement_invalid_condition_type) {
-    SetUp(
+    Init(
         "if 2 + 3 {"
         "    print 2;"
         "}");
@@ -314,7 +314,7 @@ TEST_F(InterpreterTest, if_statement_invalid_condition_type) {
 }
 
 TEST_F(InterpreterTest, if_statement_type_mismatch_in_condition) {
-    SetUp(
+    Init(
         "if 2 + true {"
         "    print 2;"
         "}");
@@ -322,7 +322,7 @@ TEST_F(InterpreterTest, if_statement_type_mismatch_in_condition) {
 }
 
 TEST_F(InterpreterTest, var_outside_of_if_statement) {
-    SetUp(
+    Init(
         "int x = 7;"
         "if true {"
         "    print x;"
@@ -331,7 +331,7 @@ TEST_F(InterpreterTest, var_outside_of_if_statement) {
 }
 
 TEST_F(InterpreterTest, while_statement) {
-    SetUp(
+    Init(
         "int i = 5;"
         "while i == 5 {"
         "    print 77;"
@@ -341,7 +341,7 @@ TEST_F(InterpreterTest, while_statement) {
 }
 
 TEST_F(InterpreterTest, struct_definition) {
-    SetUp(
+    Init(
         "struct Point {"
         "    int x,"
         "    Point y"
@@ -364,7 +364,7 @@ TEST_F(InterpreterTest, struct_definition) {
 }
 
 TEST_F(InterpreterTest, struct_var_def) {
-    SetUp(
+    Init(
         "struct Point {"
         "    int x,"
         "    float y"
@@ -390,7 +390,7 @@ TEST_F(InterpreterTest, struct_var_def) {
 }
 
 TEST_F(InterpreterTest, struct_printing) {
-    SetUp(
+    Init(
         "struct A {"
         "    int x,"
         "    bool y"
@@ -401,7 +401,7 @@ TEST_F(InterpreterTest, struct_printing) {
 }
 
 TEST_F(InterpreterTest, struct_assignment) {
-    SetUp(
+    Init(
         "struct Point {"
         "    int x,"
         "    float y"
@@ -429,12 +429,12 @@ TEST_F(InterpreterTest, struct_assignment) {
 }
 
 TEST_F(InterpreterTest, struct_not_found) {
-    SetUp("MyStruct x = {1, 2};");
+    Init("MyStruct x = {1, 2};");
     interpretAndExpectThrowAt<SymbolNotFound>({1, 1});
 }
 
 TEST_F(InterpreterTest, struct_field_access) {
-    SetUp(
+    Init(
         "struct MyInteger {"
         "    int x"
         "}"
@@ -444,7 +444,7 @@ TEST_F(InterpreterTest, struct_field_access) {
 }
 
 TEST_F(InterpreterTest, struct_chained_field_access) {
-    SetUp(
+    Init(
         "struct MyInteger { int x }"
         "struct Container { MyInteger m }"
         "Container c = { { 4 } };"
@@ -453,14 +453,14 @@ TEST_F(InterpreterTest, struct_chained_field_access) {
 }
 
 TEST_F(InterpreterTest, field_access_of_non_struct) {
-    SetUp(
+    Init(
         "int x = 5;\n"
         "print x.field;");
     interpretAndExpectThrowAt<TypeMismatch>({2, 7});
 }
 
 TEST_F(InterpreterTest, struct_var_invalid_field_type) {
-    SetUp(
+    Init(
         "struct MyInteger {\n"
         "    int x\n"
         "}\n"
@@ -469,7 +469,7 @@ TEST_F(InterpreterTest, struct_var_invalid_field_type) {
 }
 
 TEST_F(InterpreterTest, struct_var_invalid_field_count) {
-    SetUp(
+    Init(
         "struct MyInteger {\n"
         "    int x\n"
         "}\n"
@@ -478,7 +478,7 @@ TEST_F(InterpreterTest, struct_var_invalid_field_count) {
 }
 
 TEST_F(InterpreterTest, struct_assignment_invalid_field_count) {
-    SetUp(
+    Init(
         "struct MyInteger {\n"
         "    int x\n"
         "}\n"
@@ -488,7 +488,7 @@ TEST_F(InterpreterTest, struct_assignment_invalid_field_count) {
 }
 
 TEST_F(InterpreterTest, struct_assignment_invalid_type) {
-    SetUp(
+    Init(
         "struct MyInteger {\n"
         "    int x\n"
         "}\n"
@@ -498,12 +498,12 @@ TEST_F(InterpreterTest, struct_assignment_invalid_type) {
 }
 
 TEST_F(InterpreterTest, field_access_of_anonymous_struct) {
-    SetUp("print ({1, 2}).field;");
+    Init("print ({1, 2}).field;");
     interpretAndExpectThrowAt<TypeMismatch>({1, 7});
 }
 
 TEST_F(InterpreterTest, field_access_of_invalid_field) {
-    SetUp(
+    Init(
         "struct A { int x }\n"
         "A a = { 5 };\n"
         "print a.y;");
@@ -511,7 +511,7 @@ TEST_F(InterpreterTest, field_access_of_invalid_field) {
 }
 
 TEST_F(InterpreterTest, passing_struct_to_function_by_value) {
-    SetUp(
+    Init(
         "struct MyInteger {"
         "    int x"
         "}"
@@ -526,7 +526,7 @@ TEST_F(InterpreterTest, passing_struct_to_function_by_value) {
 }
 
 TEST_F(InterpreterTest, passing_anonymous_struct_to_function_by_value) {
-    SetUp(
+    Init(
         "struct MyInteger {"
         "    int x"
         "}"
@@ -538,7 +538,7 @@ TEST_F(InterpreterTest, passing_anonymous_struct_to_function_by_value) {
 }
 
 TEST_F(InterpreterTest, passing_struct_to_function_by_ref) {
-    SetUp(
+    Init(
         "struct MyInteger { int x }"
         "void foo(ref MyInteger i) {"
         "    i = { 9 };"
@@ -551,7 +551,7 @@ TEST_F(InterpreterTest, passing_struct_to_function_by_ref) {
 }
 
 TEST_F(InterpreterTest, passing_struct_to_function_mismatched_field_type) {
-    SetUp(
+    Init(
         "struct MyInteger { int x }\n"
         "void foo(MyInteger i) { }\n"
         "foo({true});");
@@ -559,7 +559,7 @@ TEST_F(InterpreterTest, passing_struct_to_function_mismatched_field_type) {
 }
 
 TEST_F(InterpreterTest, passing_struct_to_function_invalid_field_count) {
-    SetUp(
+    Init(
         "struct MyInteger { int x }\n"
         "void foo(MyInteger i) { }\n"
         "foo({2, 4});");
@@ -567,7 +567,7 @@ TEST_F(InterpreterTest, passing_struct_to_function_invalid_field_count) {
 }
 
 TEST_F(InterpreterTest, nested_struct_initialization) {
-    SetUp(
+    Init(
         "struct A { int num }"
         "struct B { A a }"
         "B b = {{5}};");
@@ -593,7 +593,7 @@ TEST_F(InterpreterTest, nested_struct_initialization) {
 }
 
 TEST_F(InterpreterTest, nested_struct_assignment) {
-    SetUp(
+    Init(
         "struct A { int num }"
         "struct B { A a }"
         "B b = {{5}};"
@@ -620,7 +620,7 @@ TEST_F(InterpreterTest, nested_struct_assignment) {
 }
 
 TEST_F(InterpreterTest, struct_field_assignment) {
-    SetUp(
+    Init(
         "struct A { int x, int y }"
         "A a = {3, 4};"
         "a.x = 9;"
@@ -629,7 +629,7 @@ TEST_F(InterpreterTest, struct_field_assignment) {
 }
 
 TEST_F(InterpreterTest, struct_nested_field_assignment) {
-    SetUp(
+    Init(
         "struct A { int num }"
         "struct B { int x, A a }"
         "B b = { 3, { 8 } };"
@@ -639,7 +639,7 @@ TEST_F(InterpreterTest, struct_nested_field_assignment) {
 }
 
 TEST_F(InterpreterTest, struct_invalid_field_assignment) {
-    SetUp(
+    Init(
         "struct A { int x, int y }\n"
         "A a = {2, 3};\n"
         "a.z = 9;");
@@ -647,7 +647,7 @@ TEST_F(InterpreterTest, struct_invalid_field_assignment) {
 }
 
 TEST_F(InterpreterTest, struct_redefinition) {
-    SetUp(
+    Init(
         "struct A { int num }\n"
         "void foo() {\n"
         "    struct A { bool truth }\n"
@@ -657,7 +657,7 @@ TEST_F(InterpreterTest, struct_redefinition) {
 }
 
 TEST_F(InterpreterTest, variant_definition) {
-    SetUp("variant IntOrBool { int, bool }");
+    Init("variant IntOrBool { int, bool }");
     interpretAndGetOutput();
 
     const VariantDef* variantDef = interpreter_.getVariantDef("IntOrBool");
@@ -675,7 +675,7 @@ TEST_F(InterpreterTest, variant_definition) {
 }
 
 TEST_F(InterpreterTest, variant_var_def) {
-    SetUp(
+    Init(
         "variant IntOrBool { int, bool }"
         "IntOrBool i = 5;");
     interpretAndGetOutput();
@@ -691,14 +691,14 @@ TEST_F(InterpreterTest, variant_var_def) {
 }
 
 TEST_F(InterpreterTest, variant_invalid_type) {
-    SetUp(
+    Init(
         "variant IntOrBool { int, bool }\n"
         "IntOrBool i = 2.0;");
     interpretAndExpectThrowAt<TypeMismatch>({2, 1});
 }
 
 TEST_F(InterpreterTest, assignment_to_variant_invalid_type) {
-    SetUp(
+    Init(
         "variant IntOrBool { int, bool }\n"
         "IntOrBool i = 5;\n"
         "i = 2.0;");
@@ -706,7 +706,7 @@ TEST_F(InterpreterTest, assignment_to_variant_invalid_type) {
 }
 
 TEST_F(InterpreterTest, variant_printing) {
-    SetUp(
+    Init(
         "variant IntOrBool { int, bool }"
         "IntOrBool i = 5;"
         "print i;");
@@ -714,7 +714,7 @@ TEST_F(InterpreterTest, variant_printing) {
 }
 
 TEST_F(InterpreterTest, variant_assignment) {
-    SetUp(
+    Init(
         "variant IntOrBool { int, bool }"
         "IntOrBool i = 5;"
         "i = true;"
@@ -723,7 +723,7 @@ TEST_F(InterpreterTest, variant_assignment) {
 }
 
 TEST_F(InterpreterTest, variant_holding_struct) {
-    SetUp(
+    Init(
         "struct A { int num }"
         "variant V { A, bool }"
         "A a = {5};"
@@ -733,7 +733,7 @@ TEST_F(InterpreterTest, variant_holding_struct) {
 }
 
 TEST_F(InterpreterTest, variant_initialization_with_anonymous_struct) {
-    SetUp(
+    Init(
         "struct A { int num }\n"
         "variant V { A, str }\n"
         "V v = {9};");
@@ -741,7 +741,7 @@ TEST_F(InterpreterTest, variant_initialization_with_anonymous_struct) {
 }
 
 TEST_F(InterpreterTest, assignment_of_anonymous_struct_to_variant) {
-    SetUp(
+    Init(
         "struct A { int num }\n"
         "variant V { A, bool }\n"
         "V v = true;\n"
@@ -750,7 +750,7 @@ TEST_F(InterpreterTest, assignment_of_anonymous_struct_to_variant) {
 }
 
 TEST_F(InterpreterTest, variant_getting_packed_value) {
-    SetUp(
+    Init(
         "variant V { int, bool }"
         "V v = true;"
         "bool a = v as bool;");
@@ -758,7 +758,7 @@ TEST_F(InterpreterTest, variant_getting_packed_value) {
 }
 
 TEST_F(InterpreterTest, variant_getting_invalid_type) {
-    SetUp(
+    Init(
         "variant V { int, bool }\n"
         "V v = true;\n"
         "bool a = v as int;");
@@ -766,7 +766,7 @@ TEST_F(InterpreterTest, variant_getting_invalid_type) {
 }
 
 TEST_F(InterpreterTest, variant_redefinition) {
-    SetUp(
+    Init(
         "variant V { int, bool }\n"
         "void foo() {\n"
         "    variant V { float, str }\n"
@@ -776,7 +776,7 @@ TEST_F(InterpreterTest, variant_redefinition) {
 }
 
 TEST_F(InterpreterTest, passing_variant_to_func_by_value) {
-    SetUp(
+    Init(
         "variant V { int, bool }"
         "void foo(V var) {"
         "    print var;"
@@ -789,7 +789,7 @@ TEST_F(InterpreterTest, passing_variant_to_func_by_value) {
 }
 
 TEST_F(InterpreterTest, passing_variant_to_func_by_ref) {
-    SetUp(
+    Init(
         "variant V { int, bool }"
         "void foo(ref V var) {"
         "    print var;"
@@ -802,7 +802,7 @@ TEST_F(InterpreterTest, passing_variant_to_func_by_ref) {
 }
 
 TEST_F(InterpreterTest, argument_conversion_to_variant) {
-    SetUp(
+    Init(
         "variant V { int, bool }"
         "void foo(V var) {"
         "    print var;"
@@ -821,7 +821,7 @@ class ConversionToVariantTest : public TypeConversionTest {};
 TEST_P(BuiltInTypeConversionTest, built_in_type_conversions) {
     auto& [value, type, expected] = GetParam();
 
-    SetUp("print " + value + " as " + type + ";");
+    Init("print " + value + " as " + type + ";");
     EXPECT_EQ(interpretAndGetOutput(), expected + '\n');
 }
 
@@ -839,7 +839,7 @@ INSTANTIATE_TEST_SUITE_P(TypeConversions, BuiltInTypeConversionTest, conversionT
 TEST_P(ConversionToVariantTest, conversions_to_variant) {
     auto& [value, type, expected] = GetParam();
 
-    SetUp(
+    Init(
         "variant V { int, float, bool, str }"
         "V v = " + value + " as " + type + ";"
         "print v;");
@@ -854,7 +854,7 @@ INSTANTIATE_TEST_SUITE_P(ConversionsToVariant, ConversionToVariantTest,
                          variantConversionTuples);
 
 TEST_F(InterpreterTest, same_struct_conversion) {
-    SetUp(
+    Init(
         "struct A { int num }"
         "A a = { 5 };"
         "A b = a as A;"
@@ -863,7 +863,7 @@ TEST_F(InterpreterTest, same_struct_conversion) {
 }
 
 TEST_F(InterpreterTest, coverting_built_int_to_variant) {
-    SetUp(
+    Init(
         "variant V { int, bool }"
         "V v = 5 as V;"
         "print v;");
@@ -871,7 +871,7 @@ TEST_F(InterpreterTest, coverting_built_int_to_variant) {
 }
 
 TEST_F(InterpreterTest, redefining_struct_with_variant) {
-    SetUp(
+    Init(
         "struct A { int num }\n"
         "void foo() {\n"
         "    variant A { int, bool }\n"
@@ -881,7 +881,7 @@ TEST_F(InterpreterTest, redefining_struct_with_variant) {
 }
 
 TEST_F(InterpreterTest, redefining_variant_with_struct) {
-    SetUp(
+    Init(
         "variant A { int, bool }\n"
         "void foo() {\n"
         "    struct A { int num }\n"
@@ -891,7 +891,7 @@ TEST_F(InterpreterTest, redefining_variant_with_struct) {
 }
 
 TEST_F(InterpreterTest, return_statement) {
-    SetUp(
+    Init(
         "void foo() {"
         "    print 5;"
         "    return;"
@@ -902,7 +902,7 @@ TEST_F(InterpreterTest, return_statement) {
 }
 
 TEST_F(InterpreterTest, return_statement_two_calls) {
-    SetUp(
+    Init(
         "void foo() {"
         "    print 2;"
         "    print 5;"
@@ -915,7 +915,7 @@ TEST_F(InterpreterTest, return_statement_two_calls) {
 }
 
 TEST_F(InterpreterTest, return_statement_nested_call) {
-    SetUp(
+    Init(
         "void foo() { return; }"
         "void bar() {"
         "    foo();"
@@ -926,7 +926,7 @@ TEST_F(InterpreterTest, return_statement_nested_call) {
 }
 
 TEST_F(InterpreterTest, return_in_if_statement) {
-    SetUp(
+    Init(
         "void foo() {"
         "    if true {"
         "        return;"
@@ -939,7 +939,7 @@ TEST_F(InterpreterTest, return_in_if_statement) {
 }
 
 TEST_F(InterpreterTest, return_in_while_statement) {
-    SetUp(
+    Init(
         "void foo() {"
         "    while true {"
         "        return;"
@@ -952,7 +952,7 @@ TEST_F(InterpreterTest, return_in_while_statement) {
 }
 
 TEST_F(InterpreterTest, returning_value_in_void_func) {
-    SetUp(
+    Init(
         "void foo() {\n"
         "    return 5;\n"
         "}\n"
@@ -961,7 +961,7 @@ TEST_F(InterpreterTest, returning_value_in_void_func) {
 }
 
 TEST_F(InterpreterTest, return_value_from_func_call_stmt_does_not_presist) {
-    SetUp(
+    Init(
         "void foo() {"
         "    int return_five() { return 5; }"
         "    return_five();"
@@ -971,7 +971,7 @@ TEST_F(InterpreterTest, return_value_from_func_call_stmt_does_not_presist) {
 }
 
 TEST_F(InterpreterTest, return_value_from_func_call_expr_does_not_presist) {
-    SetUp(
+    Init(
         "void foo() {"
         "    int return_five() { return 5; }"
         "    int x = return_five();"
@@ -981,7 +981,7 @@ TEST_F(InterpreterTest, return_value_from_func_call_expr_does_not_presist) {
 }
 
 TEST_F(InterpreterTest, function_call_in_expression) {
-    SetUp(
+    Init(
         "int return_one() { return 1; }"
         "int x = return_one();"
         "print x;");
@@ -989,14 +989,14 @@ TEST_F(InterpreterTest, function_call_in_expression) {
 }
 
 TEST_F(InterpreterTest, missing_return_statement) {
-    SetUp(
+    Init(
         "int foo() { }"
         "foo();");
     interpretAndExpectThrowAt<ReturnTypeMismatch>({1, 1});
 }
 
 TEST_F(InterpreterTest, returning_struct) {
-    SetUp(
+    Init(
         "struct A { int num }"
         "A foo() {"
         "    A a = {5};"
@@ -1007,7 +1007,7 @@ TEST_F(InterpreterTest, returning_struct) {
 }
 
 TEST_F(InterpreterTest, accessing_field_of_returned_struct) {
-    SetUp(
+    Init(
         "struct A { int num }"
         "A foo() {"
         "    A a = { 5 };"
@@ -1018,7 +1018,7 @@ TEST_F(InterpreterTest, accessing_field_of_returned_struct) {
 }
 
 TEST_F(InterpreterTest, accessing_field_of_returned_struct_covered_in_variant) {
-    SetUp(
+    Init(
         "struct A { int num }"
         "variant V { A }"
         "V foo() {"
@@ -1030,7 +1030,7 @@ TEST_F(InterpreterTest, accessing_field_of_returned_struct_covered_in_variant) {
 }
 
 TEST_F(InterpreterTest, returning_anonymous_struct) {
-    SetUp(
+    Init(
         "struct A { int num }"
         "A foo() { return {5}; }"
         "print foo();");
@@ -1038,7 +1038,7 @@ TEST_F(InterpreterTest, returning_anonymous_struct) {
 }
 
 TEST_F(InterpreterTest, returning_wrong_struct) {
-    SetUp(
+    Init(
         "struct A { int x, int y }\n"
         "A foo() { return { 5 }; }\n"
         "foo();");
@@ -1046,7 +1046,7 @@ TEST_F(InterpreterTest, returning_wrong_struct) {
 }
 
 TEST_F(InterpreterTest, returning_variant) {
-    SetUp(
+    Init(
         "variant V { int, bool }"
         "V foo() { return 5; }"
         "print foo();");
@@ -1054,7 +1054,7 @@ TEST_F(InterpreterTest, returning_variant) {
 }
 
 TEST_F(InterpreterTest, returning_wrong_variant) {
-    SetUp(
+    Init(
         "variant V { int, float }\n"
         "V foo() { return true; }\n"
         "print foo();");
@@ -1062,7 +1062,7 @@ TEST_F(InterpreterTest, returning_wrong_variant) {
 }
 
 TEST_F(InterpreterTest, checking_variant_type) {
-    SetUp(
+    Init(
         "variant V { int, float }"
         "V v = 5;"
         "print v is int;"
@@ -1071,7 +1071,7 @@ TEST_F(InterpreterTest, checking_variant_type) {
 }
 
 TEST_F(InterpreterTest, checking_variant_type_which_is_not_any_type_of_this_variant) {
-    SetUp(
+    Init(
         "variant V { int, float }"
         "V v = 5;"
         "print v is str;");
@@ -1079,7 +1079,7 @@ TEST_F(InterpreterTest, checking_variant_type_which_is_not_any_type_of_this_vari
 }
 
 TEST_F(InterpreterTest, return_makes_a_copy) {
-    SetUp(
+    Init(
         "int x = 5;"
         "int foo(ref int i) { return i; }"
         "int y = foo(ref x);"
@@ -1090,7 +1090,7 @@ TEST_F(InterpreterTest, return_makes_a_copy) {
 }
 
 TEST_F(InterpreterTest, returning_returned_value) {
-    SetUp(
+    Init(
         "int foo() {"
         "    int inner() {"
         "        if true {}"
@@ -1103,17 +1103,17 @@ TEST_F(InterpreterTest, returning_returned_value) {
 }
 
 TEST_F(InterpreterTest, returning_in_global_scope) {
-    SetUp("return 2;");
+    Init("return 2;");
     interpretAndExpectThrowAt<ReturnTypeMismatch>({1, 1});
 }
 
 TEST_F(InterpreterTest, disjunction_invalid_type_of_first_operand) {
-    SetUp("print 2 or true;");
+    Init("print 2 or true;");
     interpretAndExpectThrowAt<TypeMismatch>({1, 7});
 }
 
 TEST_F(InterpreterTest, disjunction_invalid_type_of_second_operand) {
-    SetUp("print false or 2;");
+    Init("print false or 2;");
     interpretAndExpectThrowAt<TypeMismatch>({1, 16});
 }
 
@@ -1124,7 +1124,7 @@ class BinaryExpressionTest
 TEST_P(BinaryExpressionTest, binary_expressions) {
     auto& [expr, output] = GetParam();
 
-    SetUp("print " + expr + ';');
+    Init("print " + expr + ';');
     EXPECT_EQ(interpretAndGetOutput(), output + '\n');
 }
 
@@ -1153,37 +1153,37 @@ auto binaryExpressions = testing::Values(
 INSTANTIATE_TEST_SUITE_P(BinaryExpressions, BinaryExpressionTest, binaryExpressions);
 
 TEST_F(InterpreterTest, comparison_different_types) {
-    SetUp("print 2 < 1.0;");
+    Init("print 2 < 1.0;");
     interpretAndExpectThrowAt<TypeMismatch>({1, 7});
 }
 
 TEST_F(InterpreterTest, comparison_invalid_types) {
-    SetUp("print false < true;");
+    Init("print false < true;");
     interpretAndExpectThrowAt<TypeMismatch>({1, 7});
 }
 
 TEST_F(InterpreterTest, addition_type_mismatch) {
-    SetUp("print 2 + 3.0 * 6;");
+    Init("print 2 + 3.0 * 6;");
     interpretAndExpectThrowAt<TypeMismatch>({1, 11});
 }
 
 TEST_F(InterpreterTest, sign_change_type_mismatch) {
-    SetUp("print -true;");
+    Init("print -true;");
     interpretAndExpectThrowAt<TypeMismatch>({1, 7});
 }
 
 TEST_F(InterpreterTest, negation_type_mismatch) {
-    SetUp("print not 2;");
+    Init("print not 2;");
     interpretAndExpectThrowAt<TypeMismatch>({1, 11});
 }
 
 TEST_F(InterpreterTest, division_by_zero) {
-    SetUp("print 5 / 0;");
+    Init("print 5 / 0;");
     interpretAndExpectThrowAt<DivisionByZero>({1, 7});
 }
 
 TEST_F(InterpreterTest, max_recursion_depth) {
-    SetUp(
+    Init(
         "void foo() { foo(); }"
         "foo();");
     interpretAndExpectThrowAt<MaxRecursionDepth>({1, 14});

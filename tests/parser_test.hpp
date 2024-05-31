@@ -6,7 +6,7 @@
 
 class ParserTest : public testing::Test {
    protected:
-    void SetUp(std::string input) {
+    void Init(std::string input) {
         stream_ = std::istringstream(input);
         source_ = std::make_unique<Source>(stream_);
         lexer_ = std::make_unique<Lexer>(*source_);

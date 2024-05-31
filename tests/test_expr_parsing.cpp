@@ -4,7 +4,7 @@
 #include "parser_test.hpp"
 
 TEST_F(FullyParsedTest, parse_disjuction_expression) {
-    SetUp("bool var = true or false;");
+    Init("bool var = true or false;");
 
     const auto prog = parser_->parseProgram();
 
@@ -12,7 +12,8 @@ TEST_F(FullyParsedTest, parse_disjuction_expression) {
     const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
     ASSERT_TRUE(varDef);
 
-    const auto expression = dynamic_cast<DisjunctionExpression*>(varDef->expression.get());
+    const auto expression =
+        dynamic_cast<DisjunctionExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
 
     const auto& lhs = expression->lhs;
@@ -32,14 +33,15 @@ TEST_F(FullyParsedTest, parse_disjuction_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_nested_disjuction_expressions) {
-    SetUp("bool var = true or false or false;");
+    Init("bool var = true or false or false;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
-    const auto expression = dynamic_cast<DisjunctionExpression*>(varDef->expression.get());
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
+    const auto expression =
+        dynamic_cast<DisjunctionExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
 
     const auto& lhs = expression->lhs;
@@ -61,14 +63,15 @@ TEST_F(FullyParsedTest, parse_nested_disjuction_expressions) {
 }
 
 TEST_F(FullyParsedTest, parse_conjunction_expression) {
-    SetUp("bool var = true and false;");
+    Init("bool var = true and false;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
-    const auto expression = dynamic_cast<ConjunctionExpression*>(varDef->expression.get());
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
+    const auto expression =
+        dynamic_cast<ConjunctionExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
 
     const auto& lhs = expression->lhs;
@@ -84,14 +87,15 @@ TEST_F(FullyParsedTest, parse_conjunction_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_nested_conjunction_expressions) {
-    SetUp("bool var = true and false and false;");
+    Init("bool var = true and false and false;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
-    const auto expression = dynamic_cast<ConjunctionExpression*>(varDef->expression.get());
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
+    const auto expression =
+        dynamic_cast<ConjunctionExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
 
     const auto& lhs = expression->lhs;
@@ -113,13 +117,13 @@ TEST_F(FullyParsedTest, parse_nested_conjunction_expressions) {
 }
 
 TEST_F(FullyParsedTest, parse_equal_expression) {
-    SetUp("bool var = true == false;");
+    Init("bool var = true == false;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto expression = dynamic_cast<EqualExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
 
@@ -136,18 +140,18 @@ TEST_F(FullyParsedTest, parse_equal_expression) {
 }
 
 TEST_F(ParserTest, parse_invalid_adjacent_equal_expressions) {
-    SetUp("bool var = true == false == false;");
+    Init("bool var = true == false == false;");
     parseAndExpectThrowAt<SyntaxException>({1, 26});
 }
 
 TEST_F(FullyParsedTest, parse_not_equal_expression) {
-    SetUp("bool var = true != false;");
+    Init("bool var = true != false;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto expression = dynamic_cast<NotEqualExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
 
@@ -164,13 +168,13 @@ TEST_F(FullyParsedTest, parse_not_equal_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_rel_expression) {
-    SetUp("bool var = true < false;");
+    Init("bool var = true < false;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto expression = dynamic_cast<LessThanExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
 
@@ -187,13 +191,13 @@ TEST_F(FullyParsedTest, parse_rel_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_additive_expression) {
-    SetUp("int var = 4 + 2;");
+    Init("int var = 4 + 2;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto expression = dynamic_cast<AdditionExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
 
@@ -211,13 +215,13 @@ TEST_F(FullyParsedTest, parse_additive_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_multiplicative_expression) {
-    SetUp("int var = 4 * 2;");
+    Init("int var = 4 * 2;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto expression =
         dynamic_cast<MultiplicationExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
@@ -236,13 +240,13 @@ TEST_F(FullyParsedTest, parse_multiplicative_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_sign_change_expression) {
-    SetUp("int var = -4;");
+    Init("int var = -4;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto expression = dynamic_cast<SignChangeExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
 
@@ -256,13 +260,13 @@ TEST_F(FullyParsedTest, parse_sign_change_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_negation_expression) {
-    SetUp("bool var = not true;");
+    Init("bool var = not true;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto expression =
         dynamic_cast<LogicalNegationExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
@@ -277,13 +281,13 @@ TEST_F(FullyParsedTest, parse_negation_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_type_conversion_expression) {
-    SetUp("bool var = 4 as bool;");
+    Init("bool var = 4 as bool;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto expression = dynamic_cast<ConversionExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
 
@@ -299,13 +303,13 @@ TEST_F(FullyParsedTest, parse_type_conversion_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_type_conversion_to_id_type) {
-    SetUp("MyStruct var = 4 as MyStruct;");
+    Init("MyStruct var = 4 as MyStruct;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto expression = dynamic_cast<ConversionExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
 
@@ -321,13 +325,13 @@ TEST_F(FullyParsedTest, parse_type_conversion_to_id_type) {
 }
 
 TEST_F(FullyParsedTest, parse_type_check_expression) {
-    SetUp("bool var = checked is bool;");
+    Init("bool var = checked is bool;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto expression = dynamic_cast<TypeCheckExpression*>(varDef->expression.get());
     ASSERT_TRUE(expression);
 
@@ -342,13 +346,13 @@ TEST_F(FullyParsedTest, parse_type_check_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_field_access_expression) {
-    SetUp("int var = myStruct.firstField.secondField;");
+    Init("int var = myStruct.firstField.secondField;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto lvalue = dynamic_cast<FieldAccessExpression*>(varDef->expression.get());
     ASSERT_TRUE(lvalue);
     EXPECT_EQ(lvalue->field, "secondField");
@@ -358,26 +362,26 @@ TEST_F(FullyParsedTest, parse_field_access_expression) {
 }
 
 TEST_F(FullyParsedTest, parse_variable_access) {
-    SetUp("bool var = secondVar;");
+    Init("bool var = secondVar;");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto varAccess = dynamic_cast<VariableAccess*>(varDef->expression.get());
     ASSERT_TRUE(varAccess);
     EXPECT_EQ(varAccess->name, "secondVar");
 }
 
 TEST_F(FullyParsedTest, parse_expression_in_parenthesis) {
-    SetUp("bool var = 1 + (1 + 1);");
+    Init("bool var = 1 + (1 + 1);");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto expr = dynamic_cast<AdditionExpression*>(varDef->expression.get());
     ASSERT_TRUE(expr);
 
@@ -386,13 +390,13 @@ TEST_F(FullyParsedTest, parse_expression_in_parenthesis) {
 }
 
 TEST_F(FullyParsedTest, parse_func_call_expression_no_arguments) {
-    SetUp("bool var = foo();");
+    Init("bool var = foo();");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto funcCall = dynamic_cast<FuncCall*>(varDef->expression.get());
     ASSERT_TRUE(funcCall);
     EXPECT_EQ(funcCall->name, "foo");
@@ -402,13 +406,13 @@ TEST_F(FullyParsedTest, parse_func_call_expression_no_arguments) {
 }
 
 TEST_F(FullyParsedTest, parse_func_call_expression_with_arguments) {
-    SetUp("bool var = foo(true, false);");
+    Init("bool var = foo(true, false);");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto funcCall = dynamic_cast<FuncCall*>(varDef->expression.get());
     ASSERT_TRUE(funcCall);
     EXPECT_EQ(funcCall->name, "foo");
@@ -430,13 +434,13 @@ TEST_F(FullyParsedTest, parse_func_call_expression_with_arguments) {
 }
 
 TEST_F(FullyParsedTest, parse_func_call_expression_with_ref_argument) {
-    SetUp("bool var = foo(ref true);");
+    Init("bool var = foo(ref true);");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto funcCall = dynamic_cast<FuncCall*>(varDef->expression.get());
     ASSERT_TRUE(funcCall);
     EXPECT_EQ(funcCall->name, "foo");
@@ -452,13 +456,13 @@ TEST_F(FullyParsedTest, parse_func_call_expression_with_ref_argument) {
 }
 
 TEST_F(FullyParsedTest, parse_struct_init_expr_empty) {
-    SetUp("MyStruct var = {};");
+    Init("MyStruct var = {};");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto structInitExpr =
         dynamic_cast<StructInitExpression*>(varDef->expression.get());
     ASSERT_TRUE(structInitExpr);
@@ -468,13 +472,13 @@ TEST_F(FullyParsedTest, parse_struct_init_expr_empty) {
 }
 
 TEST_F(FullyParsedTest, parse_struct_init_expr) {
-    SetUp("MyStruct var = {true, false};");
+    Init("MyStruct var = {true, false};");
 
     const auto prog = parser_->parseProgram();
 
     ASSERT_EQ(prog.statements.size(), 1);
-    const auto  varDef  = dynamic_cast<VarDef*>(prog.statements.at(0).get());
-    ASSERT_TRUE( varDef );
+    const auto varDef = dynamic_cast<VarDef*>(prog.statements.at(0).get());
+    ASSERT_TRUE(varDef);
     const auto structInitExpr =
         dynamic_cast<StructInitExpression*>(varDef->expression.get());
     ASSERT_TRUE(structInitExpr);

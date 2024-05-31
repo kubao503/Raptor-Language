@@ -11,7 +11,7 @@ class AcceptanceTest : public testing::Test {
     AcceptanceTest()
         : interpreter_{output_} {}
 
-    void SetUp(const std::string& input) {
+    void Init(const std::string& input) {
         stream_ = std::istringstream(input);
         source_ = std::make_unique<Source>(stream_);
         lexer_ = std::make_unique<Lexer>(*source_);
@@ -51,7 +51,7 @@ class AcceptanceTest : public testing::Test {
 };
 
 TEST_F(AcceptanceTest, data_types_and_operations) {
-    SetUp(
+    Init(
         "bool b = not false or 1 == 1 and true != true;"
         "int i = 3 + 2 * 4.89 as int;"
         "float f = (2 as float) * (2.0 / 2 as float);"
@@ -62,17 +62,17 @@ TEST_F(AcceptanceTest, data_types_and_operations) {
 }
 
 TEST_F(AcceptanceTest, constants) {
-    SetUp(
+    Init(
         "const float pi = 3.14;\n"
         "pi = 3;");
     interpretAndExpectThrowAt<ConstViolation>({2, 1});
 }
 
 TEST_F(AcceptanceTest, str_type) {
-    SetUp(R"(str w = "Hello\n\"world\"";)"
-          "print w;"
-          R"(str v = "Hello" + " " + "wo";v = v + "rld";)"
-          "print v;");
+    Init(R"(str w = "Hello\n\"world\"";)"
+         "print w;"
+         R"(str v = "Hello" + " " + "wo";v = v + "rld";)"
+         "print v;");
     EXPECT_EQ(interpretAndGetOutput(),
               "Hello\n"
               R"("world")"
@@ -80,12 +80,12 @@ TEST_F(AcceptanceTest, str_type) {
 }
 
 TEST_F(AcceptanceTest, comment) {
-    SetUp("# print 22;");
+    Init("# print 22;");
     EXPECT_EQ(interpretAndGetOutput(), "");
 }
 
 TEST_F(AcceptanceTest, if_and_while_statement) {
-    SetUp(
+    Init(
         "int i = 4;"
         "while i > 0 {"
         "    print i;"
@@ -98,7 +98,7 @@ TEST_F(AcceptanceTest, if_and_while_statement) {
 }
 
 TEST_F(AcceptanceTest, struct) {
-    SetUp(
+    Init(
         "struct Point {"
         "    int x,"
         "    int y"
@@ -112,7 +112,7 @@ TEST_F(AcceptanceTest, struct) {
 }
 
 TEST_F(AcceptanceTest, functions) {
-    SetUp(
+    Init(
         "int add_one(int num) {"
         "    return num + 1;"
         "}"
@@ -130,7 +130,7 @@ TEST_F(AcceptanceTest, functions) {
 }
 
 TEST_F(AcceptanceTest, variant) {
-    SetUp(
+    Init(
         "variant Number { int, float, str }"
         "void foo(Number n) {"
         "    if n is int {"
@@ -147,7 +147,7 @@ TEST_F(AcceptanceTest, variant) {
 }
 
 TEST_F(AcceptanceTest, variant_with_structure) {
-    SetUp(
+    Init(
         "struct Point {"
         "    int x,"
         "    int y"
@@ -164,7 +164,7 @@ TEST_F(AcceptanceTest, variant_with_structure) {
 }
 
 TEST_F(AcceptanceTest, variable_shadowning) {
-    SetUp(
+    Init(
         "void foo() {"
         "    int i = 5;"
         "    print i;"
@@ -175,7 +175,7 @@ TEST_F(AcceptanceTest, variable_shadowning) {
 }
 
 TEST_F(AcceptanceTest, recursion) {
-    SetUp(
+    Init(
         "void count_down_to_zero(int i) {"
         "    print i;"
         "    if i == 0 {"
