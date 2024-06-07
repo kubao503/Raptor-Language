@@ -329,7 +329,7 @@ ReturnValue Interpreter::handleFunctionCall(const FuncCall& funcCall) {
     CallContext ctx{parentCtx};
     passArgumentsToCtx(ctx, funcCall.arguments, funcDef->getParameters());
 
-    static constexpr unsigned int recursionLimit_{1000};
+    const auto recursionLimit_{1000};
     if (callStack_.size() > recursionLimit_)
         throw MaxRecursionDepth{funcCall.position};
 
