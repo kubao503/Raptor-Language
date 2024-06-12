@@ -61,6 +61,8 @@ class Token {
         CMT,
     };
 
+    using Value = std::variant<std::monostate, Integral, Floating, bool, std::string>;
+
     /// @param type
     /// @param value
     /// @param position - position of the first character of the token

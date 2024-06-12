@@ -38,7 +38,8 @@ void Parser::expectEndOfFile() const {
 /// STMTS = { STMT }
 Statements Parser::parseStatements() {
     Statements statements;
-    while (auto statement = parseStatement()) statements.push_back(std::move(*statement));
+    while (auto statement = parseStatement())
+        statements.push_back(std::move(statement));
     return statements;
 }
 
@@ -52,22 +53,28 @@ Statements Parser::parseStatements() {
 ///      | BUILT_IN_DEF
 ///      | STRUCT_DEF
 ///      | VNT_DEF
-std::optional<Statement> Parser::parseStatement() {
+PStatement Parser::parseStatement() {
+    auto prevPosition = statementPosition_;
+    statementPosition_ = currentToken_.getPosition();
+
     for (const auto& parser : statementParsers_) {
-        if (auto statement = parser(*this))
+        if (auto statement = parser(*this)) {
+            statementPosition_ = prevPosition;
             return statement;
+        }
     }
-    return std::nullopt;
+    statementPosition_ = prevPosition;
+    return nullptr;
 }
 
-/// IF_STMT = if EXPR '{' STMTS '}'
-std::optional<Statement> Parser::parseIfStatement() {
+/// IF_STMT = if DISJ '{' STMTS '}'
+PStatement Parser::parseIfStatement() {
     if (currentToken_.getType() != Token::Type::IF_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
-    auto expression = parseExpression();
-    if (!expression)
+    auto condition = parseDisjunctionExpression();
+    if (!condition)
         throw SyntaxException(currentToken_.getPosition(),
                               "Expected if-statement condition");
 
@@ -79,17 +86,18 @@ std::optional<Statement> Parser::parseIfStatement() {
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(), "Missing right curly brace"));
 
-    return IfStatement{std::move(*expression), std::move(statements)};
+    return std::make_unique<IfStatement>(std::move(condition), std::move(statements),
+                                         statementPosition_);
 }
 
-/// WHILE_STMT = while EXPR '{' STMTS '}'
-std::optional<Statement> Parser::parseWhileStatement() {
+/// WHILE_STMT = while DISJ '{' STMTS '}'
+PStatement Parser::parseWhileStatement() {
     if (currentToken_.getType() != Token::Type::WHILE_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
-    auto expression = parseExpression();
-    if (!expression)
+    auto condition = parseDisjunctionExpression();
+    if (!condition)
         throw SyntaxException(currentToken_.getPosition(),
                               "Expected while-statement condition");
 
@@ -101,13 +109,14 @@ std::optional<Statement> Parser::parseWhileStatement() {
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(), "Missing right curly brace"));
 
-    return WhileStatement{std::move(*expression), std::move(statements)};
+    return std::make_unique<WhileStatement>(std::move(condition), std::move(statements),
+                                            statementPosition_);
 }
 
 /// RET_STMT = return [ EXPR ] ';'
-std::optional<Statement> Parser::parseReturnStatement() {
+PStatement Parser::parseReturnStatement() {
     if (currentToken_.getType() != Token::Type::RETURN_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto expression = parseExpression();
@@ -116,13 +125,13 @@ std::optional<Statement> Parser::parseReturnStatement() {
            SyntaxException(currentToken_.getPosition(),
                            "Missing semicolon after return statement"));
 
-    return ReturnStatement{std::move(expression)};
+    return std::make_unique<ReturnStatement>(std::move(expression), statementPosition_);
 }
 
 /// PRINT_STMT = print [ EXPR ] ';'
-std::optional<Statement> Parser::parsePrintStatement() {
+PStatement Parser::parsePrintStatement() {
     if (currentToken_.getType() != Token::Type::PRINT_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto expression = parseExpression();
@@ -130,13 +139,14 @@ std::optional<Statement> Parser::parsePrintStatement() {
     expect(Token::Type::SEMI, SyntaxException(currentToken_.getPosition(),
                                               "Missing semicolon after print statement"));
 
-    return PrintStatement{std::move(expression)};
+    return std::make_unique<PrintStatement>(std::move(expression), statementPosition_);
 }
 
 /// CONST_VAR_DEF = const TYPE ID ASGN
-std::optional<VarDef> Parser::parseConstVarDef() {
+PStatement Parser::parseConstVarDef() {
     if (currentToken_.getType() != Token::Type::CONST_KW)
-        return std::nullopt;
+        return nullptr;
+    const auto position = currentToken_.getPosition();
     consumeToken();
 
     const auto type = getCurrentTokenType();
@@ -150,18 +160,14 @@ std::optional<VarDef> Parser::parseConstVarDef() {
 
     auto assignment = parseAssignment(name);
 
-    return VarDef{
-        .isConst = true,
-        .type = *type,
-        .name = std::move(name),
-        .expression = std::move(assignment.rhs),
-    };
+    return std::make_unique<VarDef>(true, *type, std::move(name),
+                                    std::move(assignment->rhs), std::move(position));
 }
 
 /// VOID_FUNC = void ID FUNC_DEF
-std::optional<FuncDef> Parser::parseVoidFunc() {
+PStatement Parser::parseVoidFunc() {
     if (currentToken_.getType() != Token::Type::VOID_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     const auto name = expectAndReturnValue<std::string>(
@@ -174,9 +180,9 @@ std::optional<FuncDef> Parser::parseVoidFunc() {
 /// DEF_OR_ASGN = ID ( FIELD_ASGN
 ///                  | DEF
 ///                  | FUNC_CALL ';' )
-std::optional<Statement> Parser::parseDefOrAssignment() {
+PStatement Parser::parseDefOrAssignment() {
     if (currentToken_.getType() != Token::Type::ID)
-        return std::nullopt;
+        return nullptr;
 
     auto name = std::get<std::string>(currentToken_.getValue());
     consumeToken();
@@ -193,7 +199,7 @@ std::optional<Statement> Parser::parseDefOrAssignment() {
 }
 
 /// FIELD_ASGN = { '.' ID } ASGN
-Assignment Parser::parseFieldAssignment(const std::string& name) {
+PStatement Parser::parseFieldAssignment(const std::string& name) {
     LValue lvalue{name};
 
     while (currentToken_.getType() == Token::Type::DOT) {
@@ -211,7 +217,7 @@ Assignment Parser::parseFieldAssignment(const std::string& name) {
 }
 
 /// ASGN = '=' EXPR ';'
-Assignment Parser::parseAssignment(LValue lvalue) {
+std::unique_ptr<Assignment> Parser::parseAssignment(LValue lvalue) {
     expect(Token::Type::ASGN_OP,
            SyntaxException(currentToken_.getPosition(), "Expected assignment operator"));
 
@@ -223,23 +229,24 @@ Assignment Parser::parseAssignment(LValue lvalue) {
     expect(Token::Type::SEMI,
            SyntaxException(currentToken_.getPosition(), "Missing semicolon"));
 
-    return Assignment{.lhs = std::move(lvalue), .rhs = std::move(*expression)};
+    return std::make_unique<Assignment>(std::move(lvalue), std::move(expression),
+                                        statementPosition_);
 }
 
 /// BUILT_IN_DEF = BUILT_IN_TYPE DEF
-std::optional<Statement> Parser::parseBuiltInDef() {
+PStatement Parser::parseBuiltInDef() {
     const auto type = getCurrentTokenBuiltInType();
     if (!type)
-        return std::nullopt;
+        return nullptr;
 
     consumeToken();
     return parseDef(*type);
 }
 
 /// DEF = ID ( FUNC_DEF | ASGN )
-std::optional<Statement> Parser::parseDef(const Type& type) {
+PStatement Parser::parseDef(const Type& type) {
     if (currentToken_.getType() != Token::Type::ID)
-        return std::nullopt;
+        return nullptr;
     const auto name = std::get<std::string>(currentToken_.getValue());
     consumeToken();
 
@@ -247,17 +254,14 @@ std::optional<Statement> Parser::parseDef(const Type& type) {
     if (auto def = parseFuncDef(returnType, name))
         return def;
     auto assignment = parseAssignment(name);
-    return VarDef{.type = type,
-                  .name = std::get<std::string>(assignment.lhs),
-                  .expression = std::move(assignment.rhs)};
+    return std::make_unique<VarDef>(false, type, std::get<std::string>(assignment->lhs),
+                                    std::move(assignment->rhs), statementPosition_);
 }
 
 /// FUNC_DEF = '(' PARAMS ')' '{' STMTS '}'
-std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
-                                            const std::string& name) {
+PStatement Parser::parseFuncDef(const ReturnType& returnType, const std::string& name) {
     if (currentToken_.getType() != Token::Type::L_PAR)
-        return std::nullopt;
-    const auto position = currentToken_.getPosition();
+        return nullptr;
     consumeToken();
 
     auto parameters = parseList<Parameter>(&Parser::parseParameter);
@@ -274,12 +278,14 @@ std::optional<FuncDef> Parser::parseFuncDef(const ReturnType& returnType,
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(),
                            "Missing right curly brace after function body"));
-    return FuncDef(returnType, name, std::move(parameters), std::move(statements),
-                   position);
+    return std::make_unique<FuncDef>(returnType, name, std::move(parameters),
+                                     std::move(statements), statementPosition_);
 }
 
 /// PARAM = [ ref ] TYPE ID
 std::optional<Parameter> Parser::parseParameter() {
+    const auto position = currentToken_.getPosition();
+
     const bool ref{currentToken_.getType() == Token::Type::REF_KW};
     if (ref)
         consumeToken();
@@ -297,13 +303,13 @@ std::optional<Parameter> Parser::parseParameter() {
         Token::Type::ID,
         SyntaxException(currentToken_.getPosition(), "Expected parameter name"));
 
-    return Parameter{.type = *type, .name = name, .ref = ref};
+    return Parameter{.type = *type, .name = name, .ref = ref, .position = position};
 }
 
 /// FUNC_CALL = '(' ARGS ')'
-std::optional<FuncCall> Parser::parseFuncCall(const std::string& name) {
+std::unique_ptr<FuncCall> Parser::parseFuncCall(const std::string& name) {
     if (currentToken_.getType() != Token::Type::L_PAR)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto arguments = parseList<Argument>(&Parser::parseArgument);
@@ -311,16 +317,16 @@ std::optional<FuncCall> Parser::parseFuncCall(const std::string& name) {
     expect(Token::Type::R_PAR,
            SyntaxException(currentToken_.getPosition(),
                            "Missing right parenthesis after function call arguments"));
-    return FuncCall{.name = name, .arguments = std::move(arguments)};
+    return std::make_unique<FuncCall>(name, std::move(arguments), statementPosition_);
 }
 
 /// STRUCT_DEF = struct ID '{' FIELDS '}'
-std::optional<StructDef> Parser::parseStructDef() {
+PStatement Parser::parseStructDef() {
     if (currentToken_.getType() != Token::Type::STRUCT_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
-    const auto name = expectAndReturnValue<std::string>(
+    auto name = expectAndReturnValue<std::string>(
         Token::Type::ID,
         SyntaxException(currentToken_.getPosition(), "Expected struct name"));
 
@@ -333,13 +339,14 @@ std::optional<StructDef> Parser::parseStructDef() {
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(),
                            "Missing right curly brace in struct difinition"));
-    return StructDef{.name = name, .fields = std::move(fields)};
+    return std::make_unique<StructDef>(std::move(name), std::move(fields),
+                                       statementPosition_);
 }
 
 /// VNT_DEF = variant ID '{' TYPES '}'
-std::optional<VariantDef> Parser::parseVariantDef() {
+PStatement Parser::parseVariantDef() {
     if (currentToken_.getType() != Token::Type::VARIANT_KW)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto name = expectAndReturnValue<std::string>(
@@ -351,12 +358,15 @@ std::optional<VariantDef> Parser::parseVariantDef() {
                            "Missing left curly brace in variant difinition"));
 
     auto types = parseList<Type>(&Parser::parseType);
+    if (types.empty())
+        throw NoTypesInVariant{currentToken_.getPosition()};
 
     expect(Token::Type::R_C_BR,
            SyntaxException(currentToken_.getPosition(),
                            "Missing right curly brace in variant difinition"));
 
-    return VariantDef{std::move(name), std::move(types)};
+    return std::make_unique<VariantDef>(std::move(name), std::move(types),
+                                        statementPosition_);
 }
 
 std::optional<Type> Parser::parseType() {
@@ -382,32 +392,55 @@ std::optional<Field> Parser::parseField() {
 }
 
 /// EXPR = DISJ | STRUCT_INIT
-std::optional<Expression> Parser::parseExpression() {
+PExpression Parser::parseExpression() {
     if (auto expr = parseStructInitExpression())
         return expr;
     return parseDisjunctionExpression();
 }
 
 /// STRUCT_INIT = '{' { EXPRS } '}'
-std::optional<Expression> Parser::parseStructInitExpression() {
+PExpression Parser::parseStructInitExpression() {
     if (currentToken_.getType() != Token::Type::L_C_BR)
-        return std::nullopt;
+        return nullptr;
+    const auto position = currentToken_.getPosition();
     consumeToken();
 
-    auto exprs = parseList<Expression>(&Parser::parseExpression);
+    auto exprs = parseExpressionList();
 
     expect(
         Token::Type::R_C_BR,
         SyntaxException(currentToken_.getPosition(),
                         "Missing right curly brace at the end of struct initialization"));
-    return StructInitExpression{.exprs = std::move(exprs)};
+    return std::make_unique<StructInitExpression>(std::move(exprs), position);
+}
+
+/// EXPRS = [ EXPR { ',' EXPR } ]
+std::vector<PExpression> Parser::parseExpressionList() {
+    std::vector<PExpression> exprs;
+
+    auto expr = parseExpression();
+    if (!expr)
+        return exprs;
+
+    exprs.push_back(std::move(expr));
+
+    while (currentToken_.getType() == Token::Type::CMA) {
+        consumeToken();
+        expr = parseExpression();
+        if (!expr)
+            throw SyntaxException(currentToken_.getPosition(),
+                                  "Expected expression after comma");
+        exprs.push_back(std::move(expr));
+    }
+    return exprs;
 }
 
 /// DISJ = CONJ { or CONJ }
-std::optional<Expression> Parser::parseDisjunctionExpression() {
-    auto leftLogicFactor = parseConjunctionExpression();
+PExpression Parser::parseDisjunctionExpression() {
+    const auto position = currentToken_.getPosition();
+    PExpression leftLogicFactor = parseConjunctionExpression();
     if (!leftLogicFactor)
-        return std::nullopt;
+        return nullptr;
 
     while (currentToken_.getType() == Token::Type::OR_KW) {
         consumeToken();
@@ -415,19 +448,19 @@ std::optional<Expression> Parser::parseDisjunctionExpression() {
         if (!rightLogicFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after 'or' keyword");
-        leftLogicFactor =
-            std::unique_ptr<DisjunctionExpression>(new DisjunctionExpression{
-                std::move(*leftLogicFactor), std::move(*rightLogicFactor)});
+        leftLogicFactor = std::make_unique<DisjunctionExpression>(
+            std::move(leftLogicFactor), std::move(rightLogicFactor), position);
     }
 
     return leftLogicFactor;
 }
 
 /// CONJ = EQ { and EQ }
-std::optional<Expression> Parser::parseConjunctionExpression() {
+PExpression Parser::parseConjunctionExpression() {
+    const auto position = currentToken_.getPosition();
     auto leftLogicFactor = parseEqualExpression();
     if (!leftLogicFactor)
-        return std::nullopt;
+        return nullptr;
 
     while (currentToken_.getType() == Token::Type::AND_KW) {
         consumeToken();
@@ -435,9 +468,8 @@ std::optional<Expression> Parser::parseConjunctionExpression() {
         if (!rightLogicFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after 'and' keyword");
-        leftLogicFactor =
-            std::unique_ptr<ConjunctionExpression>(new ConjunctionExpression{
-                std::move(*leftLogicFactor), std::move(*rightLogicFactor)});
+        leftLogicFactor = std::make_unique<ConjunctionExpression>(
+            std::move(leftLogicFactor), std::move(rightLogicFactor), position);
     }
 
     return leftLogicFactor;
@@ -445,10 +477,11 @@ std::optional<Expression> Parser::parseConjunctionExpression() {
 
 /// EQ = REL [ '==' REL ]
 ///    | REL [ '!=' REL ]
-std::optional<Expression> Parser::parseEqualExpression() {
+PExpression Parser::parseEqualExpression() {
+    const auto position = currentToken_.getPosition();
     auto leftEqFactor = parseRelExpression();
     if (!leftEqFactor)
-        return std::nullopt;
+        return nullptr;
 
     if (const auto& ctor = ComparisonExpression::getCtor(currentToken_.getType())) {
         consumeToken();
@@ -456,7 +489,8 @@ std::optional<Expression> Parser::parseEqualExpression() {
         if (!rightEqFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after (not)equal operator");
-        leftEqFactor = (*ctor)(std::move(*leftEqFactor), std::move(*rightEqFactor));
+        leftEqFactor =
+            (*ctor)(std::move(leftEqFactor), std::move(rightEqFactor), position);
     }
 
     return leftEqFactor;
@@ -466,10 +500,11 @@ std::optional<Expression> Parser::parseEqualExpression() {
 ///     | ADD [ '>' ADD ]
 ///     | ADD [ '<=' ADD ]
 ///     | ADD [ '>=' ADD ]
-std::optional<Expression> Parser::parseRelExpression() {
+PExpression Parser::parseRelExpression() {
+    const auto position = currentToken_.getPosition();
     auto leftRelFactor = parseAdditiveExpression();
     if (!leftRelFactor)
-        return std::nullopt;
+        return nullptr;
 
     if (const auto& ctor = RelationExpression::getCtor(currentToken_.getType())) {
         consumeToken();
@@ -477,7 +512,8 @@ std::optional<Expression> Parser::parseRelExpression() {
         if (!rightRelFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after relation operator");
-        leftRelFactor = (*ctor)(std::move(*leftRelFactor), std::move(*rightRelFactor));
+        leftRelFactor =
+            (*ctor)(std::move(leftRelFactor), std::move(rightRelFactor), position);
     }
 
     return leftRelFactor;
@@ -485,10 +521,11 @@ std::optional<Expression> Parser::parseRelExpression() {
 
 /// ADD = TERM { '+' TERM }
 ///     | TERM { '-' TERM }
-std::optional<Expression> Parser::parseAdditiveExpression() {
+PExpression Parser::parseAdditiveExpression() {
+    const auto position = currentToken_.getPosition();
     auto leftTerm = parseMultiplicativeExpression();
     if (!leftTerm)
-        return std::nullopt;
+        return nullptr;
 
     while (const auto& ctor = AdditionExpression::getCtor(currentToken_.getType())) {
         consumeToken();
@@ -496,7 +533,7 @@ std::optional<Expression> Parser::parseAdditiveExpression() {
         if (!rightTerm)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after additive operator");
-        leftTerm = (*ctor)(std::move(*leftTerm), std::move(*rightTerm));
+        leftTerm = (*ctor)(std::move(leftTerm), std::move(rightTerm), position);
     }
 
     return leftTerm;
@@ -504,10 +541,11 @@ std::optional<Expression> Parser::parseAdditiveExpression() {
 
 /// TERM = FACTOR { '*' FACTOR }
 ///      | FACTOR { '/' FACTOR }
-std::optional<Expression> Parser::parseMultiplicativeExpression() {
+PExpression Parser::parseMultiplicativeExpression() {
+    const auto position = currentToken_.getPosition();
     auto leftFactor = parseNegationExpression();
     if (!leftFactor)
-        return std::nullopt;
+        return nullptr;
 
     while (const auto& ctor =
                MultiplicativeExpression::getCtor(currentToken_.getType())) {
@@ -516,32 +554,34 @@ std::optional<Expression> Parser::parseMultiplicativeExpression() {
         if (!rightFactor)
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected expression after multiplicative operator");
-        leftFactor = (*ctor)(std::move(*leftFactor), std::move(*rightFactor));
+        leftFactor = (*ctor)(std::move(leftFactor), std::move(rightFactor), position);
     }
 
     return leftFactor;
 }
 
 /// FACTOR = [ '-' | not ] UNARY
-std::optional<Expression> Parser::parseNegationExpression() {
+PExpression Parser::parseNegationExpression() {
+    const auto position = currentToken_.getPosition();
     const auto& ctor = NegationExpression::getCtor(currentToken_.getType());
     if (ctor)
         consumeToken();
 
     auto expr = parseTypeExpression();
     if (ctor)
-        return (*ctor)(std::move(*expr));
+        return (*ctor)(std::move(expr), position);
     return expr;
 }
 
 /// UNARY = SRC [ as TYPE ]
 ///       | SRC [ is TYPE ]
-std::optional<Expression> Parser::parseTypeExpression() {
+PExpression Parser::parseTypeExpression() {
     auto expr = parseFieldAccessExpression();
     if (!expr)
-        return std::nullopt;
+        return nullptr;
 
     if (const auto& ctor = TypeExpression::getCtor(currentToken_.getType())) {
+        const auto position = currentToken_.getPosition();
         consumeToken();
 
         auto type = getCurrentTokenType();
@@ -550,24 +590,25 @@ std::optional<Expression> Parser::parseTypeExpression() {
             throw SyntaxException(currentToken_.getPosition(),
                                   "Expected type after is/as keyword");
 
-        expr = (*ctor)(std::move(*expr), *type);
+        expr = (*ctor)(std::move(expr), *type, position);
     }
     return expr;
 }
 
 /// SRC = CNTNR { '.' ID }
-std::optional<Expression> Parser::parseFieldAccessExpression() {
+PExpression Parser::parseFieldAccessExpression() {
+    const auto position = currentToken_.getPosition();
     auto expr = parseContainerExpression();
     if (!expr)
-        return std::nullopt;
+        return nullptr;
 
     while (currentToken_.getType() == Token::Type::DOT) {
         consumeToken();
         auto field = expectAndReturnValue<std::string>(
             Token::Type::ID, SyntaxException(currentToken_.getPosition(),
                                              "Expected field name after dot operator"));
-        expr = std::unique_ptr<FieldAccessExpression>(new FieldAccessExpression{
-            .expr = std::move(*expr), .field = std::move(field)});
+        expr = std::make_unique<FieldAccessExpression>(std::move(expr), std::move(field),
+                                                       position);
     }
 
     return expr;
@@ -576,7 +617,7 @@ std::optional<Expression> Parser::parseFieldAccessExpression() {
 /// CNTNR = '(' EXPR ')'
 ///       | CONST
 ///       | CALL_OR_VAR
-std::optional<Expression> Parser::parseContainerExpression() {
+PExpression Parser::parseContainerExpression() {
     if (auto expr = parseNestedExpression())
         return expr;
     if (auto expr = parseConstant())
@@ -584,9 +625,9 @@ std::optional<Expression> Parser::parseContainerExpression() {
     return parseVariableAccessOrFuncCall();
 }
 
-std::optional<Expression> Parser::parseNestedExpression() {
+PExpression Parser::parseNestedExpression() {
     if (currentToken_.getType() != Token::Type::L_PAR)
-        return std::nullopt;
+        return nullptr;
     consumeToken();
 
     auto expr = parseExpression();
@@ -597,25 +638,35 @@ std::optional<Expression> Parser::parseNestedExpression() {
     return expr;
 }
 
-std::optional<Expression> Parser::parseConstant() {
-    if (!currentToken_.isConstant())
-        return std::nullopt;
+struct TokenValueToConstantValue {
+    Constant::Value operator()(const std::monostate&) const {
+        throw std::runtime_error("Expected token to have value");
+    }
+    Constant::Value operator()(const auto& v) const { return v; }
+};
 
-    const auto value = currentToken_.getValue();
+PExpression Parser::parseConstant() {
+    if (!currentToken_.isConstant())
+        return nullptr;
+
+    const auto value = std::visit(TokenValueToConstantValue(), currentToken_.getValue());
+    const auto position = currentToken_.getPosition();
     consumeToken();
-    return Constant{.value = value};
+    return std::make_unique<Constant>(value, position);
 }
 
 /// CALL_OR_VAR = ID [ '(' ARGS ')' ]
-std::optional<Expression> Parser::parseVariableAccessOrFuncCall() {
+PExpression Parser::parseVariableAccessOrFuncCall() {
     if (currentToken_.getType() != Token::Type::ID)
-        return std::nullopt;
+        return nullptr;
+
     const auto name = std::get<std::string>(currentToken_.getValue());
+    auto position = currentToken_.getPosition();
     consumeToken();
 
-    if (auto expr = parseFuncCall(name))
-        return expr;
-    return VariableAccess{.name = name};
+    if (auto funcCall = parseFuncCall(name))
+        return funcCall;
+    return std::make_unique<VariableAccess>(name, std::move(position));
 }
 
 /// ARG = [ ref ] EXPR
@@ -623,6 +674,8 @@ std::optional<Argument> Parser::parseArgument() {
     const bool ref{currentToken_.getType() == Token::Type::REF_KW};
     if (ref)
         consumeToken();
+
+    auto argPosition = currentToken_.getPosition();
 
     auto expr = parseExpression();
     if (!expr) {
@@ -632,7 +685,8 @@ std::optional<Argument> Parser::parseArgument() {
         return std::nullopt;
     }
 
-    return Argument{.value = std::move(*expr), .ref = ref};
+    return Argument{
+        .value = std::move(expr), .ref = ref, .position = std::move(argPosition)};
 }
 
 Parser::StatementParsers Parser::statementParsers_{

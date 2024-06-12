@@ -1,5 +1,6 @@
 #include "lexer.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <string_view>
@@ -94,10 +95,10 @@ std::optional<Token> Lexer::buildIntConst() const {
     if (source_.getChar() == '0') {
         source_.nextChar();
 
-        if (auto token = buildFloatConst(0u))
+        if (auto token = buildFloatConst(0))
             return token;
 
-        return Token(Token::Type::INT_CONST, 0u, tokenPosition_);
+        return Token(Token::Type::INT_CONST, 0, tokenPosition_);
     }
 
     if (auto res = buildNumber()) {
@@ -189,8 +190,7 @@ void Lexer::expectNoEndOfFile() const {
 }
 
 char Lexer::findInEscapedChars(char searched) const {
-    auto pred = [searched](const CharPair& p) { return p.first == searched; };
-    auto res = std::find_if(escapedChars_.begin(), escapedChars_.end(), pred);
+    auto res = std::ranges::find(escapedChars_, searched, &CharPair::first);
 
     if (res == escapedChars_.end())
         throw NonEscapableChar(tokenPosition_, source_.getChar());

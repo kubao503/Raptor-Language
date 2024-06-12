@@ -1,6 +1,7 @@
 ---
 BasedOnStyle: Google
 AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
 ColumnLimit: '90'
 IndentWidth: '4'
 PackConstructorInitializers: NextLineOnly

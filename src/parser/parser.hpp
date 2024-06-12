@@ -37,52 +37,52 @@ class Parser {
     std::optional<Type> getCurrentTokenType() const;
 
     Statements parseStatements();
-    std::optional<Statement> parseStatement();
-    std::optional<Statement> parseIfStatement();
-    std::optional<Statement> parseWhileStatement();
-    std::optional<Statement> parseReturnStatement();
-    std::optional<Statement> parsePrintStatement();
-    std::optional<VarDef> parseConstVarDef();
-    std::optional<FuncDef> parseVoidFunc();
-    std::optional<Statement> parseDefOrAssignment();
-    Assignment parseFieldAssignment(const std::string& name);
-    Assignment parseAssignment(LValue lvalue);
-    std::optional<Statement> parseBuiltInDef();
-    std::optional<Statement> parseDef(const Type& type);
-    std::optional<FuncDef> parseFuncDef(const ReturnType& returnType,
-                                        const std::string& name);
+    PStatement parseStatement();
+    PStatement parseIfStatement();
+    PStatement parseWhileStatement();
+    PStatement parseReturnStatement();
+    PStatement parsePrintStatement();
+    PStatement parseConstVarDef();
+    PStatement parseVoidFunc();
+    PStatement parseDefOrAssignment();
+    PStatement parseFieldAssignment(const std::string& name);
+    std::unique_ptr<Assignment> parseAssignment(LValue lvalue);
+    PStatement parseBuiltInDef();
+    PStatement parseDef(const Type& type);
+    PStatement parseFuncDef(const ReturnType& returnType, const std::string& name);
     std::optional<Parameter> parseParameter();
-    std::optional<FuncCall> parseFuncCall(const std::string& name);
-    std::optional<StructDef> parseStructDef();
+    std::unique_ptr<FuncCall> parseFuncCall(const std::string& name);
+    PStatement parseStructDef();
     std::optional<Field> parseField();
-    std::optional<VariantDef> parseVariantDef();
+    PStatement parseVariantDef();
     std::optional<Type> parseType();
-    std::optional<Expression> parseExpression();
-    std::optional<Expression> parseStructInitExpression();
-    std::optional<Expression> parseDisjunctionExpression();
-    std::optional<Expression> parseConjunctionExpression();
-    std::optional<Expression> parseEqualExpression();
-    std::optional<Expression> parseRelExpression();
-    std::optional<Expression> parseAdditiveExpression();
-    std::optional<Expression> parseMultiplicativeExpression();
-    std::optional<Expression> parseNegationExpression();
-    std::optional<Expression> parseTypeExpression();
-    std::optional<Expression> parseFieldAccessExpression();
-    std::optional<Expression> parseContainerExpression();
-    std::optional<Expression> parseNestedExpression();
-    std::optional<Expression> parseConstant();
-    std::optional<Expression> parseVariableAccessOrFuncCall();
+    PExpression parseExpression();
+    PExpression parseStructInitExpression();
+    PExpression parseDisjunctionExpression();
+    PExpression parseConjunctionExpression();
+    PExpression parseEqualExpression();
+    PExpression parseRelExpression();
+    PExpression parseAdditiveExpression();
+    PExpression parseMultiplicativeExpression();
+    PExpression parseNegationExpression();
+    PExpression parseTypeExpression();
+    PExpression parseFieldAccessExpression();
+    PExpression parseContainerExpression();
+    PExpression parseNestedExpression();
+    PExpression parseConstant();
+    PExpression parseVariableAccessOrFuncCall();
     std::optional<Argument> parseArgument();
 
     template <typename T, typename ElementParser>
     std::vector<T> parseList(ElementParser elementParser);
+    std::vector<PExpression> parseExpressionList();
 
-    using StatementParsers =
-        std::initializer_list<std::function<std::optional<Statement>(Parser&)>>;
+    using StatementParsers = std::initializer_list<std::function<PStatement(Parser&)>>;
     static StatementParsers statementParsers_;
 
     ILexer& lexer_;
     Token currentToken_;
+    Position statementPosition_;
 };
 
 #include "parser.tpp"

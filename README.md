@@ -5,12 +5,14 @@
 - genhtml 1.14
 - doxygen 1.10.0
 
+All of them can be installed using setup.sh
+
 ### Installation:
 
 ```console
-$ conan install . --build=missing
-$ cd build/Release/
-$ cmake ../../ -DCMAKE_TOOLCHAIN_FILE=generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
+$ conan install . --build=missing -s compiler.cppstd=20 -s build_type=Debug
+$ cd build/Debug/
+$ cmake ../../ -DCMAKE_TOOLCHAIN_FILE=generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug
 $ cmake --build .
 ```
 
@@ -19,6 +21,13 @@ $ cmake --build .
 ```console
 $ cd build/Debug/
 $ ctest
+```
+
+### Running interpreter:
+
+```console
+$ cd build/Debug
+$ ./src/raptor_lang_interpreter ../../example.rp
 ```
 
 ### Getting test coverage
@@ -30,7 +39,7 @@ $ ctest
 $ lcov --capture --directory . --output-file coverage.info
 $ genhtml coverage.info --output-directory coverage_report
 ```
-Coverage report is then accessible at build/Debug/coverage_report/index.html 
+Coverage report is then accessible at build/Debug/coverage_report/index.html
 
 ### Generating documentation
 ```console

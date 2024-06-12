@@ -2,14 +2,16 @@
 
 template <typename T>
 auto getBinaryExprCtor() {
-    return [](auto lhs, auto rhs) {
-        return std::make_unique<T>(std::move(lhs), std::move(rhs));
+    return [](auto lhs, auto rhs, const Position& position) {
+        return std::make_unique<T>(std::move(lhs), std::move(rhs), position);
     };
 }
 
 template <typename T>
 auto getUnaryExprCtor() {
-    return [](auto expr) { return std::make_unique<T>(std::move(expr)); };
+    return [](auto expr, const Position& position) {
+        return std::make_unique<T>(std::move(expr), position);
+    };
 }
 
 std::optional<ComparisonExpression::Ctor> ComparisonExpression::getCtor(

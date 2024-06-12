@@ -4,7 +4,7 @@
 
 class SourceTest : public testing::Test {
    protected:
-    void SetUp(const std::string& input) {
+    void Init(const std::string& input) {
         stream_ = std::istringstream(input);
         source_ = std::make_unique<Source>(stream_);
     }
@@ -14,7 +14,7 @@ class SourceTest : public testing::Test {
 };
 
 TEST_F(SourceTest, getPosition) {
-    SetUp("abc");
+    Init("abc");
 
     auto position = source_->getPosition();
     ASSERT_EQ(position.line, 1);
@@ -22,7 +22,7 @@ TEST_F(SourceTest, getPosition) {
 }
 
 TEST_F(SourceTest, getPosition_after_nextChar) {
-    SetUp("abc");
+    Init("abc");
 
     source_->nextChar();
 
@@ -32,7 +32,7 @@ TEST_F(SourceTest, getPosition_after_nextChar) {
 }
 
 TEST_F(SourceTest, getPosition_new_line_before_nextChar) {
-    SetUp("\nabc");
+    Init("\nabc");
 
     auto position = source_->getPosition();
     ASSERT_EQ(position.line, 1);
@@ -40,7 +40,7 @@ TEST_F(SourceTest, getPosition_new_line_before_nextChar) {
 }
 
 TEST_F(SourceTest, getPosition_new_line_after_nextChar) {
-    SetUp("\nabc");
+    Init("\nabc");
 
     source_->nextChar();
 
@@ -50,13 +50,13 @@ TEST_F(SourceTest, getPosition_new_line_after_nextChar) {
 }
 
 TEST_F(SourceTest, getChar) {
-    SetUp("abc");
+    Init("abc");
 
     ASSERT_EQ(source_->getChar(), 'a');
 }
 
 TEST_F(SourceTest, getChar_after_nextChar) {
-    SetUp("abc");
+    Init("abc");
 
     source_->nextChar();
 

@@ -8,7 +8,7 @@ using TypeSequence = std::vector<Token::Type>;
 
 class LexerTest : public testing::Test {
    protected:
-    void SetUp(const std::string& input) {
+    void Init(const std::string& input) {
         stream_ = std::istringstream(input);
         source_ = std::make_unique<Source>(stream_);
         lexer_ = std::make_unique<Lexer>(*source_);
@@ -20,7 +20,7 @@ class LexerTest : public testing::Test {
 };
 
 TEST_F(LexerTest, getToken_true) {
-    SetUp("true");
+    Init("true");
 
     auto token = lexer_->getToken();
     ASSERT_EQ(token.getType(), Token::Type::TRUE_CONST) << "Invalid type";
@@ -31,7 +31,7 @@ TEST_F(LexerTest, getToken_true) {
 }
 
 TEST_F(LexerTest, getToken_false) {
-    SetUp("false");
+    Init("false");
 
     auto token = lexer_->getToken();
     ASSERT_EQ(token.getType(), Token::Type::FALSE_CONST) << "Invalid type";
@@ -42,7 +42,7 @@ TEST_F(LexerTest, getToken_false) {
 }
 
 TEST_F(LexerTest, getToken_while_keyword) {
-    SetUp("while");
+    Init("while");
 
     auto token = lexer_->getToken();
 
@@ -54,7 +54,7 @@ TEST_F(LexerTest, getToken_while_keyword) {
 }
 
 TEST_F(LexerTest, getToken_id) {
-    SetUp("valid_identifier_123");
+    Init("valid_identifier_123");
 
     auto token = lexer_->getToken();
 
@@ -66,7 +66,7 @@ TEST_F(LexerTest, getToken_id) {
 }
 
 TEST_F(LexerTest, getToken_id_pretending_to_be_keyword) {
-    SetUp("While");
+    Init("While");
 
     auto token = lexer_->getToken();
 
@@ -77,7 +77,7 @@ TEST_F(LexerTest, getToken_id_pretending_to_be_keyword) {
 }
 
 TEST_F(LexerTest, getToken_int) {
-    SetUp("1234");
+    Init("1234");
 
     auto token = lexer_->getToken();
 
@@ -88,7 +88,7 @@ TEST_F(LexerTest, getToken_int) {
 }
 
 TEST_F(LexerTest, getToken_int_with_leading_zero) {
-    SetUp("01234");
+    Init("01234");
 
     ASSERT_EQ(std::get<Integral>(lexer_->getToken().getValue()), 0)
         << "First part of int";
@@ -100,19 +100,19 @@ TEST_F(LexerTest, getToken_int_with_leading_zero) {
 }
 
 TEST_F(LexerTest, getToken_int_max) {
-    SetUp("4294967295");
+    Init("2147483647");
 
     EXPECT_NO_THROW(lexer_->getToken()) << "Just at the max";
 }
 
 TEST_F(LexerTest, getToken_int_overflow) {
-    SetUp("4294967296");
+    Init("2147483648");
 
     EXPECT_THROW(lexer_->getToken(), NumericOverflow) << "Max exceeded";
 }
 
 TEST_F(LexerTest, getToken_float) {
-    SetUp("12.125");
+    Init("12.125");
 
     auto token = lexer_->getToken();
 
@@ -126,7 +126,7 @@ class LexerFloatTest : public LexerTest,
                        public testing::WithParamInterface<std::string> {};
 
 TEST_P(LexerFloatTest, getToken_invalid_float) {
-    SetUp(GetParam());
+    Init(GetParam());
 
     EXPECT_THROW(lexer_->getToken(), InvalidFloat);
 }
@@ -134,25 +134,25 @@ TEST_P(LexerFloatTest, getToken_invalid_float) {
 INSTANTIATE_TEST_SUITE_P(InvalidFloat, LexerFloatTest, testing::Values("1..125", "1."));
 
 TEST_F(LexerTest, getToken_float_max) {
-    SetUp("0.4294967295");
+    Init("0.2147483647");
 
     EXPECT_NO_THROW(lexer_->getToken()) << "Just at the max";
 }
 
 TEST_F(LexerTest, getToken_float_overflow) {
-    SetUp("0.4294967296");
+    Init("0.2147483648");
 
     EXPECT_THROW(lexer_->getToken(), NumericOverflow) << "Max exceeded";
 }
 
 TEST_F(LexerTest, getToken_invalid) {
-    SetUp("&324");
+    Init("&324");
 
     EXPECT_THROW(lexer_->getToken(), InvalidToken);
 }
 
 TEST_F(LexerTest, getToken_empty_source) {
-    SetUp("");
+    Init("");
 
     for (int i{0}; i < 5; ++i) {
         auto token = lexer_->getToken();
@@ -163,7 +163,7 @@ TEST_F(LexerTest, getToken_empty_source) {
 }
 
 TEST_F(LexerTest, getToken_leading_white_space) {
-    SetUp("   \t \n  true");
+    Init("   \t \n  true");
 
     auto token = lexer_->getToken();
 
@@ -176,7 +176,7 @@ class LexerOperatorTest
 
 TEST_P(LexerOperatorTest, getToken_operators) {
     auto& [op, tokenType] = GetParam();
-    SetUp(op);
+    Init(op);
 
     auto token = lexer_->getToken();
     EXPECT_EQ(token.getType(), tokenType) << "Invalid type";
@@ -200,13 +200,13 @@ auto operatorPairs = testing::Values(
 INSTANTIATE_TEST_SUITE_P(Operators, LexerOperatorTest, operatorPairs);
 
 TEST_F(LexerTest, getToken_invalid_not_equal_operator) {
-    SetUp("!");
+    Init("!");
 
     EXPECT_THROW(lexer_->getToken(), InvalidToken);
 }
 
 TEST_F(LexerTest, getToken_str_const_empty) {
-    SetUp(R"("")");
+    Init(R"("")");
 
     auto token = lexer_->getToken();
     ASSERT_EQ(token.getType(), Token::Type::STR_CONST) << "Invalid type";
@@ -216,7 +216,7 @@ TEST_F(LexerTest, getToken_str_const_empty) {
 }
 
 TEST_F(LexerTest, getToken_str_const_new_line) {
-    SetUp(R"("a\nb")");
+    Init(R"("a\nb")");
 
     auto token = lexer_->getToken();
     ASSERT_EQ(token.getType(), Token::Type::STR_CONST) << "Invalid type";
@@ -227,7 +227,7 @@ TEST_F(LexerTest, getToken_str_const_new_line) {
 }
 
 TEST_F(LexerTest, getToken_str_const_quotation_mark) {
-    SetUp(R"("\"")");
+    Init(R"("\"")");
 
     auto token = lexer_->getToken();
     ASSERT_EQ(token.getType(), Token::Type::STR_CONST) << "Invalid type";
@@ -238,7 +238,7 @@ TEST_F(LexerTest, getToken_str_const_quotation_mark) {
 }
 
 TEST_F(LexerTest, getToken_str_const_backslash) {
-    SetUp(R"("\\")");
+    Init(R"("\\")");
 
     auto token = lexer_->getToken();
     ASSERT_EQ(token.getType(), Token::Type::STR_CONST) << "Invalid type";
@@ -249,7 +249,7 @@ TEST_F(LexerTest, getToken_str_const_backslash) {
 }
 
 TEST_F(LexerTest, getToken_str_const_complicated) {
-    SetUp(R"("\"lama \nma \\ delfina\"")");
+    Init(R"("\"lama \nma \\ delfina\"")");
 
     auto token = lexer_->getToken();
     ASSERT_EQ(token.getType(), Token::Type::STR_CONST) << "Invalid type";
@@ -260,27 +260,27 @@ TEST_F(LexerTest, getToken_str_const_complicated) {
 }
 
 TEST_F(LexerTest, getToken_not_terminated_str_const) {
-    SetUp(R"("no ending quotation mark)");
+    Init(R"("no ending quotation mark)");
 
     EXPECT_THROW(lexer_->getToken(), NotTerminatedStrConst)
         << "Str const without ending quotation mark";
 }
 
 TEST_F(LexerTest, getToken_backslash_at_the_end_of_file) {
-    SetUp(R"("abc\)");
+    Init(R"("abc\)");
 
     EXPECT_THROW(lexer_->getToken(), NotTerminatedStrConst)
         << "Non-terminated string is more important than backslash";
 }
 
 TEST_F(LexerTest, getToken_escaping_wrong_char) {
-    SetUp(R"("\a")");
+    Init(R"("\a")");
 
     EXPECT_THROW(lexer_->getToken(), NonEscapableChar) << "cannot escape char 'a'";
 }
 
 TEST_F(LexerTest, getToken_comment) {
-    SetUp(R"(# int 12 # "abc")");
+    Init(R"(# int 12 # "abc")");
 
     auto token = lexer_->getToken();
     ASSERT_EQ(token.getType(), Token::Type::CMT) << "Invalid type";
@@ -290,7 +290,7 @@ TEST_F(LexerTest, getToken_comment) {
 }
 
 TEST_F(LexerTest, getToken_end_comment_at_new_line) {
-    SetUp("# first line\n second line");
+    Init("# first line\n second line");
 
     auto token = lexer_->getToken();
     ASSERT_EQ(token.getType(), Token::Type::CMT) << "Invalid type";
@@ -298,7 +298,7 @@ TEST_F(LexerTest, getToken_end_comment_at_new_line) {
 }
 
 TEST_F(LexerTest, getToken_token_position_one_line) {
-    SetUp("int void");
+    Init("int void");
 
     auto token = lexer_->getToken();
     EXPECT_EQ(token.getPosition().line, 1);
@@ -310,7 +310,7 @@ TEST_F(LexerTest, getToken_token_position_one_line) {
 }
 
 TEST_F(LexerTest, getToken_token_position_two_lines) {
-    SetUp("abc\ndef");
+    Init("abc\ndef");
 
     auto token = lexer_->getToken();
     EXPECT_EQ(token.getPosition().line, 1);
@@ -326,7 +326,7 @@ TEST_F(LexerTest, getToken_multiple_tokens) {
         "void add_one_ref(ref int num) {"
         "    num = num + 1;"
         "}"};
-    SetUp(input);
+    Init(input);
 
     TypeSequence seq{
         Token::Type::VOID_KW,   Token::Type::ID,     Token::Type::L_PAR,
@@ -337,5 +337,6 @@ TEST_F(LexerTest, getToken_multiple_tokens) {
         Token::Type::ETX,
     };
 
-    for (auto type : seq) EXPECT_EQ(lexer_->getToken().getType(), type) << "Invalid type";
+    for (auto type : seq)
+        EXPECT_EQ(lexer_->getToken().getType(), type) << "Invalid type";
 }

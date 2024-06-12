@@ -1,10 +1,13 @@
 #include "printer.hpp"
 
+#include <iostream>
+
 #include "magic_enum/magic_enum.hpp"
 
 std::ostream& operator<<(std::ostream& stream, const Program& program) {
     for (const auto& stmt : program.statements) {
-        stream << std::visit(StatementPrinter(), stmt) << '\n';
+        auto printer = StatementPrinter();
+        stmt->accept(printer);
     }
     return stream;
 }
@@ -17,177 +20,187 @@ StatementPrinter BasePrinter::getSubStmtPrinter() const {
     return StatementPrinter(indent_ + indentWidth_);
 }
 
-std::string ExpressionPrinter::printBinaryExpression(const auto& expression) const {
-    return std::visit(getSubExprPrinter(), expression->lhs) + '\n'
-           + std::visit(getSubExprPrinter(), expression->rhs);
+void ExpressionPrinter::printBinaryExpression(const auto& expression) const {
+    expression.lhs->accept(getSubExprPrinter());
+    expression.rhs->accept(getSubExprPrinter());
 }
 
-std::string ExpressionPrinter::operator()(const StructInitExpression& expr) const {
-    std::string output = getPrefix() + "StructInitExpression";
+void ExpressionPrinter::operator()(const StructInitExpression& expr) const {
+    std::cout << getPrefix() << "StructInitExpression\n";
     for (const auto& expr : expr.exprs)
-        output += '\n' + std::visit(getSubExprPrinter(), expr);
-    return output;
+        expr->accept(getSubExprPrinter());
 }
 
-std::string ExpressionPrinter::operator()(
-    const std::unique_ptr<DisjunctionExpression>& disjunction) const {
-    return getPrefix() + "DisjunctionExpression\n" + printBinaryExpression(disjunction);
+void ExpressionPrinter::operator()(const DisjunctionExpression& disjunction) const {
+    std::cout << getPrefix() << "DisjunctionExpression\n";
+    printBinaryExpression(disjunction);
 }
 
-std::string ExpressionPrinter::operator()(
-    const std::unique_ptr<ConjunctionExpression>& conjunction) const {
-    return getPrefix() + "ConjunctionExpression\n" + printBinaryExpression(conjunction);
+void ExpressionPrinter::operator()(const ConjunctionExpression& conjunction) const {
+    std::cout << getPrefix() << "ConjunctionExpression\n";
+    printBinaryExpression(conjunction);
 }
 
-std::string ExpressionPrinter::operator()(
-    const std::unique_ptr<EqualExpression>& expr) const {
-    return getPrefix() + "EqualExpression\n" + printBinaryExpression(expr);
+void ExpressionPrinter::operator()(const EqualExpression& expr) const {
+    std::cout << getPrefix() << "EqualExpression\n";
+    printBinaryExpression(expr);
 }
 
-std::string ExpressionPrinter::operator()(
-    const std::unique_ptr<NotEqualExpression>& expr) const {
-    return getPrefix() + "NotEqualExpression\n" + printBinaryExpression(expr);
+void ExpressionPrinter::operator()(const NotEqualExpression& expr) const {
+    std::cout << getPrefix() << "NotEqualExpression\n";
+    printBinaryExpression(expr);
 }
 
-std::string ExpressionPrinter::operator()(
-    const std::unique_ptr<LessThanExpression>& expr) const {
-    return getPrefix() + "LessThanExpression\n" + printBinaryExpression(expr);
+void ExpressionPrinter::operator()(const LessThanExpression& expr) const {
+    std::cout << getPrefix() << "LessThanExpression\n";
+    printBinaryExpression(expr);
 }
 
-std::string ExpressionPrinter::operator()(
-    const std::unique_ptr<LessThanOrEqualExpression>& expr) const {
-    return getPrefix() + "LessThanOrEqualExpression\n" + printBinaryExpression(expr);
+void ExpressionPrinter::operator()(const LessThanOrEqualExpression& expr) const {
+    std::cout << getPrefix() << "LessThanOrEqualExpression\n";
+    printBinaryExpression(expr);
 }
 
-std::string ExpressionPrinter::operator()(
-    const std::unique_ptr<GreaterThanExpression>& expr) const {
-    return getPrefix() + "GreaterThanExpression\n" + printBinaryExpression(expr);
+void ExpressionPrinter::operator()(const GreaterThanExpression& expr) const {
+    std::cout << getPrefix() << "GreaterThanExpression\n";
+    printBinaryExpression(expr);
 }
 
-std::string ExpressionPrinter::operator()(
-    const std::unique_ptr<GreaterThanOrEqualExpression>& expr) const {
-    return getPrefix() + "GreaterThanOrEqualExpression\n" + printBinaryExpression(expr);
+void ExpressionPrinter::operator()(const GreaterThanOrEqualExpression& expr) const {
+    std::cout << getPrefix() << "GreaterThanOrEqualExpression\n";
+    printBinaryExpression(expr);
 }
 
-std::string ExpressionPrinter::operator()(
-    const std::unique_ptr<AdditionExpression>& expr) const {
-    return getPrefix() + "AdditionExpression\n" + printBinaryExpression(expr);
+void ExpressionPrinter::operator()(const AdditionExpression& expr) const {
+    std::cout << getPrefix() << "AdditionExpression\n";
+    printBinaryExpression(expr);
 }
 
-std::string ExpressionPrinter::operator()(
-    const std::unique_ptr<SubtractionExpression>& expr) const {
-    return getPrefix() + "SubtractionExpression\n" + printBinaryExpression(expr);
+void ExpressionPrinter::operator()(const SubtractionExpression& expr) const {
+    std::cout << getPrefix() << "SubtractionExpression\n";
+    printBinaryExpression(expr);
 }
 
-std::string ExpressionPrinter::operator()(
-    const std::unique_ptr<MultiplicationExpression>& expr) const {
-    return getPrefix() + "MultiplicationExpression\n" + printBinaryExpression(expr);
+void ExpressionPrinter::operator()(const MultiplicationExpression& expr) const {
+    std::cout << getPrefix() << "MultiplicationExpression\n";
+    printBinaryExpression(expr);
 }
 
-std::string ExpressionPrinter::operator()(
-    const std::unique_ptr<DivisionExpression>& expr) const {
-    return getPrefix() + "DivisionExpression\n" + printBinaryExpression(expr);
+void ExpressionPrinter::operator()(const DivisionExpression& expr) const {
+    std::cout << getPrefix() << "DivisionExpression\n";
+    printBinaryExpression(expr);
+}
+void ExpressionPrinter::operator()(const SignChangeExpression&) const {}
+
+void ExpressionPrinter::operator()(const LogicalNegationExpression&) const {}
+
+void ExpressionPrinter::operator()(const ConversionExpression&) const {}
+
+void ExpressionPrinter::operator()(const TypeCheckExpression&) const {}
+
+void ExpressionPrinter::operator()(const FieldAccessExpression& expr) const {
+    std::cout << getPrefix() << "FieldAccessExpression\n";
+    expr.expr->accept(getSubExprPrinter());
+    std::cout << getPrefix() << "└field: " << expr.field << '\n';
 }
 
-std::string ExpressionPrinter::operator()(
-    const std::unique_ptr<FieldAccessExpression>& expr) const {
-    return getPrefix() + "FieldAccessExpression\n"
-           + std::visit(getSubExprPrinter(), expr->expr) + '\n' + getPrefix()
-           + "  field: " + expr->field;
+void ExpressionPrinter::operator()(const Constant& expr) const {
+    std::cout << getPrefix() << "Constant: " << std::visit(ValuePrinter(), expr.value)
+              << '\n';
 }
 
-std::string ExpressionPrinter::operator()(const VariableAccess& expr) const {
-    return getPrefix() + "VariableAccess " + expr.name;
+void ExpressionPrinter::operator()(const FuncCall&) const {}
+
+void ExpressionPrinter::operator()(const VariableAccess& expr) const {
+    std::cout << getPrefix() << "VariableAccess " << expr.name << '\n';
 }
 
-std::string ExpressionPrinter::operator()(const Constant& expr) const {
-    return getPrefix() + "Constant: " + std::visit(ValuePrinter(), expr.value);
+void StatementPrinter::operator()(const IfStatement& ifStatement) {
+    std::cout << getPrefix() << "IfStatement\n" << getPrefix() << "└condition:\n";
+    ifStatement.condition->accept(getSubExprPrinter());
+    std::cout << getPrefix() << "└statements {\n";
+    for (const auto& stmt : ifStatement.statements) {
+        auto vis = getSubStmtPrinter();
+        stmt->accept(vis);
+    }
+    std::cout << getPrefix() << "}\n";
 }
 
-std::string ExpressionPrinter::operator()(const auto& expr) const {
-    return getPrefix() + typeid(expr).name();
+void StatementPrinter::operator()(const WhileStatement& whileStatement) {
+    std::cout << getPrefix() << "WhileStatement\n" << getPrefix() << "└condition:\n";
+    whileStatement.condition->accept(getSubExprPrinter());
+    std::cout << getPrefix() << "└statements {\n";
+    for (const auto& stmt : whileStatement.statements) {
+        auto vis = getSubStmtPrinter();
+        stmt->accept(vis);
+    }
+    std::cout << getPrefix() << "}\n";
 }
 
-std::string StatementPrinter::operator()(const IfStatement& ifStatement) const {
-    std::string output = getPrefix() + "IfStatement\n" + getPrefix() + "└condition:\n"
-                         + std::visit(getSubExprPrinter(), ifStatement.condition) + '\n'
-                         + getPrefix() + "└statements {";
-    for (const auto& stmt : ifStatement.statements)
-        output += '\n' + std::visit(getSubStmtPrinter(), stmt);
-    return output + '\n' + getPrefix() + '}';
+void StatementPrinter::operator()(const ReturnStatement& stmt) {
+    std::cout << getPrefix() << "ReturnStatement\n";
+    if (stmt.expression)
+        stmt.expression->accept(getSubExprPrinter());
 }
 
-std::string StatementPrinter::operator()(const WhileStatement& whileStatement) const {
-    std::string output = getPrefix() + "WhileStatement\n" + getPrefix() + "└condition:\n"
-                         + std::visit(getSubExprPrinter(), whileStatement.condition)
-                         + '\n' + getPrefix() + "└statements {";
-    for (const auto& stmt : whileStatement.statements)
-        output += '\n' + std::visit(getSubStmtPrinter(), stmt);
-    return output + '\n' + getPrefix() + '}';
+void StatementPrinter::operator()(const PrintStatement& stmt) {
+    std::cout << getPrefix() << "PrintStatement\n";
+    if (stmt.expression)
+        stmt.expression->accept(getSubExprPrinter());
 }
 
-std::string StatementPrinter::operator()(const ReturnStatement& stmt) const {
-    return getPrefix() + "ReturnStatement\n"
-           + (stmt.expression ? std::visit(getSubExprPrinter(), *stmt.expression) : "");
+void StatementPrinter::operator()(const FuncDef& funcDef) {
+    std::cout << getPrefix() << "FuncDef " << funcDef.getName();
+    for (const auto& param : funcDef.getParameters())
+        std::cout << ' ' << param.name << ',';
+    std::cout << " {\n";
+    for (const auto& stmt : funcDef.getStatements()) {
+        auto vis = getSubStmtPrinter();
+        stmt->accept(vis);
+    }
+    std::cout << '\n' << getPrefix() << "}\n";
 }
 
-std::string StatementPrinter::operator()(const PrintStatement& stmt) const {
-    return getPrefix() + "PrintStatement\n"
-           + (stmt.expression ? std::visit(getSubExprPrinter(), *stmt.expression) : "");
+void StatementPrinter::operator()(const Assignment& stmt) {
+    std::cout << getPrefix() << "Assignment\n"
+              << std::visit(LValuePrinter(indent_ + indentWidth_), stmt.lhs) << '\n';
+    stmt.rhs->accept(getSubExprPrinter());
 }
 
-std::string StatementPrinter::operator()(const FuncDef& funcDef) const {
-    std::string output = getPrefix() + "FuncDef " + funcDef.getName();
-    for (const auto& param : funcDef.getParameters()) output += ' ' + param.name + ',';
-    output += " {";
-    for (const auto& stmt : funcDef.getStatements())
-        output += '\n' + std::visit(getSubStmtPrinter(), stmt);
-    return output + '\n' + getPrefix() + '}';
+void StatementPrinter::operator()(const VarDef& stmt) {
+    std::cout << getPrefix() << "VarDef\n"
+              << getPrefix() << "  is const: " << std::to_string(stmt.isConst) << '\n'
+              << getPrefix()
+              << "  type: " << std::visit(TypePrinter(indent_ + indentWidth_), stmt.type)
+              << '\n'
+              << getPrefix() << "  name: " << stmt.name << '\n'
+              << getPrefix() << "  value:\n";
+    stmt.expression->accept(getSubExprPrinter());
 }
 
-std::string StatementPrinter::operator()(const Assignment& stmt) const {
-    return getPrefix() + "Assignment\n"
-           + std::visit(LValuePrinter(indent_ + indentWidth_), stmt.lhs) + '\n'
-           + std::visit(getSubExprPrinter(), stmt.rhs);
-}
-
-std::string StatementPrinter::operator()(const VarDef& stmt) const {
-    return getPrefix() + "VarDef\n" + getPrefix()
-           + "  is const: " + std::to_string(stmt.isConst) + '\n' + getPrefix()
-           + "  type: " + std::visit(TypePrinter(indent_ + indentWidth_), stmt.type)
-           + '\n' + getPrefix() + "  name: " + stmt.name + '\n' + getPrefix()
-           + "  value:\n" + std::visit(getSubExprPrinter(), stmt.expression);
-}
-
-std::string StatementPrinter::operator()(const FuncCall& stmt) const {
-    std::string output = getPrefix() + "FuncCall\n" + getPrefix() + "  name: " + stmt.name
-                         + '\n' + getPrefix() + "  args: ";
+void StatementPrinter::operator()(const FuncCall& stmt) {
+    std::cout << getPrefix() << "FuncCall\n"
+              << getPrefix() << "  name: " << stmt.name << '\n'
+              << getPrefix() << "  args:\n";
     for (const auto& arg : stmt.arguments)
-        output += '\n' + std::visit(getSubExprPrinter(), arg.value);
-    return output;
+        arg.value->accept(getSubExprPrinter());
 }
 
-std::string StatementPrinter::operator()(const StructDef& stmt) const {
-    std::string output =
-        getPrefix() + "StructDef " + stmt.name + '\n' + getPrefix() + "fields: ";
+void StatementPrinter::operator()(const StructDef& stmt) {
+    std::cout << getPrefix() << "StructDef " << stmt.name << '\n'
+              << getPrefix() << "fields: \n";
     for (const auto& field : stmt.fields)
-        output += '\n' + getPrefix() + "  "
-                  + std::visit(TypePrinter(indent_ + indentWidth_), field.type) + ' '
-                  + field.name;
-    return output;
+        std::cout << getPrefix() << "  "
+                  << std::visit(TypePrinter(indent_ + indentWidth_), field.type) << ' '
+                  << field.name << '\n';
 }
 
-std::string StatementPrinter::operator()(const VariantDef& stmt) const {
-    std::string output =
-        getPrefix() + "VariantDef " + stmt.name + '\n' + getPrefix() + "types: ";
+void StatementPrinter::operator()(const VariantDef& stmt) {
+    std::cout << getPrefix() << "VariantDef " << stmt.name << '\n'
+              << getPrefix() << "types:\n";
     for (const auto& type : stmt.types)
-        output += '\n' + getPrefix() + "  "
-                  + std::visit(TypePrinter(indent_ + indentWidth_), type);
-    return output;
-}
-
-std::string StatementPrinter::operator()(const auto& stmt) const {
-    return getPrefix() + typeid(stmt).name();
+        std::cout << getPrefix() << "  "
+                  << std::visit(TypePrinter(indent_ + indentWidth_), type) << '\n';
 }
 
 std::string LValuePrinter::operator()(const std::unique_ptr<FieldAccess>& lvalue) const {

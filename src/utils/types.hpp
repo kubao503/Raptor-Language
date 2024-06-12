@@ -4,9 +4,19 @@
 #include <string>
 #include <variant>
 
-using Integral = unsigned int;
+using Integral = int;
 using Floating = float;
 
-using Value = std::variant<std::monostate, Integral, Floating, bool, std::string>;
+enum class BuiltInType {
+    INT,
+    FLOAT,
+    BOOL,
+    STR,
+};
+
+struct VoidType {};
+
+using Type = std::variant<std::string, BuiltInType>;
+using ReturnType = std::variant<std::string, BuiltInType, VoidType>;
 
 #endif
