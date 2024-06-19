@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <ranges>
 
 #include "expr_interpreter.hpp"
 #include "interpreter_errors.hpp"
@@ -381,8 +382,10 @@ void Interpreter::passArgumentsToCtx(CallContext& ctx, const Arguments& args,
                                      const Parameters& params) {
     checkArgsCount(args, params);
 
-    for (std::size_t i{0}; i < args.size(); ++i)
-        passArgumentToCtx(ctx, args[i], params[i]);
+    for (auto elem : std::views::zip(args, params)) {
+        auto& [arg, param] = elem;
+        passArgumentToCtx(ctx, arg, param);
+    }
 }
 
 void checkArgRef(const Argument& arg, const Parameter& param) {

@@ -9,7 +9,7 @@ curl -L https://github.com/conan-io/conan/releases/download/2.3.2/conan-2.3.2-am
 dpkg -i conan-2.3.2-amd64.deb
 
 conan profile detect --force
-conan install . --build=missing -s compiler.cppstd=20 -s build_type=$BUILD_TYPE
+conan install . --build=missing -s compiler.cppstd=23 -s build_type=$BUILD_TYPE
 
 cd build/$BUILD_TYPE
 cmake ../../ -DCMAKE_TOOLCHAIN_FILE=generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE

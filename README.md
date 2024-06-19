@@ -10,7 +10,7 @@ All of them can be installed using setup.sh
 ### Installation:
 
 ```console
-$ conan install . --build=missing -s compiler.cppstd=20 -s build_type=Debug
+$ conan install . --build=missing -s compiler.cppstd=23 -s build_type=Debug
 $ cd build/Debug/
 $ cmake ../../ -DCMAKE_TOOLCHAIN_FILE=generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug
 $ cmake --build .
