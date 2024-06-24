@@ -4,6 +4,7 @@
 #include "base_errors.hpp"
 #include "filter.hpp"
 #include "interpreter.hpp"
+#include "ir_generator.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
 
@@ -20,8 +21,9 @@ int main(int argc, char* argv[]) {
         auto parser = Parser(filter);
         const auto program = parser.parseProgram();
 
-        Interpreter interpreter(std::cout);
-        interpreter.interpret(program);
+        IRGenerator irGenerator;
+        irGenerator.genIR(program);
+
     } catch (const BaseException& e) {
         std::cerr << '\n' << e.describe() << '\n';
     }
