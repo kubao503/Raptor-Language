@@ -8,6 +8,8 @@
 #include "lexer.hpp"
 #include "parser.hpp"
 
+void compile(llvm::Module& module);
+
 int main(int argc, char* argv[]) {
     if (argc < 2)
         return -1;
@@ -23,6 +25,7 @@ int main(int argc, char* argv[]) {
 
         IRGenerator irGenerator;
         irGenerator.genIR(program);
+        compile(*irGenerator.takeModule());
 
     } catch (const BaseException& e) {
         std::cerr << '\n' << e.describe() << '\n';

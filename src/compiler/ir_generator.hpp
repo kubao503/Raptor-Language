@@ -3,9 +3,23 @@
 
 #include "parse_tree.hpp"
 
+namespace llvm {
+class LLVMContext;
+class Module;
+}  // namespace llvm
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
+#include "llvm/IR/IRBuilder.h"
+
+#pragma GCC diagnostic pop
+
 class IRGenerator : public StatementVisitor {
    public:
+    IRGenerator();
     void genIR(const Program& program);
+    auto takeModule() { return std::move(module_); }
 
    private:
     void operator()(const IfStatement& stmt) override;
@@ -18,6 +32,14 @@ class IRGenerator : public StatementVisitor {
     void operator()(const FuncCall& stmt) override;
     void operator()(const StructDef& stmt) override;
     void operator()(const VariantDef& stmt) override;
+
+    void InitializeModule();
+    void addPrintfFunc() const;
+    void createMainFunc() const;
+
+    std::unique_ptr<llvm::LLVMContext> context_;
+    std::unique_ptr<llvm::Module> module_;
+    std::unique_ptr<llvm::IRBuilder<>> builder_;
 };
 
 #endif  // IR_GENERATOR_H
