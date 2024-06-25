@@ -1,4 +1,4 @@
-#include "ir_generator.hpp"
+#include "IRGenerator.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"

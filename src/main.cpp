@@ -1,10 +1,10 @@
 #include <fstream>
 #include <iostream>
 
+#include "IRGenerator.hpp"
 #include "base_errors.hpp"
 #include "filter.hpp"
 #include "interpreter.hpp"
-#include "ir_generator.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
 
