@@ -3,7 +3,20 @@
 
 #include "parse_tree.hpp"
 
+class IRGenerator;
+
+namespace llvm {
+class Value;
+}
+
 class ExprIRGenerator : public ExpressionVisitor {
+   public:
+    ExprIRGenerator(IRGenerator* irGenerator)
+        : irGenerator_{irGenerator} {}
+
+    llvm::Value* getLastValue() { return lastValue_; }
+
+   private:
     void operator()(const StructInitExpression& expr) const override;
     void operator()(const DisjunctionExpression& disjunction) const override;
     void operator()(const ConjunctionExpression& conjunction) const override;
@@ -25,6 +38,12 @@ class ExprIRGenerator : public ExpressionVisitor {
     void operator()(const Constant& expr) const override;
     void operator()(const FuncCall& expr) const override;
     void operator()(const VariableAccess& expr) const override;
+
+    IRGenerator* irGenerator_{nullptr};
+
+    mutable llvm::Value* lastValue_{nullptr};
 };
+
+#include "overloaded.tpp"
 
 #endif  // EXPR_IR_GENERATOR_H

@@ -1,6 +1,7 @@
 #ifndef IR_GENERATOR_H
 #define IR_GENERATOR_H
 
+#include "ExprIRGenerator.hpp"
 #include "parse_tree.hpp"
 
 namespace llvm {
@@ -37,9 +38,15 @@ class IRGenerator : public StatementVisitor {
     void addPrintfFunc() const;
     void createMainFunc() const;
 
+    llvm::Value* getIRFromExpr(const Expression& expr);
+
     std::unique_ptr<llvm::LLVMContext> context_;
     std::unique_ptr<llvm::Module> module_;
     std::unique_ptr<llvm::IRBuilder<>> builder_;
+
+    ExprIRGenerator exprIRGenerator_{this};
+
+    friend class ExprIRGenerator;
 };
 
 #endif  // IR_GENERATOR_H

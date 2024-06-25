@@ -61,14 +61,37 @@ void IRGenerator::operator()(const IfStatement&) {}
 void IRGenerator::operator()(const WhileStatement&) {}
 void IRGenerator::operator()(const ReturnStatement&) {}
 
-void IRGenerator::operator()(const PrintStatement&) {
-    auto func = module_->getFunction("printf");
+auto getFormatString(llvm::Value* value) {
+    auto typeId = value->getType()->getTypeID();
+    switch (typeId) {
+        case llvm::Type::IntegerTyID:
+            return "%d\n";
+        case llvm::Type::DoubleTyID:
+            return "%f\n";
+        case llvm::Type::PointerTyID:
+            return "%s\n";
+        default:
+            throw std::runtime_error("Unknown value type " + std::to_string(typeId)
+                                     + ". Cannot determine the format string");
+    }
+}
+
+void IRGenerator::operator()(const PrintStatement& stmt) {
+    const auto func = module_->getFunction("printf");
     assert(func && "printf not found");
 
-    const auto formatStr = builder_->CreateGlobalStringPtr("%d\n");
-    const auto val = llvm::ConstantInt::get(builder_->getInt32Ty(), 42);
+    std::vector<llvm::Value*> args;
 
-    const std::vector<llvm::Value*> args{formatStr, val};
+    if (auto expr = stmt.expression.get()) {
+        auto value = getIRFromExpr(*expr);
+        const auto formatStr = builder_->CreateGlobalStringPtr(getFormatString(value));
+
+        args.push_back(formatStr);
+        args.push_back(value);
+    } else {
+        const auto formatStr = builder_->CreateGlobalStringPtr("\n");
+        args.push_back(formatStr);
+    }
 
     builder_->CreateCall(func, args, "calltmp");
 }
@@ -79,3 +102,10 @@ void IRGenerator::operator()(const VarDef&) {}
 void IRGenerator::operator()(const FuncCall&) {}
 void IRGenerator::operator()(const StructDef&) {}
 void IRGenerator::operator()(const VariantDef&) {}
+
+llvm::Value* IRGenerator::getIRFromExpr(const Expression& expr) {
+    expr.accept(exprIRGenerator_);
+    const auto value = exprIRGenerator_.getLastValue();
+    assert(value && "Expression value not set");
+    return value;
+}
