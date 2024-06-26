@@ -9,6 +9,7 @@ add_executable(
     test_stmt_parsing.cpp
     test_expr_parsing.cpp
     test_interpreter.cpp
+    test_IRGenerator.cpp
     acceptance_tests.cpp
 )
 
@@ -18,6 +19,8 @@ target_link_libraries(
     PRIVATE lexer
     PRIVATE parser
     PRIVATE interpreter
+    PRIVATE compiler
+    PRIVATE print
 )
 
 include(GoogleTest)

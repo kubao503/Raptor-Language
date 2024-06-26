@@ -11,6 +11,8 @@
 
 #pragma GCC diagnostic pop
 
+constexpr const char* printFuncName{"printValue"};
+
 IRGenerator::IRGenerator() {
     InitializeModule();
     addPrintfFunc();
@@ -24,12 +26,11 @@ void IRGenerator::InitializeModule() {
 }
 
 void IRGenerator::addPrintfFunc() const {
-    const std::vector<llvm::Type*> paramTypes{
-        llvm::PointerType::get(llvm::Type::getInt8Ty(*context_), 0)};
+    const std::vector<llvm::Type*> paramTypes{llvm::Type::getInt32Ty(*context_)};
     const auto funcType =
-        llvm::FunctionType::get(llvm::Type::getInt32Ty(*context_), paramTypes, true);
+        llvm::FunctionType::get(llvm::Type::getVoidTy(*context_), paramTypes, false);
 
-    llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "printf",
+    llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, printFuncName,
                            module_.get());
 }
 
@@ -61,36 +62,16 @@ void IRGenerator::operator()(const IfStatement&) {}
 void IRGenerator::operator()(const WhileStatement&) {}
 void IRGenerator::operator()(const ReturnStatement&) {}
 
-auto getFormatString(llvm::Value* value) {
-    auto typeId = value->getType()->getTypeID();
-    switch (typeId) {
-        case llvm::Type::IntegerTyID:
-            return "%d\n";
-        case llvm::Type::DoubleTyID:
-            return "%f\n";
-        case llvm::Type::PointerTyID:
-            return "%s\n";
-        default:
-            throw std::runtime_error("Unknown value type " + std::to_string(typeId)
-                                     + ". Cannot determine the format string");
-    }
-}
-
 void IRGenerator::operator()(const PrintStatement& stmt) {
-    const auto func = module_->getFunction("printf");
-    assert(func && "printf not found");
+    const auto func = module_->getFunction(printFuncName);
+    assert(func && printFuncName && "printf not found");
 
     std::vector<llvm::Value*> args;
 
     if (auto expr = stmt.expression.get()) {
         auto value = getIRFromExpr(*expr);
-        const auto formatStr = builder_->CreateGlobalStringPtr(getFormatString(value));
-
-        args.push_back(formatStr);
         args.push_back(value);
     } else {
-        const auto formatStr = builder_->CreateGlobalStringPtr("\n");
-        args.push_back(formatStr);
     }
 
     builder_->CreateCall(func, args, "calltmp");

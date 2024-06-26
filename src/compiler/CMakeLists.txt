@@ -14,6 +14,9 @@ add_library(
     compiler.cpp
 )
 
+add_library(print print.cpp)
+
+target_include_directories(compiler INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(compiler INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 message(STATUS "LLVM Libraries: ${llvm_libs}")
