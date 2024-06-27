@@ -75,7 +75,17 @@ TEST_F(CompilerTest, empty_program) {
     EXPECT_EQ(compileAndGetOutput(), "");
 }
 
-TEST_F(CompilerTest, print_constant) {
+TEST_F(CompilerTest, print_new_line) {
+    Init("print;");
+    EXPECT_EQ(compileAndGetOutput(), "\n");
+}
+
+TEST_F(CompilerTest, print_int) {
     Init("print 5;");
     EXPECT_EQ(compileAndGetOutput(), "5\n");
+}
+
+TEST_F(CompilerTest, print_bool) {
+    Init("print true;");
+    EXPECT_EQ(compileAndGetOutput(), "true\n");
 }

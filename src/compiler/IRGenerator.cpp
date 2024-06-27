@@ -8,6 +8,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
+#include "print.hpp"
 
 #pragma GCC diagnostic pop
 
@@ -28,7 +29,7 @@ void IRGenerator::InitializeModule() {
 void IRGenerator::addPrintfFunc() const {
     const std::vector<llvm::Type*> paramTypes{llvm::Type::getInt32Ty(*context_)};
     const auto funcType =
-        llvm::FunctionType::get(llvm::Type::getVoidTy(*context_), paramTypes, false);
+        llvm::FunctionType::get(llvm::Type::getVoidTy(*context_), paramTypes, true);
 
     llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, printFuncName,
                            module_.get());
@@ -62,6 +63,23 @@ void IRGenerator::operator()(const IfStatement&) {}
 void IRGenerator::operator()(const WhileStatement&) {}
 void IRGenerator::operator()(const ReturnStatement&) {}
 
+TypeIndex getTypeID(llvm::Value* value) {
+    const auto type = value->getType()->getTypeID();
+    switch (type) {
+        case llvm::Type::IntegerTyID: {
+            if (value->getType()->getIntegerBitWidth() == 1)
+                return TypeIndex::BOOL;
+            return TypeIndex::INT;
+        }
+        case llvm::Type::DoubleTyID:
+            return TypeIndex::FLOAT;
+        case llvm::Type::PointerTyID:
+            return TypeIndex::STR;
+        default:
+            throw std::runtime_error("Unknown type id" + std::to_string(type));
+    }
+}
+
 void IRGenerator::operator()(const PrintStatement& stmt) {
     const auto func = module_->getFunction(printFuncName);
     assert(func && printFuncName && "printf not found");
@@ -70,8 +88,12 @@ void IRGenerator::operator()(const PrintStatement& stmt) {
 
     if (auto expr = stmt.expression.get()) {
         auto value = getIRFromExpr(*expr);
+        auto typeId = static_cast<int>(getTypeID(value));
+        args.push_back(llvm::ConstantInt::get(builder_->getInt32Ty(), typeId));
         args.push_back(value);
     } else {
+        args.push_back(llvm::ConstantInt::get(builder_->getInt32Ty(),
+                                              static_cast<int>(TypeIndex::VOID)));
     }
 
     builder_->CreateCall(func, args, "calltmp");

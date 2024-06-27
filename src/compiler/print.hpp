@@ -1,6 +1,8 @@
 #ifndef PRINT_H
 #define PRINT_H
 
-extern "C" void printValue(int value);
+enum class TypeIndex { INT, FLOAT, BOOL, STR, VOID };
+
+extern "C" void printValue(int type, ...);
 
 #endif  // PRINT_H
