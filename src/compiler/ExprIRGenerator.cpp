@@ -2,6 +2,7 @@
 
 #include "IRGenerator.hpp"
 #include "llvm/IR/Constants.h"
+#include "overloaded.tpp"
 
 void ExprIRGenerator::operator()(const StructInitExpression&) const {}
 void ExprIRGenerator::operator()(const DisjunctionExpression&) const {}
@@ -24,19 +25,16 @@ void ExprIRGenerator::operator()(const FieldAccessExpression&) const {}
 
 void ExprIRGenerator::operator()(const Constant& expr) const {
     auto constantToValue = overloaded{
-        [this](int v) {
-            return static_cast<llvm::Value*>(
-                llvm::ConstantInt::get(irGenerator_->builder_->getInt32Ty(), v));
+        [this](int v) -> llvm::Value* {
+            return llvm::ConstantInt::get(irGenerator_->builder_->getInt32Ty(), v);
         },
-        [this](float v) {
-            return static_cast<llvm::Value*>(
-                llvm::ConstantFP::get(irGenerator_->builder_->getDoubleTy(), v));
+        [this](float v) -> llvm::Value* {
+            return llvm::ConstantFP::get(irGenerator_->builder_->getDoubleTy(), v);
         },
-        [this](bool v) {
-            return static_cast<llvm::Value*>(
-                llvm::ConstantInt::get(irGenerator_->builder_->getInt1Ty(), v));
+        [this](bool v) -> llvm::Value* {
+            return llvm::ConstantInt::get(irGenerator_->builder_->getInt1Ty(), v);
         },
-        [this](const std::string& v) {
+        [this](const std::string& v) -> llvm::Value* {
             const auto str =
                 llvm::ConstantDataArray::getString(*irGenerator_->context_, v);
 
@@ -50,7 +48,7 @@ void ExprIRGenerator::operator()(const Constant& expr) const {
             llvm::Constant* strPtr =
                 llvm::ConstantExpr::getGetElementPtr(str->getType(), strVar, indices);
 
-            return static_cast<llvm::Value*>(strPtr);
+            return strPtr;
         }};
 
     lastValue_ = std::visit(constantToValue, expr.value);

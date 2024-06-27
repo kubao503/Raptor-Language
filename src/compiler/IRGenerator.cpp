@@ -8,9 +8,10 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
-#include "print.hpp"
 
 #pragma GCC diagnostic pop
+
+#include "print.hpp"
 
 constexpr const char* printFuncName{"printValue"};
 
@@ -82,13 +83,13 @@ TypeIndex getTypeID(llvm::Value* value) {
 
 void IRGenerator::operator()(const PrintStatement& stmt) {
     const auto func = module_->getFunction(printFuncName);
-    assert(func && printFuncName && "printf not found");
+    assert(func && printFuncName && " not found");
 
     std::vector<llvm::Value*> args;
 
     if (auto expr = stmt.expression.get()) {
-        auto value = getIRFromExpr(*expr);
-        auto typeId = static_cast<int>(getTypeID(value));
+        const auto value = getIRFromExpr(*expr);
+        const auto typeId = static_cast<int>(getTypeID(value));
         args.push_back(llvm::ConstantInt::get(builder_->getInt32Ty(), typeId));
         args.push_back(value);
     } else {

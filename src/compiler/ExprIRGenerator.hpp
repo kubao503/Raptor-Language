@@ -44,6 +44,4 @@ class ExprIRGenerator : public ExpressionVisitor {
     mutable llvm::Value* lastValue_{nullptr};
 };
 
-#include "overloaded.tpp"
-
 #endif  // EXPR_IR_GENERATOR_H

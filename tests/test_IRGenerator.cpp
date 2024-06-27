@@ -21,18 +21,11 @@ std::string captureStdout(std::function<void()> func) {
 }
 
 void executeLLVMModule(std::unique_ptr<llvm::Module> module) {
-    llvm::InitializeNativeTarget();
-    llvm::InitializeNativeTargetAsmPrinter();
-    llvm::InitializeNativeTargetAsmParser();
-
-    llvm::sys::DynamicLibrary::AddSymbol("printValue", (void*)printValue);
-
-    std::string errStr;
     llvm::ExecutionEngine* executionEngine =
         llvm::EngineBuilder(std::move(module)).create();
 
     if (!executionEngine) {
-        llvm::errs() << "Failed to create ExecutionEngine: " << errStr << "\n";
+        llvm::errs() << "Failed to create ExecutionEngine.\n";
         return;
     }
 
@@ -44,6 +37,7 @@ void executeLLVMModule(std::unique_ptr<llvm::Module> module) {
     }
 
     executionEngine->runFunction(mainFunc, {});
+    delete executionEngine;
 }
 
 class CompilerTest : public testing::Test {
@@ -61,6 +55,14 @@ class CompilerTest : public testing::Test {
         lexer_ = std::make_unique<Lexer>(*source_);
         parser_ = std::make_unique<Parser>(*lexer_);
         program_ = parser_->parseProgram();
+    }
+
+    static void SetUpTestSuite() {
+        llvm::InitializeNativeTarget();
+        llvm::InitializeNativeTargetAsmPrinter();
+        llvm::InitializeNativeTargetAsmParser();
+
+        llvm::sys::DynamicLibrary::AddSymbol("printValue", (void*)printValue);
     }
 
     std::string compileAndGetOutput() {
