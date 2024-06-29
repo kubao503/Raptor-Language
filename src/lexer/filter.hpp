@@ -1,7 +1,7 @@
 #ifndef FILTER_H
 #define FILTER_H
 
-#include "ILexer.hpp"
+#include "i_lexer.hpp"
 
 /// @brief Exception thrown when trying to instantiate
 /// a Filter ignoring end-of-text tokens

@@ -9,7 +9,7 @@ add_executable(
     test_stmt_parsing.cpp
     test_expr_parsing.cpp
     test_interpreter.cpp
-    test_IRGenerator.cpp
+    test_ir_generator.cpp
     acceptance_tests.cpp
 )
 

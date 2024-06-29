@@ -1,7 +1,7 @@
 #ifndef LEXER_ERRORS_H
 #define LEXER_ERRORS_H
 
-#include "base_errors.hpp"
+#include "base_exception.hpp"
 #include "types.hpp"
 
 class InvalidToken : public BaseException {

@@ -1,7 +1,7 @@
 #ifndef PARSER_ERRORS_H
 #define PARSER_ERRORS_H
 
-#include "base_errors.hpp"
+#include "base_exception.hpp"
 
 class SyntaxException : public BaseException {
    public:

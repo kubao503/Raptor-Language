@@ -4,7 +4,7 @@
 #include <functional>
 #include <optional>
 
-#include "ILexer.hpp"
+#include "i_lexer.hpp"
 #include "parse_tree.hpp"
 #include "parser_errors.hpp"
 #include "token.hpp"

@@ -1,7 +1,7 @@
 #ifndef INTERPRETER_ERRORS_H
 #define INTERPRETER_ERRORS_H
 
-#include "base_errors.hpp"
+#include "base_exception.hpp"
 #include "types.hpp"
 #include "value_obj.hpp"
 

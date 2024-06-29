@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "ILexer.hpp"
+#include "i_lexer.hpp"
 
 /// @brief FakeLexer implementing the same interface as Lexer. Used for testing
 class FakeLexer : public ILexer {
@@ -14,9 +14,8 @@ class FakeLexer : public ILexer {
     /// @param typeSequence
     FakeLexer(std::initializer_list<Token::Type> typeSequence) {
         std::transform(typeSequence.begin(), typeSequence.end(),
-                       std::back_inserter(tokenSequence_), [](auto type) {
-                           return Token{type, {}, {}};
-                       });
+                       std::back_inserter(tokenSequence_),
+                       [](auto type) { return Token{type, {}, {}}; });
         current_ = tokenSequence_.begin();
     }
 

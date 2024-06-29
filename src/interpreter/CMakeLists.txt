@@ -5,6 +5,7 @@ add_library(
     call_context.cpp
     scope.cpp
     value_obj.cpp
+    interpreter_errors.cpp
 )
 
 target_include_directories(interpreter INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

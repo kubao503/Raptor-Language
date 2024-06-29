@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "IRGenerator.hpp"
+#include "ir_generator.hpp"
 #include "lexer.hpp"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"

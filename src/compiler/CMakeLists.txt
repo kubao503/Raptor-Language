@@ -9,8 +9,8 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 
 add_library(
     compiler
-    IRGenerator.cpp
-    ExprIRGenerator.cpp
+    ir_generator.cpp
+    expr_ir_generator.cpp
     compiler.cpp
 )
 

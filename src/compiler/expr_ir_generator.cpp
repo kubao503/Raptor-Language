@@ -1,6 +1,6 @@
-#include "ExprIRGenerator.hpp"
+#include "expr_ir_generator.hpp"
 
-#include "IRGenerator.hpp"
+#include "ir_generator.hpp"
 #include "llvm/IR/Constants.h"
 #include "overloaded.tpp"
 

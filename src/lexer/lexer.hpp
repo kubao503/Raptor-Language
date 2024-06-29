@@ -4,7 +4,7 @@
 #include <functional>
 #include <optional>
 
-#include "ILexer.hpp"
+#include "i_lexer.hpp"
 #include "source.hpp"
 #include "token.hpp"
 

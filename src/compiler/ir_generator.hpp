@@ -1,7 +1,7 @@
 #ifndef IR_GENERATOR_H
 #define IR_GENERATOR_H
 
-#include "ExprIRGenerator.hpp"
+#include "expr_ir_generator.hpp"
 #include "parse_tree.hpp"
 
 namespace llvm {
