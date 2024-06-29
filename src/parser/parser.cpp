@@ -1,11 +1,12 @@
 #include "parser.hpp"
 
 #include "magic_enum/magic_enum.hpp"
+#include "overloaded.tpp"
 
 std::optional<BuiltInType> Parser::getCurrentTokenBuiltInType() const {
     auto name = magic_enum::enum_name(currentToken_.getType());
 
-    static constexpr std::size_t suffixSize{3};
+    static const std::size_t suffixSize{3};
     if (name.size() < suffixSize)
         return std::nullopt;
 
@@ -638,18 +639,16 @@ PExpression Parser::parseNestedExpression() {
     return expr;
 }
 
-struct TokenValueToConstantValue {
-    Constant::Value operator()(const std::monostate&) const {
-        throw std::runtime_error("Expected token to have value");
-    }
-    Constant::Value operator()(const auto& v) const { return v; }
-};
-
 PExpression Parser::parseConstant() {
     if (!currentToken_.isConstant())
         return nullptr;
 
-    const auto value = std::visit(TokenValueToConstantValue(), currentToken_.getValue());
+    const auto value = std::visit(
+        overloaded{[](const std::monostate&) -> Constant::Value {
+                       throw std::runtime_error("Expected token to have value");
+                   },
+                   [](const auto& v) -> Constant::Value { return v; }},
+        currentToken_.getValue());
     const auto position = currentToken_.getPosition();
     consumeToken();
     return std::make_unique<Constant>(value, position);

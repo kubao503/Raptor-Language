@@ -1,10 +1,11 @@
 #include "token.hpp"
 
+#include <algorithm>
+
 #include "magic_enum/magic_enum.hpp"
 
 bool Token::isConstant() const {
-    return std::find(constantTypes_.begin(), constantTypes_.end(), type_)
-           != constantTypes_.end();
+    return std::ranges::contains(constantTypes_, type_);
 }
 
 std::vector<Token::Type> Token::constantTypes_{

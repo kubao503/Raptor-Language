@@ -15,7 +15,6 @@ class Lexer : public ILexer {
 
     using TokenBuilders =
         std::initializer_list<std::function<std::optional<Token>(Lexer&)>>;
-    using EscapedChars = std::initializer_list<CharPair>;
 
     using IntWithDigitCount = std::pair<Integral, unsigned int>;
 
@@ -51,7 +50,6 @@ class Lexer : public ILexer {
     char findInEscapedChars(char searched) const;
 
     static TokenBuilders tokenBuilders_;
-    static EscapedChars escapedChars_;
 };
 
 #endif

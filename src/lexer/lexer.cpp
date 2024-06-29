@@ -69,15 +69,15 @@ std::optional<Token> Lexer::buildKeyword(std::string_view lexeme) const {
 }
 
 bool isAnyUpperCase(std::string_view s) {
-    return std::any_of(s.begin(), s.end(), [](char c) { return std::isupper(c); });
+    return std::ranges::any_of(s, [](char c) { return std::isupper(c); });
 }
 
 std::string lexemeToKeyword(std::string_view lexeme) {
-    static const std::string_view suffix{"_KW"};
+    static constexpr std::string_view suffix{"_KW"};
 
     std::string keyword(lexeme.size(), ' ');
-    std::transform(lexeme.begin(), lexeme.end(), keyword.begin(),
-                   [](char c) { return std::toupper(c); });
+    std::ranges::transform(lexeme, keyword.begin(),
+                           [](char c) { return std::toupper(c); });
     keyword += suffix;
 
     return keyword;
@@ -190,11 +190,18 @@ void Lexer::expectNoEndOfFile() const {
 }
 
 char Lexer::findInEscapedChars(char searched) const {
-    auto res = std::ranges::find(escapedChars_, searched, &CharPair::first);
-
-    if (res == escapedChars_.end())
-        throw NonEscapableChar(tokenPosition_, source_.getChar());
-    return res->second;
+    switch (searched) {
+        case 'n':
+            return '\n';
+        case 't':
+            return '\t';
+        case '"':
+            return '"';
+        case '\\':
+            return '\\';
+        default:
+            throw NonEscapableChar(tokenPosition_, source_.getChar());
+    }
 }
 
 std::optional<Token> Lexer::buildComment() const {
@@ -276,6 +283,3 @@ Lexer::TokenBuilders Lexer::tokenBuilders_{
         return l.buildTwoLetterOp({'=', '='}, {Token::Type::ASGN_OP, Token::Type::EQ_OP});
     },
 };
-
-Lexer::EscapedChars Lexer::escapedChars_{
-    {'n', '\n'}, {'t', '\t'}, {'"', '"'}, {'\\', '\\'}};
