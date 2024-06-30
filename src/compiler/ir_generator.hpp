@@ -41,9 +41,9 @@ class IRGenerator : public StatementVisitor {
     void operator()(const StructDef& stmt) override;
     void operator()(const VariantDef& stmt) override;
 
-    void InitializeModule();
-    void addPrintfFunc() const;
-    void createMainFunc() const;
+    void initializeModule();
+    void initPrintFunc();
+    void initMainFunc();
 
     llvm::Value* getIRFromExpr(const Expression& expr);
     llvm::AllocaInst* createEntryBlockAlloca(llvm::Type* type,
@@ -54,6 +54,9 @@ class IRGenerator : public StatementVisitor {
     std::unique_ptr<llvm::LLVMContext> context_;
     std::unique_ptr<llvm::Module> module_;
     std::unique_ptr<llvm::IRBuilder<>> builder_;
+
+    llvm::Function* mainFunc_{nullptr};
+    llvm::Function* printFunc_{nullptr};
 
     ExprIRGenerator exprIRGenerator_;
     std::stack<Scope> scopeStack_;

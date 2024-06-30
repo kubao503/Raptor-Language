@@ -15,43 +15,42 @@
 #include "print.hpp"
 #include "semantic_errors.hpp"
 
-constexpr const char* printFuncName{"printValue"};
-
 Type llvmValueToType(llvm::Value* value);
 
 namespace compiler {
 IRGenerator::IRGenerator()
     : exprIRGenerator_(this) {
-    InitializeModule();
-    addPrintfFunc();
-    createMainFunc();
+    initializeModule();
+    initMainFunc();
+    initPrintFunc();
     scopeStack_.emplace();
 }
 
-void IRGenerator::InitializeModule() {
+void IRGenerator::initializeModule() {
     context_ = std::make_unique<llvm::LLVMContext>();
     module_ = std::make_unique<llvm::Module>("The Module", *context_);
     builder_ = std::make_unique<llvm::IRBuilder<>>(*context_);
 }
 
-void IRGenerator::addPrintfFunc() const {
+void IRGenerator::initPrintFunc() {
     const std::vector<llvm::Type*> paramTypes{llvm::Type::getInt32Ty(*context_)};
     const auto funcType =
         llvm::FunctionType::get(llvm::Type::getVoidTy(*context_), paramTypes, true);
 
-    llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, printFuncName,
-                           module_.get());
+    const char* printFuncName{"printValue"};
+    printFunc_ = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage,
+                                        printFuncName, module_.get());
 }
 
-void IRGenerator::createMainFunc() const {
+void IRGenerator::initMainFunc() {
     const std::vector<llvm::Type*> paramTypes;
     const auto funcType =
         llvm::FunctionType::get(llvm::Type::getInt32Ty(*context_), paramTypes, false);
 
-    const auto func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage,
-                                             "main", module_.get());
+    mainFunc_ = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main",
+                                       module_.get());
 
-    const auto block = llvm::BasicBlock::Create(*context_, "entry", func);
+    const auto block = llvm::BasicBlock::Create(*context_, "entry", mainFunc_);
     builder_->SetInsertPoint(block);
 }
 
@@ -64,13 +63,14 @@ llvm::Value* IRGenerator::getVariable(std::string_view name) const {
 }
 
 void IRGenerator::genIR(const Program& program) {
+    assert(mainFunc_ && "Main function not initialized");
+
     for (const auto& stmt : program.statements)
         stmt->accept(*this);
 
     builder_->CreateRet(llvm::ConstantInt::get(builder_->getInt32Ty(), 0));
 
-    const auto mainFunc = module_->getFunction("main");
-    llvm::verifyFunction(*mainFunc);
+    llvm::verifyFunction(*mainFunc_);
 
     module_->print(llvm::outs(), nullptr);
 }
@@ -97,8 +97,7 @@ TypeIndex getTypeID(llvm::Value* value) {
 }
 
 void IRGenerator::operator()(const PrintStatement& stmt) {
-    const auto func = module_->getFunction(printFuncName);
-    assert(func && printFuncName && " not found");
+    assert(printFunc_ && "Print function not initialized");
 
     std::vector<llvm::Value*> args;
 
@@ -112,7 +111,7 @@ void IRGenerator::operator()(const PrintStatement& stmt) {
                                               static_cast<int>(TypeIndex::VOID)));
     }
 
-    builder_->CreateCall(func, args, "calltmp");
+    builder_->CreateCall(printFunc_, args, "calltmp");
 }
 
 void IRGenerator::operator()(const FuncDef& funcDef) {
