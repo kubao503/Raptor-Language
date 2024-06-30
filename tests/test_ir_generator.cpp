@@ -121,3 +121,10 @@ TEST_F(CompilerTest, var_not_found) {
     Init("print x;");
     executeAndExpectThrowAt<SymbolNotFound>({1, 7});
 }
+
+TEST_F(CompilerTest, var_redefinition) {
+    Init(
+        "int x = 5;\n"
+        "int x = 10;");
+    executeAndExpectThrowAt<VariableRedefinition>({2, 1});
+}

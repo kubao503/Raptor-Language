@@ -12,6 +12,7 @@
 #pragma GCC diagnostic pop
 
 #include "print.hpp"
+#include "semantic_errors.hpp"
 
 constexpr const char* printFuncName{"printValue"};
 
@@ -115,6 +116,8 @@ void IRGenerator::operator()(const FuncDef&) {}
 void IRGenerator::operator()(const Assignment&) {}
 
 void IRGenerator::operator()(const VarDef& stmt) {
+    if (getVariable(stmt.name))
+        throw VariableRedefinition(stmt.position, stmt.name);
     auto initValue = getIRFromExpr(*stmt.expression);
 
     auto alloca = createEntryBlockAlloca(stmt.name);
