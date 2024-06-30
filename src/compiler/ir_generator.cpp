@@ -120,7 +120,7 @@ void IRGenerator::operator()(const VarDef& stmt) {
         throw VariableRedefinition(stmt.position, stmt.name);
     auto initValue = getIRFromExpr(*stmt.expression);
 
-    auto alloca = createEntryBlockAlloca(stmt.name);
+    auto alloca = createEntryBlockAlloca(initValue->getType(), stmt.name);
     builder_->CreateStore(initValue, alloca);
     addVariable({stmt.name, alloca});
 }
@@ -136,9 +136,10 @@ llvm::Value* IRGenerator::getIRFromExpr(const Expression& expr) {
     return value;
 }
 
-llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(std::string_view name) {
+llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(llvm::Type* type,
+                                                      std::string_view name) const {
     auto func = builder_->GetInsertBlock()->getParent();
     llvm::IRBuilder<> TmpB(&func->getEntryBlock(), func->getEntryBlock().begin());
-    return TmpB.CreateAlloca(llvm::Type::getInt32Ty(*context_), nullptr, name);
+    return TmpB.CreateAlloca(type, nullptr, name);
 }
 }  // namespace compiler

@@ -46,7 +46,8 @@ class IRGenerator : public StatementVisitor {
     void createMainFunc() const;
 
     llvm::Value* getIRFromExpr(const Expression& expr);
-    llvm::AllocaInst* createEntryBlockAlloca(std::string_view name);
+    llvm::AllocaInst* createEntryBlockAlloca(llvm::Type* type,
+                                             std::string_view name) const;
 
     std::unique_ptr<llvm::LLVMContext> context_;
     std::unique_ptr<llvm::Module> module_;

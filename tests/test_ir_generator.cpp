@@ -100,22 +100,35 @@ TEST_F(CompilerTest, print_new_line) {
     EXPECT_EQ(executeAndGetOutput(), "\n");
 }
 
-TEST_F(CompilerTest, print_int) {
-    Init("print 5;");
-    EXPECT_EQ(executeAndGetOutput(), "5\n");
+const auto builtInValues = testing::Values(
+    std::make_tuple("5", "5"), std::make_tuple("2.7", "2.7"),
+    std::make_tuple("true", "true"), std::make_tuple(R"("text")", "text"));
+
+class CompilerPrintTest
+    : public CompilerTest,
+      public testing::WithParamInterface<std::tuple<std::string, std::string>> {};
+
+TEST_P(CompilerPrintTest, print_built_in_type) {
+    const auto& [input, output] = GetParam();
+    Init("print " + input + ";");
+    EXPECT_EQ(executeAndGetOutput(), output + "\n");
 }
 
-TEST_F(CompilerTest, print_bool) {
-    Init("print true;");
-    EXPECT_EQ(executeAndGetOutput(), "true\n");
-}
+INSTANTIATE_TEST_SUITE_P(PrintTest, CompilerPrintTest, builtInValues);
 
-TEST_F(CompilerTest, var_def) {
+class CompilerVarDefTest
+    : public CompilerTest,
+      public testing::WithParamInterface<std::tuple<std::string, std::string>> {};
+
+TEST_P(CompilerVarDefTest, var_def) {
+    const auto& [input, output] = GetParam();
     Init(
-        "int x = 5;"
+        "int x = " + input + ";"
         "print x;");
-    EXPECT_EQ(executeAndGetOutput(), "5\n");
+    EXPECT_EQ(executeAndGetOutput(), output + "\n");
 }
+
+INSTANTIATE_TEST_SUITE_P(VarDefTest, CompilerVarDefTest, builtInValues);
 
 TEST_F(CompilerTest, var_not_found) {
     Init("print x;");

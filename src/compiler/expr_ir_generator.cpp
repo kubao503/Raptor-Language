@@ -62,7 +62,7 @@ void ExprIRGenerator::operator()(const VariableAccess& varAccess) const {
     const auto value = irGenerator_->getVariable(varAccess.name);
     if (!value)
         throw SymbolNotFound(varAccess.position, "Variable", varAccess.name);
-    lastValue_ = irGenerator_->builder_->CreateLoad(
-        llvm::Type::getInt32Ty(*irGenerator_->context_), value, varAccess.name);
+    const auto type = value->getType()->getPointerElementType();
+    lastValue_ = irGenerator_->builder_->CreateLoad(type, value, varAccess.name);
 }
-}
+}  // namespace compiler
