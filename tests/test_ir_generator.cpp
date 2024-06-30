@@ -101,29 +101,29 @@ TEST_F(CompilerTest, print_new_line) {
 }
 
 const auto builtInValues = testing::Values(
-    std::make_tuple("5", "5"), std::make_tuple("2.7", "2.7"),
-    std::make_tuple("true", "true"), std::make_tuple(R"("text")", "text"));
+    std::make_tuple("int", "5", "5"), std::make_tuple("float", "2.7", "2.7"),
+    std::make_tuple("bool", "true", "true"), std::make_tuple("str", R"("text")", "text"));
 
-class CompilerPrintTest
-    : public CompilerTest,
-      public testing::WithParamInterface<std::tuple<std::string, std::string>> {};
+class CompilerPrintTest : public CompilerTest,
+                          public testing::WithParamInterface<
+                              std::tuple<std::string, std::string, std::string>> {};
 
 TEST_P(CompilerPrintTest, print_built_in_type) {
-    const auto& [input, output] = GetParam();
-    Init("print " + input + ";");
+    const auto& [_, init, output] = GetParam();
+    Init("print " + init + ";");
     EXPECT_EQ(executeAndGetOutput(), output + "\n");
 }
 
 INSTANTIATE_TEST_SUITE_P(PrintTest, CompilerPrintTest, builtInValues);
 
-class CompilerVarDefTest
-    : public CompilerTest,
-      public testing::WithParamInterface<std::tuple<std::string, std::string>> {};
+class CompilerVarDefTest : public CompilerTest,
+                           public testing::WithParamInterface<
+                               std::tuple<std::string, std::string, std::string>> {};
 
 TEST_P(CompilerVarDefTest, var_def) {
-    const auto& [input, output] = GetParam();
+    const auto& [type, init, output] = GetParam();
     Init(
-        "int x = " + input + ";"
+        type + " x = " + init + ";"
         "print x;");
     EXPECT_EQ(executeAndGetOutput(), output + "\n");
 }
@@ -140,4 +140,9 @@ TEST_F(CompilerTest, var_redefinition) {
         "int x = 5;\n"
         "int x = 10;");
     executeAndExpectThrowAt<VariableRedefinition>({2, 1});
+}
+
+TEST_F(CompilerTest, var_def_mismatched_types) {
+    Init("int x = true;");
+    executeAndExpectThrowAt<TypeMismatch>({1, 1});
 }

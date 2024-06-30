@@ -115,10 +115,32 @@ void IRGenerator::operator()(const PrintStatement& stmt) {
 void IRGenerator::operator()(const FuncDef&) {}
 void IRGenerator::operator()(const Assignment&) {}
 
+Type llvmValueToType(llvm::Value* value) {
+    const auto type = value->getType();
+
+    switch (type->getTypeID()) {
+        case llvm::Type::IntegerTyID:
+            if (static_cast<llvm::IntegerType*>(type)->getBitWidth() == 1)
+                return BuiltInType::BOOL;
+            return BuiltInType::INT;
+        case llvm::Type::DoubleTyID:
+            return BuiltInType::FLOAT;
+        case llvm::Type::PointerTyID:
+            return BuiltInType::STR;
+        default:
+            throw std::runtime_error("Unrecognized value type");
+    }
+}
+
 void IRGenerator::operator()(const VarDef& stmt) {
     if (getVariable(stmt.name))
         throw VariableRedefinition(stmt.position, stmt.name);
-    auto initValue = getIRFromExpr(*stmt.expression);
+
+    const auto initValue = getIRFromExpr(*stmt.expression);
+    const auto valueType = llvmValueToType(initValue);
+
+    if (stmt.type != valueType)
+        throw TypeMismatch(stmt.position, stmt.type, valueType);
 
     auto alloca = createEntryBlockAlloca(initValue->getType(), stmt.name);
     builder_->CreateStore(initValue, alloca);
