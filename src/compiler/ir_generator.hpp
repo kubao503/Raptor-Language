@@ -49,6 +49,8 @@ class IRGenerator : public StatementVisitor {
     llvm::AllocaInst* createEntryBlockAlloca(llvm::Type* type,
                                              std::string_view name) const;
 
+    llvm::Type* typeToLLVMType(const ReturnType& type) const;
+
     std::unique_ptr<llvm::LLVMContext> context_;
     std::unique_ptr<llvm::Module> module_;
     std::unique_ptr<llvm::IRBuilder<>> builder_;

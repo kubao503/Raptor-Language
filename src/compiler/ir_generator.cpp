@@ -11,10 +11,13 @@
 
 #pragma GCC diagnostic pop
 
+#include "overloaded.tpp"
 #include "print.hpp"
 #include "semantic_errors.hpp"
 
 constexpr const char* printFuncName{"printValue"};
+
+Type llvmValueToType(llvm::Value* value);
 
 namespace compiler {
 IRGenerator::IRGenerator()
@@ -112,8 +115,89 @@ void IRGenerator::operator()(const PrintStatement& stmt) {
     builder_->CreateCall(func, args, "calltmp");
 }
 
-void IRGenerator::operator()(const FuncDef&) {}
+void IRGenerator::operator()(const FuncDef& funcDef) {
+    const auto insertPoint = builder_->saveIP();
+
+    // const auto paramTypeTransform = []() {};
+    std::vector<llvm::Type*> argTypes;
+
+    const auto returnType = typeToLLVMType(funcDef.getReturnType());
+    const auto funcType = llvm::FunctionType::get(returnType, argTypes, false);
+
+    const auto func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage,
+                                             funcDef.getName(), module_.get());
+    const auto block = llvm::BasicBlock::Create(*context_, "entry", func);
+    builder_->SetInsertPoint(block);
+
+    // Create new context
+
+    for (const auto& stmt : funcDef.getStatements())
+        stmt->accept(*this);
+
+    builder_->CreateRetVoid();
+    llvm::verifyFunction(*func);
+
+    builder_->restoreIP(insertPoint);
+}
+
 void IRGenerator::operator()(const Assignment&) {}
+
+void IRGenerator::operator()(const VarDef& stmt) {
+    if (getVariable(stmt.name))
+        throw VariableRedefinition(stmt.position, stmt.name);
+
+    const auto initValue = getIRFromExpr(*stmt.expression);
+    const auto valueType = llvmValueToType(initValue);
+
+    if (stmt.type != valueType)
+        throw TypeMismatch(stmt.position, stmt.type, valueType);
+
+    auto alloca = createEntryBlockAlloca(initValue->getType(), stmt.name);
+    builder_->CreateStore(initValue, alloca);
+    addVariable({stmt.name, alloca});
+}
+
+void IRGenerator::operator()(const FuncCall& funcCall) {
+    const auto func = module_->getFunction(funcCall.name);
+    if (!func)
+        throw SymbolNotFound(funcCall.position, "Function", funcCall.name);
+    builder_->CreateCall(func, {}, "calltmp");
+}
+
+void IRGenerator::operator()(const StructDef&) {}
+void IRGenerator::operator()(const VariantDef&) {}
+
+llvm::Value* IRGenerator::getIRFromExpr(const Expression& expr) {
+    expr.accept(exprIRGenerator_);
+    const auto value = exprIRGenerator_.getLastValue();
+    assert(value && "Expression value not set");
+    return value;
+}
+
+llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(llvm::Type* type,
+                                                      std::string_view name) const {
+    auto func = builder_->GetInsertBlock()->getParent();
+    llvm::IRBuilder<> TmpB(&func->getEntryBlock(), func->getEntryBlock().begin());
+    return TmpB.CreateAlloca(type, nullptr, name);
+}
+
+llvm::Type* IRGenerator::typeToLLVMType(const ReturnType& type) const {
+    const auto typeConverter =
+        overloaded{[this](BuiltInType type) -> llvm::Type* {
+                       switch (type) {
+                           case BuiltInType::INT:
+                               return llvm::Type::getInt32Ty(*context_);
+                           default:
+                               throw std::runtime_error("Unrecognized value type");
+                       }
+                   },
+                   [this](VoidType) { return llvm::Type::getVoidTy(*context_); },
+                   [](const auto&) -> llvm::Type* {
+                       throw std::runtime_error("Unrecognized value type");
+                   }};
+    return std::visit(typeConverter, type);
+}
+}  // namespace compiler
 
 Type llvmValueToType(llvm::Value* value) {
     const auto type = value->getType();
@@ -131,37 +215,3 @@ Type llvmValueToType(llvm::Value* value) {
             throw std::runtime_error("Unrecognized value type");
     }
 }
-
-void IRGenerator::operator()(const VarDef& stmt) {
-    if (getVariable(stmt.name))
-        throw VariableRedefinition(stmt.position, stmt.name);
-
-    const auto initValue = getIRFromExpr(*stmt.expression);
-    const auto valueType = llvmValueToType(initValue);
-
-    if (stmt.type != valueType)
-        throw TypeMismatch(stmt.position, stmt.type, valueType);
-
-    auto alloca = createEntryBlockAlloca(initValue->getType(), stmt.name);
-    builder_->CreateStore(initValue, alloca);
-    addVariable({stmt.name, alloca});
-}
-
-void IRGenerator::operator()(const FuncCall&) {}
-void IRGenerator::operator()(const StructDef&) {}
-void IRGenerator::operator()(const VariantDef&) {}
-
-llvm::Value* IRGenerator::getIRFromExpr(const Expression& expr) {
-    expr.accept(exprIRGenerator_);
-    const auto value = exprIRGenerator_.getLastValue();
-    assert(value && "Expression value not set");
-    return value;
-}
-
-llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(llvm::Type* type,
-                                                      std::string_view name) const {
-    auto func = builder_->GetInsertBlock()->getParent();
-    llvm::IRBuilder<> TmpB(&func->getEntryBlock(), func->getEntryBlock().begin());
-    return TmpB.CreateAlloca(type, nullptr, name);
-}
-}  // namespace compiler

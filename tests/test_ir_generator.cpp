@@ -146,3 +146,17 @@ TEST_F(CompilerTest, var_def_mismatched_types) {
     Init("int x = true;");
     executeAndExpectThrowAt<TypeMismatch>({1, 1});
 }
+
+TEST_F(CompilerTest, func_call) {
+    Init(
+        "void fun() {"
+        R"(    print "Inside function";)"
+        "}"
+        "fun();");
+    EXPECT_EQ(executeAndGetOutput(), "Inside function\n");
+}
+
+TEST_F(CompilerTest, function_not_found) {
+    Init("foo(5);");
+    executeAndExpectThrowAt<SymbolNotFound>({1, 1});
+}
