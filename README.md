@@ -26,8 +26,17 @@ $ ctest
 ### Running interpreter:
 
 ```console
-$ cd build/Debug
-$ ./src/raptor_lang_interpreter ../../example.rp
+$ cd build/Release
+$ ./src/interpreter/interpreter_program ../../example.rp
+```
+
+### Running compiler:
+
+```console
+$ cd build/Release
+$ ./src/compiler/compiler_program ../../example.rp 
+$ g++ output.o src/compiler/CMakeFiles/print.dir/print.cpp.o -o prog
+$ ./prog
 ```
 
 ### Getting test coverage

@@ -1,5 +1,5 @@
 #!/bin/bash
-BUILD_TYPE=Debug
+BUILD_TYPE=Release
 
 apt-get -y install cmake
 apt-get -y install lcov
@@ -15,4 +15,4 @@ cd build/$BUILD_TYPE
 cmake ../../ -DCMAKE_TOOLCHAIN_FILE=generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 cmake --build .
 
-./src/raptor_lang_interpreter ../../example.rp
+./src/interpreter/interpreter_program ../../example.rp

@@ -4,11 +4,8 @@
 #include "base_exception.hpp"
 #include "filter.hpp"
 #include "interpreter.hpp"
-#include "ir_generator.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
-
-void compile(llvm::Module& module);
 
 int main(int argc, char* argv[]) {
     if (argc < 2)
@@ -23,10 +20,8 @@ int main(int argc, char* argv[]) {
         auto parser = Parser(filter);
         const auto program = parser.parseProgram();
 
-        IRGenerator irGenerator;
-        irGenerator.genIR(program);
-        compile(*irGenerator.takeModule());
-
+        Interpreter interpreter(std::cout);
+        interpreter.interpret(program);
     } catch (const BaseException& e) {
         std::cerr << '\n' << e.describe() << '\n';
     }

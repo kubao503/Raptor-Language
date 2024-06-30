@@ -14,6 +14,11 @@ add_library(
     compiler.cpp
 )
 
+add_executable(
+    compiler_program
+    main.cpp
+)
+
 add_library(print print.cpp)
 
 target_include_directories(compiler INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -23,4 +28,9 @@ target_link_libraries(
     compiler
     PUBLIC parser
     LLVM-14
+)
+
+target_link_libraries(
+    compiler_program
+    PUBLIC compiler
 )
