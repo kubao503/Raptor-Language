@@ -2,8 +2,9 @@
 
 #include <algorithm>
 
-#include "interpreter_errors.hpp"
+#include "semantic_errors.hpp"
 
+namespace interpreter {
 void Scope::addVariable(VarEntry entry) {
     if (getVariable(entry.name))
         throw VariableRedefinition{{}, entry.name};
@@ -51,3 +52,4 @@ Scope::VariantDefEntry Scope::getVariantDef(std::string_view name) const {
         return *res;
     return nullptr;
 }
+}  // namespace interpreter

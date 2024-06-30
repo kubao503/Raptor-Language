@@ -15,10 +15,13 @@
 
 constexpr const char* printFuncName{"printValue"};
 
-IRGenerator::IRGenerator() {
+namespace compiler {
+IRGenerator::IRGenerator()
+    : exprIRGenerator_(this) {
     InitializeModule();
     addPrintfFunc();
     createMainFunc();
+    scopeStack_.emplace();
 }
 
 void IRGenerator::InitializeModule() {
@@ -46,6 +49,14 @@ void IRGenerator::createMainFunc() const {
 
     const auto block = llvm::BasicBlock::Create(*context_, "entry", func);
     builder_->SetInsertPoint(block);
+}
+
+void IRGenerator::addVariable(Scope::VarEntry varEntry) {
+    scopeStack_.top().addVariable(std::move(varEntry));
+}
+
+llvm::Value* IRGenerator::getVariable(std::string_view name) const {
+    return scopeStack_.top().getVariable(name);
 }
 
 void IRGenerator::genIR(const Program& program) {
@@ -108,7 +119,7 @@ void IRGenerator::operator()(const VarDef& stmt) {
 
     auto alloca = createEntryBlockAlloca(stmt.name);
     builder_->CreateStore(initValue, alloca);
-    varEntry = {stmt.name, alloca};
+    addVariable({stmt.name, alloca});
 }
 
 void IRGenerator::operator()(const FuncCall&) {}
@@ -127,3 +138,4 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(std::string_view name) {
     llvm::IRBuilder<> TmpB(&func->getEntryBlock(), func->getEntryBlock().begin());
     return TmpB.CreateAlloca(llvm::Type::getInt32Ty(*context_), nullptr, name);
 }
+}  // namespace compiler

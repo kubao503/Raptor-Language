@@ -8,6 +8,7 @@
 #include "parse_tree.hpp"
 #include "types.hpp"
 
+namespace interpreter {
 struct ValueObj;
 
 /// @brief Struct with just some unnamed values
@@ -54,5 +55,6 @@ ValueObj getHeldValue(ValueHolder holder);
 /// @param holder
 /// @return ValueObj with the same value as ValueHolder
 ValueObj getHeldValueCopy(const ValueHolder& holder);
+}  // namespace interpreter
 
 #endif

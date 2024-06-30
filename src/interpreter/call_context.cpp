@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <ranges>
 
+namespace interpreter {
 std::optional<RefObj> CallContext::getVariable(std::string_view name) const {
     for (const auto& scope : std::ranges::views::reverse(scopes_))
         if (const auto& varRef = scope.getVariable(name))
@@ -53,3 +54,4 @@ const VariantDef* CallContext::getVariantDef(std::string_view name) const {
 
     return nullptr;
 }
+}  // namespace interpreter

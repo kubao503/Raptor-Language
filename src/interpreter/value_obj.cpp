@@ -2,8 +2,9 @@
 
 #include <algorithm>
 
-#include "interpreter_errors.hpp"
+#include "semantic_errors.hpp"
 
+namespace interpreter {
 NamedStructObj::NamedStructObj(Values values, const StructDef* structDef)
     : StructObj{std::move(values)}, structDef{structDef} {
     if (!structDef)
@@ -71,3 +72,4 @@ struct GetHeldValueCopy {
 ValueObj getHeldValueCopy(const ValueHolder& holder) {
     return std::visit(GetHeldValueCopy(), holder);
 }
+}  // namespace interpreter

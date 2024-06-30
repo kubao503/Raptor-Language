@@ -5,8 +5,9 @@
 #include <ranges>
 
 #include "expr_interpreter.hpp"
-#include "interpreter_errors.hpp"
+#include "semantic_errors.hpp"
 
+namespace interpreter {
 Interpreter::Interpreter(std::ostream& out)
     : out_{out} {
     callStack_.emplace(nullptr);
@@ -466,3 +467,4 @@ void Interpreter::operator()(const VariantDef& stmt) {
         throw StructRedefinition{stmt.position, e};
     }
 }
+}  // namespace interpreter

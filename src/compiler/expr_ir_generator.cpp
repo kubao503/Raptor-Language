@@ -3,7 +3,9 @@
 #include "ir_generator.hpp"
 #include "llvm/IR/Constants.h"
 #include "overloaded.tpp"
+#include "semantic_errors.hpp"
 
+namespace compiler {
 void ExprIRGenerator::operator()(const StructInitExpression&) const {}
 void ExprIRGenerator::operator()(const DisjunctionExpression&) const {}
 void ExprIRGenerator::operator()(const ConjunctionExpression&) const {}
@@ -56,8 +58,11 @@ void ExprIRGenerator::operator()(const Constant& expr) const {
 
 void ExprIRGenerator::operator()(const FuncCall&) const {}
 
-void ExprIRGenerator::operator()(const VariableAccess& expr) const {
+void ExprIRGenerator::operator()(const VariableAccess& varAccess) const {
+    const auto value = irGenerator_->getVariable(varAccess.name);
+    if (!value)
+        throw SymbolNotFound(varAccess.position, "Variable", varAccess.name);
     lastValue_ = irGenerator_->builder_->CreateLoad(
-        llvm::Type::getInt32Ty(*irGenerator_->context_), irGenerator_->varEntry.second,
-        expr.name);
+        llvm::Type::getInt32Ty(*irGenerator_->context_), value, varAccess.name);
+}
 }

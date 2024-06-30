@@ -7,6 +7,8 @@
 #include "lexer.hpp"
 #include "parser.hpp"
 
+using compiler::IRGenerator;
+
 void compile(llvm::Module& module);
 
 int main(int argc, char* argv[]) {

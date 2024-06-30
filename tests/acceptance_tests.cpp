@@ -2,9 +2,11 @@
 
 #include "filter.hpp"
 #include "interpreter.hpp"
-#include "interpreter_errors.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "semantic_errors.hpp"
+
+using interpreter::Interpreter;
 
 class AcceptanceTest : public testing::Test {
    protected:

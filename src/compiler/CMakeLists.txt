@@ -27,6 +27,7 @@ target_include_directories(print INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(
     compiler
     PUBLIC parser
+    PRIVATE semantic_errors
     LLVM-14
 )
 

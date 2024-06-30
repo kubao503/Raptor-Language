@@ -3,7 +3,26 @@
 #include <algorithm>
 
 #include "interpreter.hpp"
-#include "interpreter_errors.hpp"
+#include "semantic_errors.hpp"
+
+namespace interpreter {
+struct ValueToString {
+    std::string operator()(Integral) const { return "INT"; }
+    std::string operator()(Floating) const { return "FLOAT"; }
+    std::string operator()(bool) const { return "BOOL"; }
+    std::string operator()(const std::string&) const { return "STR"; }
+    std::string operator()(const StructObj&) const { return "Anonymous struct"; }
+    std::string operator()(const NamedStructObj& s) const {
+        return "Struct " + s.structDef->name;
+    }
+    std::string operator()(const VariantObj& v) const {
+        return "Variant " + v.variantDef->name;
+    }
+} valueToString;
+
+std::string convertValueToString(ValueObj::Value value) {
+    return std::visit(valueToString, value);
+}
 
 ExpressionInterpreter::ExpressionInterpreter(Interpreter* interpreter)
     : interpreter_{interpreter} {
@@ -265,7 +284,8 @@ struct TypeConverter {
         if (std::visit(TypeComparer(), static_cast<Type>(to), from.valueObj->value))
             return std::move(from.valueObj->value);
 
-        throw InvalidTypeConversion{{}, std::move(from.valueObj->value), to};
+        throw InvalidTypeConversion{
+            {}, convertValueToString(std::move(from.valueObj->value)), to};
     }
     ValueObj::Value operator()(Integral from, BuiltInType to) const {
         return fromBuiltInValue(from, to);
@@ -279,7 +299,7 @@ struct TypeConverter {
     ValueObj::Value operator()(std::string from, BuiltInType to) const {
         if (to == BuiltInType::STR)
             return from;
-        throw InvalidTypeConversion{{}, std::move(from), to};
+        throw InvalidTypeConversion{{}, convertValueToString(std::move(from)), to};
     }
     ValueObj::Value operator()(NamedStructObj from, const std::string& to) const {
         if (from.structDef->name == to)
@@ -301,7 +321,7 @@ struct TypeConverter {
     }
 
     ValueObj::Value operator()(auto from, const auto& to) const {
-        throw InvalidTypeConversion{{}, std::move(from), to};
+        throw InvalidTypeConversion{{}, convertValueToString(std::move(from)), to};
     }
 
    private:
@@ -314,14 +334,14 @@ struct TypeConverter {
             case BuiltInType::BOOL:
                 return static_cast<bool>(builtInValue);
             default:
-                throw InvalidTypeConversion{{}, builtInValue, to};
+                throw InvalidTypeConversion{{}, convertValueToString(builtInValue), to};
         }
     }
 
     ValueObj::Value convertToVariant(auto from, const std::string& to) const {
         const auto variantDef = interpreter_->getVariantDef(to);
         if (!variantDef)
-            throw InvalidTypeConversion{{}, std::move(from), to};
+            throw InvalidTypeConversion{{}, convertValueToString(std::move(from)), to};
 
         auto value = static_cast<ValueObj::Value>(std::move(from));
 
@@ -332,7 +352,7 @@ struct TypeConverter {
             auto valuePtr = std::make_unique<ValueObj>(std::move(value));
             return VariantObj{std::move(valuePtr), variantDef};
         }
-        throw InvalidTypeConversion{{}, std::move(value), to};
+        throw InvalidTypeConversion{{}, convertValueToString(std::move(value)), to};
     }
 
     Interpreter* interpreter_;
@@ -427,3 +447,4 @@ void ExpressionInterpreter::operator()(const VariableAccess& expr) const {
         throw SymbolNotFound{expr.position, "Variable", expr.name};
     lastResult_ = *varRef;
 }
+}  // namespace interpreter

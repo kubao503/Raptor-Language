@@ -5,6 +5,7 @@
 
 #include "scope.hpp"
 
+namespace interpreter {
 using RefEntry = std::pair<std::string, RefObj>;
 
 /// @brief Function call context
@@ -45,5 +46,6 @@ class CallContext {
     std::vector<Scope> scopes_;
     std::vector<RefEntry> varRefs_;
 };
+}  // namespace interpreter
 
 #endif

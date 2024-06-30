@@ -5,7 +5,6 @@ add_library(
     call_context.cpp
     scope.cpp
     value_obj.cpp
-    interpreter_errors.cpp
 )
 
 add_executable(
@@ -18,6 +17,7 @@ target_include_directories(interpreter INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(
     interpreter
     PUBLIC parser
+    PRIVATE semantic_errors
 )
 
 target_link_libraries(

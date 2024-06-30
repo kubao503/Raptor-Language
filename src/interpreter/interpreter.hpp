@@ -8,6 +8,7 @@
 #include "expr_interpreter.hpp"
 #include "parse_tree.hpp"
 
+namespace interpreter {
 using ReturnValue = std::optional<ValueObj>;
 
 /// @brief Statement interpreter
@@ -134,5 +135,6 @@ struct ValueToType {
     }
     Type operator()(const StructObj&) const { return "Anonymous struct"; }
 };
+}  // namespace interpreter
 
 #endif

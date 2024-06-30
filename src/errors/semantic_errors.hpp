@@ -1,9 +1,8 @@
-#ifndef INTERPRETER_ERRORS_H
-#define INTERPRETER_ERRORS_H
+#ifndef SEMANTIC_ERRORS_H
+#define SEMANTIC_ERRORS_H
 
 #include "base_exception.hpp"
 #include "types.hpp"
-#include "value_obj.hpp"
 
 class SymbolNotFound : public BaseException {
    public:
@@ -95,12 +94,11 @@ class VariantRedefinition : public Redefinition {
 
 class InvalidTypeConversion : public BaseException {
    public:
-    InvalidTypeConversion(const Position& position, ValueObj::Value from, Type to);
+    InvalidTypeConversion(const Position& position, Type from, Type to);
     InvalidTypeConversion(const Position& position, InvalidTypeConversion e);
 
    private:
-    ValueObj::Value from_;
-    Type to_;
+    Type from_, to_;
 };
 
 class ConstViolation : public BaseException {

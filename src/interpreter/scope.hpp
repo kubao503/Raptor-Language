@@ -1,5 +1,5 @@
-#ifndef SCOPE_H
-#define SCOPE_H
+#ifndef INTERPRETER_SCOPE_H
+#define INTERPRETER_SCOPE_H
 
 #include <memory>
 #include <optional>
@@ -10,6 +10,7 @@
 #include "types.hpp"
 #include "value_obj.hpp"
 
+namespace interpreter {
 struct VarEntry {
     std::string name;
     std::unique_ptr<ValueObj> valueObj;
@@ -38,5 +39,6 @@ class Scope {
     std::vector<StructDefEntry> structs_;
     std::vector<VariantDefEntry> variants_;
 };
+}  // namespace interpreter
 
 #endif

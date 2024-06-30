@@ -4,6 +4,7 @@
 #include "parse_tree.hpp"
 #include "value_obj.hpp"
 
+namespace interpreter {
 class Interpreter;
 
 class ExpressionInterpreter : public ExpressionVisitor {
@@ -54,5 +55,6 @@ class ExpressionInterpreter : public ExpressionVisitor {
     Interpreter* interpreter_;
     mutable ValueHolder lastResult_;
 };
+}  // namespace interpreter
 
 #endif

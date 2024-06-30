@@ -2,9 +2,11 @@
 
 #include "expr_interpreter.hpp"
 #include "interpreter.hpp"
-#include "interpreter_errors.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "semantic_errors.hpp"
+
+using namespace interpreter;
 
 class InterpreterTest : public testing::Test {
    protected:

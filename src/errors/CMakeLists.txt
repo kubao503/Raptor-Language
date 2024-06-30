@@ -6,3 +6,14 @@ target_link_libraries(
     errors
     PUBLIC utils
 )
+
+add_library(
+    semantic_errors
+    semantic_errors.cpp
+)
+
+target_link_libraries(
+    semantic_errors
+    PRIVATE magic_enum::magic_enum
+    PUBLIC errors
+)

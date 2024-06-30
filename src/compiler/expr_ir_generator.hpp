@@ -3,11 +3,12 @@
 
 #include "parse_tree.hpp"
 
-class IRGenerator;
-
 namespace llvm {
 class Value;
 }
+
+namespace compiler {
+class IRGenerator;
 
 class ExprIRGenerator : public ExpressionVisitor {
    public:
@@ -39,9 +40,10 @@ class ExprIRGenerator : public ExpressionVisitor {
     void operator()(const FuncCall& expr) const override;
     void operator()(const VariableAccess& expr) const override;
 
-    IRGenerator* irGenerator_{nullptr};
+    IRGenerator* irGenerator_;
 
     mutable llvm::Value* lastValue_{nullptr};
 };
+}  // namespace compiler
 
 #endif  // EXPR_IR_GENERATOR_H
