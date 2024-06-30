@@ -55,4 +55,9 @@ void ExprIRGenerator::operator()(const Constant& expr) const {
 }
 
 void ExprIRGenerator::operator()(const FuncCall&) const {}
-void ExprIRGenerator::operator()(const VariableAccess&) const {}
+
+void ExprIRGenerator::operator()(const VariableAccess& expr) const {
+    lastValue_ = irGenerator_->builder_->CreateLoad(
+        llvm::Type::getInt32Ty(*irGenerator_->context_), irGenerator_->varEntry.second,
+        expr.name);
+}

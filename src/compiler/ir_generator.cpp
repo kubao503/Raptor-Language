@@ -102,7 +102,15 @@ void IRGenerator::operator()(const PrintStatement& stmt) {
 
 void IRGenerator::operator()(const FuncDef&) {}
 void IRGenerator::operator()(const Assignment&) {}
-void IRGenerator::operator()(const VarDef&) {}
+
+void IRGenerator::operator()(const VarDef& stmt) {
+    auto initValue = getIRFromExpr(*stmt.expression);
+
+    auto alloca = createEntryBlockAlloca(stmt.name);
+    builder_->CreateStore(initValue, alloca);
+    varEntry = {stmt.name, alloca};
+}
+
 void IRGenerator::operator()(const FuncCall&) {}
 void IRGenerator::operator()(const StructDef&) {}
 void IRGenerator::operator()(const VariantDef&) {}
@@ -112,4 +120,10 @@ llvm::Value* IRGenerator::getIRFromExpr(const Expression& expr) {
     const auto value = exprIRGenerator_.getLastValue();
     assert(value && "Expression value not set");
     return value;
+}
+
+llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(std::string_view name) {
+    auto func = builder_->GetInsertBlock()->getParent();
+    llvm::IRBuilder<> TmpB(&func->getEntryBlock(), func->getEntryBlock().begin());
+    return TmpB.CreateAlloca(llvm::Type::getInt32Ty(*context_), nullptr, name);
 }

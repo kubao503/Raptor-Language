@@ -91,3 +91,10 @@ TEST_F(CompilerTest, print_bool) {
     Init("print true;");
     EXPECT_EQ(compileAndGetOutput(), "true\n");
 }
+
+TEST_F(CompilerTest, var_def) {
+    Init(
+        "int x = 5;"
+        "print x;");
+    EXPECT_EQ(compileAndGetOutput(), "5\n");
+}

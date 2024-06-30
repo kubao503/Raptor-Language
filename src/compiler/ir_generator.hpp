@@ -1,6 +1,8 @@
 #ifndef IR_GENERATOR_H
 #define IR_GENERATOR_H
 
+#include <utility>
+
 #include "expr_ir_generator.hpp"
 #include "parse_tree.hpp"
 
@@ -39,12 +41,16 @@ class IRGenerator : public StatementVisitor {
     void createMainFunc() const;
 
     llvm::Value* getIRFromExpr(const Expression& expr);
+    llvm::AllocaInst* createEntryBlockAlloca(std::string_view name);
 
     std::unique_ptr<llvm::LLVMContext> context_;
     std::unique_ptr<llvm::Module> module_;
     std::unique_ptr<llvm::IRBuilder<>> builder_;
 
     ExprIRGenerator exprIRGenerator_{this};
+
+    using VarEntry = std::pair<std::string, llvm::Value*>;
+    VarEntry varEntry = {"", nullptr};
 
     friend class ExprIRGenerator;
 };
