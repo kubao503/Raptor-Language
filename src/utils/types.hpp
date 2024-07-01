@@ -19,4 +19,6 @@ struct VoidType {};
 using Type = std::variant<std::string, BuiltInType>;
 using ReturnType = std::variant<std::string, BuiltInType, VoidType>;
 
+ReturnType typeToReturnType(const Type& type);
+
 #endif

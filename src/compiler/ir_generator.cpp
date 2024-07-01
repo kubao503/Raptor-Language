@@ -11,6 +11,8 @@
 
 #pragma GCC diagnostic pop
 
+#include <ranges>
+
 #include "overloaded.tpp"
 #include "print.hpp"
 #include "semantic_errors.hpp"
@@ -115,20 +117,37 @@ void IRGenerator::operator()(const PrintStatement& stmt) {
 }
 
 void IRGenerator::operator()(const FuncDef& funcDef) {
+    if (module_->getFunction(funcDef.getName()))
+        throw FunctionRedefinition(funcDef.position, funcDef.getName());
+
     const auto insertPoint = builder_->saveIP();
 
-    // const auto paramTypeTransform = []() {};
-    std::vector<llvm::Type*> argTypes;
+    const auto paramTransform = [this](const Parameter& param) {
+        return typeToLLVMType(typeToReturnType(param.type));
+    };
+    std::vector<llvm::Type*> paramTypes;
+    std::ranges::transform(funcDef.getParameters(), std::back_inserter(paramTypes),
+                           paramTransform);
 
     const auto returnType = typeToLLVMType(funcDef.getReturnType());
-    const auto funcType = llvm::FunctionType::get(returnType, argTypes, false);
+    const auto funcType = llvm::FunctionType::get(returnType, paramTypes, false);
 
     const auto func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage,
                                              funcDef.getName(), module_.get());
+
+    for (auto elem : std::views::zip(func->args(), funcDef.getParameters())) {
+        const auto& [arg, param] = elem;
+        arg.setName(param.name);
+    }
+
     const auto block = llvm::BasicBlock::Create(*context_, "entry", func);
     builder_->SetInsertPoint(block);
 
-    // Create new context
+    for (auto& arg : func->args()) {
+        const auto alloca = createEntryBlockAlloca(arg.getType(), arg.getName());
+        builder_->CreateStore(&arg, alloca);
+        addVariable({std::string(arg.getName()), alloca});
+    }
 
     for (const auto& stmt : funcDef.getStatements())
         stmt->accept(*this);
@@ -151,7 +170,7 @@ void IRGenerator::operator()(const VarDef& stmt) {
     if (stmt.type != valueType)
         throw TypeMismatch(stmt.position, stmt.type, valueType);
 
-    auto alloca = createEntryBlockAlloca(initValue->getType(), stmt.name);
+    const auto alloca = createEntryBlockAlloca(initValue->getType(), stmt.name);
     builder_->CreateStore(initValue, alloca);
     addVariable({stmt.name, alloca});
 }
@@ -160,7 +179,13 @@ void IRGenerator::operator()(const FuncCall& funcCall) {
     const auto func = module_->getFunction(funcCall.name);
     if (!func)
         throw SymbolNotFound(funcCall.position, "Function", funcCall.name);
-    builder_->CreateCall(func, {}, "calltmp");
+
+    std::vector<llvm::Value*> args;
+    const auto argsTransform = [this](const Argument& arg) {
+        return getIRFromExpr(*arg.value);
+    };
+    std::ranges::transform(funcCall.arguments, std::back_inserter(args), argsTransform);
+    builder_->CreateCall(func, args, "calltmp");
 }
 
 void IRGenerator::operator()(const StructDef&) {}

@@ -160,3 +160,19 @@ TEST_F(CompilerTest, function_not_found) {
     Init("foo(5);");
     executeAndExpectThrowAt<SymbolNotFound>({1, 1});
 }
+
+TEST_F(CompilerTest, function_redefinition) {
+    Init(
+        "void fun() { }\n"
+        "int fun(int a) { }");
+    executeAndExpectThrowAt<FunctionRedefinition>({2, 1});
+}
+
+TEST_F(CompilerTest, function_parameter) {
+    Init(
+        "void foo(int a) {"
+        "    print a;"
+        "}"
+        "foo(5);");
+    EXPECT_EQ(executeAndGetOutput(), "5\n");
+}

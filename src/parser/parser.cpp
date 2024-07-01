@@ -20,10 +20,6 @@ std::optional<Type> Parser::getCurrentTokenType() const {
     return getCurrentTokenBuiltInType();
 }
 
-ReturnType typeToReturnType(const Type& type) {
-    return std::visit([](auto s) -> ReturnType { return s; }, type);
-}
-
 /// PROGRAM = STMTS
 Program Parser::parseProgram() {
     auto statements = parseStatements();
