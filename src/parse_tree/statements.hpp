@@ -17,25 +17,18 @@ struct FuncCall;
 struct StructDef;
 struct VariantDef;
 
-struct StatementVisitor {
-    virtual void operator()(const IfStatement& stmt) = 0;
-    virtual void operator()(const WhileStatement& stmt) = 0;
-    virtual void operator()(const ReturnStatement& stmt) = 0;
-    virtual void operator()(const PrintStatement& stmt) = 0;
-    virtual void operator()(const FuncDef& stmt) = 0;
-    virtual void operator()(const Assignment& stmt) = 0;
-    virtual void operator()(const VarDef& stmt) = 0;
-    virtual void operator()(const FuncCall& stmt) = 0;
-    virtual void operator()(const StructDef& stmt) = 0;
-    virtual void operator()(const VariantDef& stmt) = 0;
-};
+using StatementVisitor =
+    Visitor<IfStatement, WhileStatement, ReturnStatement, PrintStatement, FuncDef,
+            Assignment, VarDef, FuncCall, StructDef, VariantDef>;
 
-struct Statement : public virtual SyntaxNode {
-    virtual void accept(StatementVisitor& vis) const = 0;
-};
+struct Statement : public virtual SyntaxNode,
+                   public virtual Visitable<StatementVisitor> {};
 
 using PStatement = std::unique_ptr<Statement>;
 using Statements = std::vector<PStatement>;
+
+template <typename T>
+using VisitableStatement = VisitableImpl<T, StatementVisitor>;
 
 struct ConditionalStatement : public Statement {
     ConditionalStatement(PExpression condition, Statements statements,
@@ -48,36 +41,29 @@ struct ConditionalStatement : public Statement {
     Statements statements;
 };
 
-struct IfStatement : public ConditionalStatement {
+struct IfStatement : public ConditionalStatement, public VisitableStatement<IfStatement> {
     IfStatement(PExpression condition, Statements statements, const Position& position)
         : SyntaxNode{position},
           ConditionalStatement{std::move(condition), std::move(statements), position} {}
-
-    void accept(StatementVisitor& vis) const override { vis(*this); }
 };
 
-struct WhileStatement : public ConditionalStatement {
+struct WhileStatement : public ConditionalStatement,
+                        public VisitableStatement<WhileStatement> {
     WhileStatement(PExpression condition, Statements statements, const Position& position)
         : SyntaxNode{position},
           ConditionalStatement{std::move(condition), std::move(statements), position} {}
-
-    void accept(StatementVisitor& vis) const override { vis(*this); }
 };
 
-struct ReturnStatement : public Statement {
+struct ReturnStatement : public Statement, public VisitableStatement<ReturnStatement> {
     ReturnStatement(PExpression expression, const Position& position)
         : SyntaxNode{position}, expression{std::move(expression)} {}
-
-    void accept(StatementVisitor& vis) const override { vis(*this); }
 
     PExpression expression;
 };
 
-struct PrintStatement : public Statement {
+struct PrintStatement : public Statement, public VisitableStatement<PrintStatement> {
     PrintStatement(PExpression expression, const Position& position)
         : SyntaxNode{position}, expression{std::move(expression)} {}
-
-    void accept(StatementVisitor& vis) const override { vis(*this); }
 
     PExpression expression;
 };
@@ -91,7 +77,7 @@ struct Parameter {
 
 using Parameters = std::vector<Parameter>;
 
-class FuncDef : public Statement {
+class FuncDef : public Statement, public VisitableStatement<FuncDef> {
    public:
     FuncDef(const ReturnType& returnType, const std::string& name,
             const Parameters& parameters, Statements statements, const Position& position)
@@ -100,8 +86,6 @@ class FuncDef : public Statement {
           name_{name},
           parameters_{parameters},
           statements_{std::move(statements)} {}
-
-    void accept(StatementVisitor& vis) const override { vis(*this); }
 
     const ReturnType& getReturnType() const { return returnType_; }
     const std::string& getName() const { return name_; }
@@ -125,17 +109,15 @@ struct FieldAccess {
     std::string field;
 };
 
-struct Assignment : public Statement {
+struct Assignment : public Statement, public VisitableStatement<Assignment> {
     Assignment(LValue lhs, PExpression rhs, const Position& position)
         : SyntaxNode{position}, lhs{std::move(lhs)}, rhs{std::move(rhs)} {}
-
-    void accept(StatementVisitor& vis) const override { vis(*this); }
 
     LValue lhs;
     PExpression rhs;
 };
 
-struct VarDef : public Statement {
+struct VarDef : public Statement, public VisitableStatement<VarDef> {
     VarDef(bool isConst, Type type, std::string name, PExpression expression,
            const Position& position)
         : SyntaxNode{position},
@@ -143,8 +125,6 @@ struct VarDef : public Statement {
           type{std::move(type)},
           name{std::move(name)},
           expression{std::move(expression)} {}
-
-    void accept(StatementVisitor& vis) const override { vis(*this); }
 
     bool isConst;
     Type type;
@@ -160,15 +140,15 @@ struct Argument {
 
 using Arguments = std::vector<Argument>;
 
-struct FuncCall : public Expression, public Statement {
+struct FuncCall : public Expression,
+                  public Statement,
+                  public VisitableExpression<FuncCall>,
+                  public VisitableStatement<FuncCall> {
     std::string name;
     Arguments arguments;
 
     FuncCall(std::string name, Arguments arguments, const Position& position)
         : SyntaxNode{position}, name{std::move(name)}, arguments{std::move(arguments)} {}
-
-    void accept(const ExpressionVisitor& vis) const override { vis(*this); }
-    void accept(StatementVisitor& vis) const override { vis(*this); }
 };
 
 struct Field {
@@ -176,21 +156,17 @@ struct Field {
     std::string name;
 };
 
-struct StructDef : public Statement {
+struct StructDef : public Statement, public VisitableStatement<StructDef> {
     StructDef(std::string name, std::vector<Field> fields, const Position& position)
         : SyntaxNode{position}, name{std::move(name)}, fields{std::move(fields)} {}
-
-    void accept(StatementVisitor& vis) const override { vis(*this); }
 
     std::string name;
     std::vector<Field> fields;
 };
 
-struct VariantDef : public Statement {
+struct VariantDef : public Statement, public VisitableStatement<VariantDef> {
     VariantDef(std::string name, std::vector<Type> types, const Position& position)
         : SyntaxNode{position}, name{std::move(name)}, types{std::move(types)} {}
-
-    void accept(StatementVisitor& vis) const override { vis(*this); }
 
     std::string name;
     std::vector<Type> types;
