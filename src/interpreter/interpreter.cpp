@@ -324,7 +324,7 @@ void Interpreter::operator()(const FuncCall& funcCall) {
 ReturnValue Interpreter::handleFunctionCall(const FuncCall& funcCall) {
     auto funcWithCtx = getFunctionWithCtx(funcCall.name);
     if (!funcWithCtx)
-        throw SymbolNotFound{funcCall.position, "Function", funcCall.name};
+        throw SymbolNotFound{funcCall.Statement::position, "Function", funcCall.name};
     const auto [funcDef, parentCtx] = *funcWithCtx;
 
     CallContext ctx{parentCtx};
@@ -332,7 +332,7 @@ ReturnValue Interpreter::handleFunctionCall(const FuncCall& funcCall) {
 
     const auto recursionLimit_{1000};
     if (callStack_.size() > recursionLimit_)
-        throw MaxRecursionDepth{funcCall.position};
+        throw MaxRecursionDepth{funcCall.Statement::position};
 
     callStack_.push(std::move(ctx));
 
