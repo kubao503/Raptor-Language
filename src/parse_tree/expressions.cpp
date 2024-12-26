@@ -1,16 +1,9 @@
 #include "expressions.hpp"
 
 template <typename T>
-auto getBinaryExprCtor() {
-    return [](auto lhs, auto rhs, const Position& position) {
-        return std::make_unique<T>(std::move(lhs), std::move(rhs), position);
-    };
-}
-
-template <typename T>
-auto getUnaryExprCtor() {
-    return [](auto expr, const Position& position) {
-        return std::make_unique<T>(std::move(expr), position);
+auto getCtorObject() {
+    return [](auto&&... args) {
+        return std::make_unique<T>(std::forward<decltype(args)>(args)...);
     };
 }
 
@@ -18,9 +11,9 @@ std::optional<ComparisonExpression::Ctor> ComparisonExpression::getCtor(
     Token::Type type) {
     switch (type) {
         case Token::Type::EQ_OP:
-            return getBinaryExprCtor<EqualExpression>();
+            return getCtorObject<EqualExpression>();
         case Token::Type::NEQ_OP:
-            return getBinaryExprCtor<NotEqualExpression>();
+            return getCtorObject<NotEqualExpression>();
         default:
             return std::nullopt;
     }
@@ -29,13 +22,13 @@ std::optional<ComparisonExpression::Ctor> ComparisonExpression::getCtor(
 std::optional<RelationExpression::Ctor> RelationExpression::getCtor(Token::Type type) {
     switch (type) {
         case Token::Type::LT_OP:
-            return getBinaryExprCtor<LessThanExpression>();
+            return getCtorObject<LessThanExpression>();
         case Token::Type::LTE_OP:
-            return getBinaryExprCtor<LessThanOrEqualExpression>();
+            return getCtorObject<LessThanOrEqualExpression>();
         case Token::Type::GT_OP:
-            return getBinaryExprCtor<GreaterThanExpression>();
+            return getCtorObject<GreaterThanExpression>();
         case Token::Type::GTE_OP:
-            return getBinaryExprCtor<GreaterThanOrEqualExpression>();
+            return getCtorObject<GreaterThanOrEqualExpression>();
         default:
             return std::nullopt;
     }
@@ -44,9 +37,9 @@ std::optional<RelationExpression::Ctor> RelationExpression::getCtor(Token::Type 
 std::optional<AdditiveExpression::Ctor> AdditiveExpression::getCtor(Token::Type type) {
     switch (type) {
         case Token::Type::ADD_OP:
-            return getBinaryExprCtor<AdditionExpression>();
+            return getCtorObject<AdditionExpression>();
         case Token::Type::MIN_OP:
-            return getBinaryExprCtor<SubtractionExpression>();
+            return getCtorObject<SubtractionExpression>();
         default:
             return std::nullopt;
     }
@@ -56,9 +49,9 @@ std::optional<MultiplicativeExpression::Ctor> MultiplicativeExpression::getCtor(
     Token::Type type) {
     switch (type) {
         case Token::Type::MULT_OP:
-            return getBinaryExprCtor<MultiplicationExpression>();
+            return getCtorObject<MultiplicationExpression>();
         case Token::Type::DIV_OP:
-            return getBinaryExprCtor<DivisionExpression>();
+            return getCtorObject<DivisionExpression>();
         default:
             return std::nullopt;
     }
@@ -67,9 +60,9 @@ std::optional<MultiplicativeExpression::Ctor> MultiplicativeExpression::getCtor(
 std::optional<NegationExpression::Ctor> NegationExpression::getCtor(Token::Type type) {
     switch (type) {
         case Token::Type::MIN_OP:
-            return getUnaryExprCtor<SignChangeExpression>();
+            return getCtorObject<SignChangeExpression>();
         case Token::Type::NOT_KW:
-            return getUnaryExprCtor<LogicalNegationExpression>();
+            return getCtorObject<LogicalNegationExpression>();
         default:
             return std::nullopt;
     }
@@ -78,9 +71,9 @@ std::optional<NegationExpression::Ctor> NegationExpression::getCtor(Token::Type 
 std::optional<TypeExpression::Ctor> TypeExpression::getCtor(Token::Type type) {
     switch (type) {
         case Token::Type::AS_KW:
-            return getBinaryExprCtor<ConversionExpression>();
+            return getCtorObject<ConversionExpression>();
         case Token::Type::IS_KW:
-            return getBinaryExprCtor<TypeCheckExpression>();
+            return getCtorObject<TypeCheckExpression>();
         default:
             return std::nullopt;
     }
